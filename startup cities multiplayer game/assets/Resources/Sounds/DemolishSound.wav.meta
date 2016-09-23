@@ -1,0 +1,31 @@
+fileFormatVersion: 2
+guid: 6deb84a8ec0366543a8e4c4b7f7f4827
+labels:
+- usfx
+- imphenzia
+- demolish
+- break
+- destruct
+- destroy
+- destruction
+- stereo
+timeCreated: 1466214454
+licenseType: Free
+AudioImporter:
+  serializedVersion: 6
+  defaultSettings:
+    loadType: 1
+    sampleRateSetting: 0
+    sampleRateOverride: 0
+    compressionFormat: 0
+    quality: 0
+    conversionMode: 0
+  platformSettingOverrides: {}
+  forceToMono: 0
+  normalize: 1
+  preloadAudioData: 1
+  loadInBackground: 0
+  3D: 1
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
