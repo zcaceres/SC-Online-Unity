@@ -11,7 +11,6 @@ public class Megaphone : MonoBehaviour {
 	}
 
 	public void ToggleFoodTruck(bool enable) {
-		Debug.Log ("toggling food truck: " + enable);
 		audioS.enabled = enable;
 		restaurantNode.enabled = enable;
 	}

@@ -24,6 +24,7 @@ public class Vehicle : NetworkBehaviour {
 	[SyncVar]
 	protected NetworkInstanceId owner;
 	const int TYPENUM = 27;
+	public bool eligibleToExit;
 
 	public Color color;           // The original vehicle color
 	public Collider c;            // vehicle's collider
@@ -47,6 +48,7 @@ public class Vehicle : NetworkBehaviour {
 		horn = carSounds [1];
 		vehicleOccupied = false;
 		type = TYPENUM;
+		eligibleToExit = false;
 		foreach (AudioSource aSources in carSounds) {
 			aSources.enabled = false;
 		}
@@ -68,7 +70,7 @@ public class Vehicle : NetworkBehaviour {
 			if (Input.GetKeyUp (KeyCode.Mouse0)) {
 				horn.Stop ();
 			}
-			if (Input.GetKey (KeyCode.G)) {
+			if (Input.GetKey (KeyCode.F) && eligibleToExit) {
 				Player p = gameObject.GetComponentInChildren<Player> ();
 				ExitVehicle (p);
 			}
@@ -80,12 +82,14 @@ public class Vehicle : NetworkBehaviour {
 	public void StartVehicle (Player p) {
 		HidePlayer (p, true);
 		EnableCar (true);
+		StartCoroutine ("DelayToExit");
 	}
 
 
 	public void ExitVehicle (Player p) {
 		HidePlayer (p, false);
 		EnableCar (false);
+		StartCoroutine ("DelayToEnter");
 	}
 
 
@@ -97,6 +101,8 @@ public class Vehicle : NetworkBehaviour {
 		UnityStandardAssets.Vehicles.Car.CarAudio carA = GetComponent<UnityStandardAssets.Vehicles.Car.CarAudio>();
 		carA.enabled = active;
 		UnityStandardAssets.Vehicles.Car.CarUserControl carU = GetComponent<UnityStandardAssets.Vehicles.Car.CarUserControl> ();
+		UnityStandardAssets.Vehicles.Car.CarController carC = GetComponent<UnityStandardAssets.Vehicles.Car.CarController> ();
+		carC.enabled = active;
 		carU.enabled = active;
 		Camera carCam = GetComponentInChildren<Camera> ();
 		carCam.enabled = active;
@@ -119,7 +125,7 @@ public class Vehicle : NetworkBehaviour {
 			play.gameObject.transform.Find("MainCamera").GetComponent<Camera>().enabled = false;
 			play.gameObject.transform.SetParent(this.gameObject.transform);
 			vehicleOccupied = true;
-			play.message = "Press G to leave the vehicle.";
+			play.message = "Press F to leave the vehicle.";
 		} else {
 			play.GetComponent<Rigidbody> ().isKinematic = false;
 			play.GetComponent<Collider> ().enabled = true;
@@ -139,7 +145,7 @@ public class Vehicle : NetworkBehaviour {
 	/// Generates a name for the building from the residential names file.
 	/// </summary>
 	/// <returns>The gen.</returns>
-	protected string nameGen() {
+	private string nameGen() {
 		string name;
 
 		name = rSmallFirst [(int)Random.Range (0, rSmallFirst.Length)] + " " + rSmallLast [(int)Random.Range (0, rSmallLast.Length)];
@@ -150,6 +156,16 @@ public class Vehicle : NetworkBehaviour {
 
 	public virtual int getCost() {
 		return cost;
+	}
+
+	private IEnumerator DelayToExit() {
+		yield return new WaitForSeconds(2f);
+		eligibleToExit = true;
+	}
+
+	private IEnumerator DelayToEnter() {
+		yield return new WaitForSeconds(2f);
+		eligibleToExit = false;
 	}
 
 

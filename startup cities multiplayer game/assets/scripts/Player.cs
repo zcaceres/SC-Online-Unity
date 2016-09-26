@@ -451,10 +451,12 @@ public class Player : NetworkBehaviour {
 			int tax = 0;
 			foreach (NetId buildingId in owned) {
 				Building b = getBuilding (buildingId.id);
-				if (b is Lot) {
-					tax += (int)(b.baseRent * .1f);
-				} else if (!(b is Neighborhood)) {
-					tax += (int)(b.appraise () * .1f);
+				if (b != null) { //used to avoid null refs on vehicles
+					if (b is Lot) {
+						tax += (int)(b.baseRent * .1f);
+					} else if (!(b is Neighborhood)) {
+						tax += (int)(b.appraise () * .1f);
+					}
 				}
 			}
 			budget -= tax;
@@ -1244,7 +1246,9 @@ public class Player : NetworkBehaviour {
 
 		foreach (NetId buildingId in owned) {
 			Building b = getBuilding (buildingId.id);
-			s += "\n\t" + b.buildingName;
+			if (b != null) {
+				s += "\n\t" + b.buildingName;
+			}
 		}
 
 		return s;

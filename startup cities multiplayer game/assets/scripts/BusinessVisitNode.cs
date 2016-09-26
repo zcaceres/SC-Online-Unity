@@ -17,6 +17,7 @@ public class BusinessVisitNode : MonoBehaviour {
 				Resident resident = residentCollider.GetComponent<Resident> ();
 				if (resident != null && (resident.jobBuilding == null || biz.id != resident.jobBuilding.id)) {
 					biz.visitBusiness (resident);
+					Debug.LogError ("business visited");
 				}
 			}
 		}

@@ -8,6 +8,7 @@ public class IceCreamTruckVehicle : Vehicle
 	private UnityStandardAssets.Vehicles.Car.CarController carController;
 	private AudioSource megaPhoneLoop;
 	private Megaphone mega; //used for mobile collection of $$ from customers
+	protected int earnings;
 //	public bool vehicleOccupied;
 //	private AudioSource horn;
 //	public int type;
@@ -79,26 +80,38 @@ public class IceCreamTruckVehicle : Vehicle
 			if (Input.GetKeyUp (KeyCode.Mouse0)) {
 				horn.Stop ();
 			}
-			if (Input.GetKey (KeyCode.G)) {
+			if (Input.GetKey (KeyCode.F) && eligibleToExit) {
 				Player p = gameObject.GetComponentInChildren<Player> ();
 				ExitVehicle (p);
 			}
-			if (carController.CurrentSpeed <= 15f) {
+			if (carController.CurrentSpeed <= 15f && vehicleOccupied) {
 				mega.ToggleFoodTruck (true);
-				//enable business collection collider
-				//play ice cream truck loop
-				//else disable both
 			} else {
 				mega.ToggleFoodTruck (false);
 			}
 		}
 	}
 
+//	public void addMoney (int i)
+//	{
+//		earnings += i;
+//	}
+
 	//BEGIN OWNERSHIP METHODS
 
 	//advance month function here?
 
 
+	/// <summary>
+	/// Generates a name for the building from the residential names file.
+	/// </summary>
+	/// <returns>The gen.</returns>
+	private string nameGen() {
+		string name;
+
+		name = rSmallFirst [(int)Random.Range (0, rSmallFirst.Length)] + " " + rSmallLast [(int)Random.Range (0, rSmallLast.Length)];
+		return name;
+	}
 
 
 

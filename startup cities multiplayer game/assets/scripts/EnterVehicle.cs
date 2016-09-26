@@ -24,7 +24,7 @@ public class EnterVehicle : MonoBehaviour {
 		if (coll.CompareTag ("Player")) { // check player ownership
 			Player p = coll.gameObject.GetComponent<Player> ();
 			if (Input.GetKeyDown (KeyCode.F)) {
-				if (vehicle.getOwner () == p.id) {
+				if (vehicle.getOwner () == p.id && !vehicle.eligibleToExit) {
 					vehicle.StartVehicle (p);
 				}
 			}
