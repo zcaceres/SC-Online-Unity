@@ -24,9 +24,11 @@ public class ConstructionController : NetworkBehaviour {
 		// name of the building prefab
 		public string description;
 		// short description of the building
+		public int category;
+		// item category 
 
-
-		public Spawnable (Object dum, Object spawn, int cost, int level, int type, int a, string n, string d) {
+		// categories: 0 cheap residential 1 med res 2 high res 3 business 4 decoration 5 utility 
+		public Spawnable (Object dum, Object spawn, int cost, int level, int type, int a, string n, string d, int c) {
 			dummy = dum;
 			spawnable = spawn;
 			price = cost;
@@ -35,12 +37,13 @@ public class ConstructionController : NetworkBehaviour {
 			attractiveness = a;
 			name = n;
 			description = d;
+			category = c;
 		}
 	}
 
 	private Player player;
 	private Quaternion constructionRotation;
-	private List<Spawnable> spawnables;
+	private List<Spawnable>[] spawnables;
 	private int currentSpawnable;
 	private GameObject toBuild;
 	private GameObject playerCamera;
@@ -51,19 +54,28 @@ public class ConstructionController : NetworkBehaviour {
 	private LayerMask layerMask;
 	private MonthManager monthManager;
 	private NetworkManager nm;
-
+	private int currentCategory;
+	private bool categorySelected;
 	// Use this for initialization
 	void Start () {
 		nm = FindObjectOfType<NetworkManager> ();
 		layerMask = ~(1 << LayerMask.NameToLayer ("player") | 1 << LayerMask.NameToLayer ("node") | 1 << LayerMask.NameToLayer ("Ignore Raycast") | 1 << LayerMask.NameToLayer("trail"));
-		spawnables = new List<Spawnable> ();
+		spawnables = new List<Spawnable>[6];
+		spawnables[0] = new List<Spawnable> ();
+		spawnables[1] = new List<Spawnable> ();
+		spawnables[2] = new List<Spawnable> ();
+		spawnables[3] = new List<Spawnable> ();
+		spawnables[4] = new List<Spawnable> ();
+		spawnables[5] = new List<Spawnable> ();
 		Spawnable tmp;
+		currentCategory = 5;
+		categorySelected = false;
 
 		string[] lines = System.IO.File.ReadAllLines (@"Assets\constructables\constructables_list.txt");
 		foreach (string s in lines) {
 			if (!s.StartsWith("//")) {
 				string[] values = s.Split (',');
-				if (values.Length > 7) {
+				if (values.Length > 8) {
 					Object dummy = Resources.Load (values [0].Trim());
 					Object prefab = Resources.Load (values [1].Trim());
 					int cost = int.Parse (values [2]);
@@ -72,82 +84,12 @@ public class ConstructionController : NetworkBehaviour {
 					int attr = int.Parse (values [5]);
 					string name = values [6].Trim();
 					string desc = values [7].Trim();
-					tmp = new Spawnable (dummy, prefab, cost, level, type, attr, name, desc); 
-					spawnables.Add (tmp);
+					int category = int.Parse(values [8].Trim ());
+					tmp = new Spawnable (dummy, prefab, cost, level, type, attr, name, desc, category); 
+					spawnables[category].Add (tmp);
 				}
 			}
 		}
-
-//		tmp = new Spawnable (Resources.Load ("DummyBuildings/Dummy_DirtPath"), Resources.Load ("ConstructableBuildings/DirtPath"), 5, 0, 23, -3, "Dirt Path", "A cheap path. All buildings must connect to road or sidewalk!");
-//		spawnables.Add (tmp);
-//		tmp = new Spawnable (Resources.Load ("DummyBuildings/Dummy_Sidewalk"), Resources.Load ("ConstructableBuildings/Sidewalk"), 50, 0, 22, 0, "Sidewalk", "A nice path. All buildings must connect to road or sidewalk!");
-//		spawnables.Add (tmp);
-//		tmp = new Spawnable (Resources.Load ("DummyBuildings/Dummy_Trailer"), Resources.Load ("ConstructableBuildings/Trailer"), 900, 0, 19, -15, "Trailer", "Cheap housing on wheels.");
-//		spawnables.Add (tmp);
-//		tmp = new Spawnable (Resources.Load ("DummyBuildings/Dummy_Trailer (Square)"), Resources.Load ("ConstructableBuildings/Trailer (Square)"), 900, 0, 19, -15, "Trailer", "Cheap housing on wheels.");
-//		spawnables.Add (tmp);
-//		tmp = new Spawnable (Resources.Load ("DummyBuildings/Dummy_Building2A"), Resources.Load ("ConstructableBuildings/Building2A"), 6000, 1, 10, -15, "Small Apartment Building", "A small apartment building.");
-//		spawnables.Add (tmp);
-//		tmp = new Spawnable (Resources.Load ("DummyBuildings/Dummy_Building2B"), Resources.Load ("ConstructableBuildings/Building2B"), 6000, 1, 10, -15, "Small Apartment Building", "A small apartment building.");
-//		spawnables.Add (tmp);
-//		tmp = new Spawnable (Resources.Load ("DummyBuildings/Dummy_Building3A"), Resources.Load ("ConstructableBuildings/Building3A"), 7500, 1, 11, -20, "Apartment Building", "A mid-level apartment building.");
-//		spawnables.Add (tmp);
-//		tmp = new Spawnable (Resources.Load ("DummyBuildings/Dummy_Building3B"), Resources.Load ("ConstructableBuildings/Building3B"), 7500, 1, 11, -20, "Apartment Building", "A mid-level apartment building.");
-//		spawnables.Add (tmp);
-//		tmp = new Spawnable (Resources.Load ("DummyBuildings/Dummy_Building3C"), Resources.Load ("ConstructableBuildings/Building3C"), 7500, 1, 11, -20, "Apartment Building", "A mid-level apartment building.");
-//		spawnables.Add (tmp);
-//		tmp = new Spawnable (Resources.Load ("DummyBuildings/Dummy_Building3D"), Resources.Load ("ConstructableBuildings/Building3D"), 7500, 1, 11, -20, "Apartment Building", "A mid-level apartment building.");
-//		spawnables.Add (tmp);
-//		tmp = new Spawnable (Resources.Load ("DummyBuildings/Dummy_Building3E"), Resources.Load ("ConstructableBuildings/Building3E"), 7500, 1, 11, -20, "Apartment Building", "A mid-level apartment building.");
-//		spawnables.Add (tmp);
-//		tmp = new Spawnable (Resources.Load ("DummyBuildings/Dummy_Building3F"), Resources.Load ("ConstructableBuildings/Building3F"), 7500, 1, 11, -20, "Apartment Building", "A mid-level apartment building.");
-//		spawnables.Add (tmp);
-//		tmp = new Spawnable (Resources.Load ("DummyBuildings/Dummy_Building3G"), Resources.Load ("ConstructableBuildings/Building3G"), 2000, 1, 9, -10, "Tenement Building", "A cheap apartment building.");
-//		spawnables.Add (tmp);
-//		tmp = new Spawnable (Resources.Load ("DummyBuildings/Dummy_Building3H"), Resources.Load ("ConstructableBuildings/Building3H"), 2000, 1, 9, -10, "Tenement Building", "A cheap apartment building.");
-//		spawnables.Add (tmp);
-//		tmp = new Spawnable (Resources.Load ("DummyBuildings/Dummy_Building3I"), Resources.Load ("ConstructableBuildings/Building3I"), 2000, 1, 9, -10, "Tenement Building", "A cheap apartment building.");
-//		spawnables.Add (tmp);
-//		tmp = new Spawnable (Resources.Load ("DummyBuildings/Dummy_Billboard"), Resources.Load ("ConstructableBuildings/Billboard"), 4000, 1, 15, -30, "Billboard", "A billboard used for advertising.");
-//		spawnables.Add (tmp);
-//		tmp = new Spawnable (Resources.Load ("DummyBuildings/Dummy_Dinner"), Resources.Load ("ConstructableBuildings/Dinner01"), 7500, 1, 3, -20, "Diner", "A commercial restaurant property.");
-//		spawnables.Add (tmp);
-//		tmp = new Spawnable (Resources.Load ("DummyBuildings/Dummy_CheapRestaurant"), Resources.Load ("ConstructableBuildings/CheapRestaurant"), 2500, 0, 3, -30, "Cheap Restaurant", "A low-end commercial property. Employs 3.");
-//		spawnables.Add (tmp);
-//		tmp = new Spawnable (Resources.Load ("DummyBuildings/Dummy_HardwareStore"), Resources.Load ("ConstructableBuildings/HardwareStore"), 5000, 0, 4, -10, "Hardware Store", "A low-end commercial property. Employs 8");
-//		spawnables.Add (tmp);
-//		tmp = new Spawnable (Resources.Load ("DummyBuildings/Dummy_HouseA"), Resources.Load ("ConstructableBuildings/HouseA"), 2000, 0, 1, 0, "House", "A small residential property.");
-//		spawnables.Add (tmp);
-//		tmp = new Spawnable (Resources.Load ("DummyBuildings/Dummy_HouseB"), Resources.Load ("ConstructableBuildings/HouseB"), 2000, 0, 1, 0, "House", "A small residential property.");
-//		spawnables.Add (tmp);
-//		tmp = new Spawnable (Resources.Load ("DummyBuildings/Dummy_Mart"), Resources.Load ("ConstructableBuildings/Mart"), 15000, 2, 8, -30, "Supermart", "A large commercial property.");
-//		spawnables.Add (tmp);
-//		tmp = new Spawnable (Resources.Load ("DummyBuildings/Dummy_PlazaA"), Resources.Load ("ConstructableBuildings/PlazaA"), 15000, 2, 12, -30, "Plaza", "A large residential property.");
-//		spawnables.Add (tmp);
-//		tmp = new Spawnable (Resources.Load ("DummyBuildings/Dummy_PlazaB"), Resources.Load ("ConstructableBuildings/PlazaB"), 15000, 2, 12, -30, "Plaza", "A large residential property.");
-//		spawnables.Add (tmp);
-//		tmp = new Spawnable (Resources.Load ("DummyBuildings/Dummy_TreeA"), Resources.Load ("ConstructableBuildings/TreeA"), 500, 0, 18, 10, "Tree", "A bit of greenery.");
-//		spawnables.Add (tmp);
-//		tmp = new Spawnable (Resources.Load ("DummyBuildings/Dummy_TreeB"), Resources.Load ("ConstructableBuildings/TreeB"), 500, 0, 18, 10, "Tree", "A bit of greenery.");
-//		spawnables.Add (tmp);
-//		tmp = new Spawnable (Resources.Load ("DummyBuildings/Dummy_TreeC"), Resources.Load ("ConstructableBuildings/TreeC"), 500, 0, 18, 10, "Tree", "A bit of greenery.");
-//		spawnables.Add (tmp);
-//		tmp = new Spawnable (Resources.Load ("DummyBuildings/Dummy_WoodenFence"), Resources.Load ("ConstructableBuildings/WoodenFence"), 100, 0, 18, 1, "Wooden Fence", "Mark the edges of your lot.");
-//		spawnables.Add (tmp);
-//		tmp = new Spawnable (Resources.Load ("DummyBuildings/Dummy_BrickWall"), Resources.Load ("ConstructableBuildings/BrickWall"), 300, 0, 18, 1, "Brick Wall", "For privacy...");
-//		spawnables.Add (tmp);
-//		tmp = new Spawnable (Resources.Load ("DummyBuildings/Dummy_MetalFence"), Resources.Load ("ConstructableBuildings/MetalFence"), 200, 0, 18, -1, "Metal Fence", "For keeping out the riff-raff.");
-//		spawnables.Add (tmp);
-//		tmp = new Spawnable (Resources.Load ("DummyBuildings/Dummy_ParkBench"), Resources.Load ("ConstructableBuildings/ParkBench"), 100, 0, 18, 5, "Park Bench", "A nice place to sit.");
-//		spawnables.Add (tmp);
-//		tmp = new Spawnable (Resources.Load ("DummyBuildings/Dummy_StreetLamp"), Resources.Load ("ConstructableBuildings/StreetLamp"), 400, 0, 18, 10, "Street Lamp", "A pretty light at night.");
-//		spawnables.Add (tmp);
-//		tmp = new Spawnable (Resources.Load ("DummyBuildings/Dummy_StreetLight"), Resources.Load ("ConstructableBuildings/StreetLight"), 400, 0, 18, 10, "Street Light", "A tall street light.");
-//		spawnables.Add (tmp);
-//		tmp = new Spawnable (Resources.Load ("DummyBuildings/Dummy_SecurityGuard"), Resources.Load ("ConstructableBuildings/SecurityGuard"), 400, 0, 24, -5, "Hire a Security Guard", "Scares away criminals. Costs $100 a month.");
-//		spawnables.Add (tmp);
-//		tmp = new Spawnable (Resources.Load ("DummyBuildings/Dummy_FireHydrant"), Resources.Load ("ConstructableBuildings/FireHydrant"), 500, 0, 24, -5, "Fire Hydrant", "Stand near this hydrant to put out fires.");
-//		spawnables.Add (tmp);
 
 		player = GetComponent<Player> ();
 		constructionRotation = Quaternion.identity;
@@ -169,7 +111,7 @@ public class ConstructionController : NetworkBehaviour {
 	}
 
 	private void setTooltip () {
-		Spawnable current = spawnables [currentSpawnable % spawnables.Count];
+		Spawnable current = spawnables [currentCategory][currentSpawnable % spawnables[currentCategory].Count];
 
 		string pretty = "";
 		if (current.attractiveness > 0) { // green for positive prettiness
@@ -185,7 +127,29 @@ public class ConstructionController : NetworkBehaviour {
 		} else {
 			s += "\n" + "No market data for this building.";
 		}
-		tooltip.transform.Find ("message").GetComponent<Text> ().text = s;
+		Text t = tooltip.transform.Find ("message").GetComponent<Text> ();
+		t.alignment = TextAnchor.UpperRight;
+		t.text = s;
+	}
+
+	private void setCategoryTooltip() {
+		string s;
+		if (currentCategory == 5) {
+			s = "Utilities";
+		} else if (currentCategory == 4) {
+			s = "Decorations";
+		} else if (currentCategory == 3) {
+			s = "Businesses";
+		} else if (currentCategory == 2) {
+			s = "Expensive Residential";
+		} else if (currentCategory == 1) {
+			s = "Medium Residential";
+		} else {
+			s = "Cheap Residential";
+		} 
+		Text t = tooltip.transform.Find ("message").GetComponent<Text> ();
+		t.alignment = TextAnchor.UpperCenter;
+		t.text = s;
 	}
 
 	/// <summary>
@@ -196,12 +160,12 @@ public class ConstructionController : NetworkBehaviour {
 	/// <param name="q">rotation.</param>
 	/// <param name="pid">Player id.</param>
 	[Command (channel = CHANNEL)]
-	public void CmdBuild (int index, Vector3 pos, Quaternion q, NetworkInstanceId pid, NetworkInstanceId lotId) {
+	public void CmdBuild (int index, int category, Vector3 pos, Quaternion q, NetworkInstanceId pid, NetworkInstanceId lotId) {
 		Player player = getLocalInstance (pid).GetComponent<Player> ();
 		Lot lot = getLocalInstance (lotId).GetComponent<Lot> ();
 		GameObject constructionParticles;
 		constructionParticles = (GameObject)Resources.Load ("ConstructionParticles");
-		GameObject tmp = (GameObject)Instantiate (spawnables [index].spawnable, pos, q);
+		GameObject tmp = (GameObject)Instantiate (spawnables[category][index].spawnable, pos, q);
 		NetworkServer.Spawn (tmp);
 
 		//Spawns construction particle indicator and plays construction sound
@@ -218,8 +182,8 @@ public class ConstructionController : NetworkBehaviour {
 			lot.addObject (b.netId);
 
 			if (player != null) {
-				player.budget -= spawnables [index].price;
-				player.message = "Spent $" + spawnables [index].price + " to build " + spawnables [index].name + "!";
+				player.budget -= spawnables[category] [index].price;
+				player.message = "Spent $" + spawnables [category][index].price + " to build " + spawnables [category][index].name + "!";
 				b.setOwner(player.netId);
 				b.notForSale = true;
 			} 
@@ -288,7 +252,7 @@ public class ConstructionController : NetworkBehaviour {
 
 	public void buildMode () {
 		ConstructionBoundary lotBoundary;
-		int index = currentSpawnable % spawnables.Count;
+		int index = currentSpawnable % spawnables[currentCategory].Count;
 
 		if (confirm != null) { // don't move the object around while the player is dealing with the confirmation box
 			if (Input.GetKeyDown (KeyCode.E) || Input.GetKeyDown (KeyCode.Return)) {
@@ -304,18 +268,19 @@ public class ConstructionController : NetworkBehaviour {
 			setTooltip ();
 		}
 		if (Input.GetKeyDown (KeyCode.Tab)) {
-			if (toBuild != null) {
+			if (toBuild != null || !categorySelected) {
 				Destroy (toBuild);
 				Destroy (tooltip);
 			}
 			player.construction = false;
 		}
-
-		if (toBuild == null) {
+		if (!categorySelected) {
+			setCategoryTooltip ();
+		} else if (toBuild == null) {
 			Vector3 fwd = playerCamera.transform.TransformDirection (Vector3.forward); // ray shooting from camera
 			RaycastHit hit;
 			if (Physics.Raycast (playerCamera.transform.position, fwd, out hit, 100f, layerMask)) {
-				toBuild = (GameObject)Instantiate (spawnables [index].dummy, hit.point/*GetSharedSnapPosition(hit.point, .1f)*/, constructionRotation);
+				toBuild = (GameObject)Instantiate (spawnables [currentCategory][index].dummy, hit.point, constructionRotation);
 				if (toBuild.CompareTag ("floor")) {
 					toBuild.transform.rotation = Quaternion.identity;
 				}
@@ -350,16 +315,16 @@ public class ConstructionController : NetworkBehaviour {
 					readyToConstruct = false;
 					lotBoundary.turnRed ();
 				}
-			
+
 				if (Input.GetKeyDown (KeyCode.E)) {
-					if (canBuild (spawnables [index].price)) {
+					if (canBuild (spawnables [currentCategory][index].price)) {
 						if (readyToConstruct) {
 							confirm = (GameObject)Instantiate (Resources.Load ("Confirm"));
 							confirm.transform.SetParent (GameObject.Find ("Canvas").transform, false);
-							confirm.transform.Find ("ConfirmMessage").GetComponent<Text> ().text = "Build " + spawnables [index].name + " for $" + spawnables [index].price + "?";
+							confirm.transform.Find ("ConfirmMessage").GetComponent<Text> ().text = "Build " + spawnables[currentCategory] [index].name + " for $" + spawnables[currentCategory] [index].price + "?";
 							confirm.transform.Find ("Ok").GetComponent<Button> ().onClick.AddListener (delegate {
 								lotBoundary.resetColor ();
-								CmdBuild (index, toBuild.transform.position, toBuild.transform.rotation, this.netId, l.netId);
+								CmdBuild (index,currentCategory, toBuild.transform.position, toBuild.transform.rotation, this.netId, l.netId);
 								constructionRotation = toBuild.transform.rotation;
 								Destroy (toBuild);
 								Destroy (tooltip);
@@ -376,7 +341,7 @@ public class ConstructionController : NetworkBehaviour {
 					}
 				}
 			}
-			
+
 			if (Input.GetKeyDown (KeyCode.Mouse1) && toBuild.CompareTag ("floor")) { //For paths
 				toBuild.transform.Rotate (new Vector3 (0, 30, 0)); //Snap to 90 degrees
 				constructionRotation = toBuild.transform.rotation;
@@ -393,18 +358,38 @@ public class ConstructionController : NetworkBehaviour {
 			}
 		}
 		if (Input.GetKeyDown (KeyCode.RightArrow)) {
-			Destroy (toBuild);
-			toBuild = null;
-			currentSpawnable++;
-			setTooltip ();
-		} else if (Input.GetKeyDown (KeyCode.LeftArrow)) {
-			Destroy (toBuild);
-			toBuild = null;
-			currentSpawnable--;
-			if (currentSpawnable < 0) {
-				currentSpawnable = (spawnables.Count - 1);
+			if (categorySelected) {
+				Destroy (toBuild);
+				toBuild = null;
+				currentSpawnable++;
+				setTooltip ();
+			} else {
+				currentCategory++;
+				currentCategory = currentCategory % spawnables.Length;
+				setCategoryTooltip ();
 			}
+		} else if (Input.GetKeyDown (KeyCode.LeftArrow)) {
+			if (categorySelected) {
+				Destroy (toBuild);
+				toBuild = null;
+				currentSpawnable--;
+				if (currentSpawnable < 0) {
+					currentSpawnable = (spawnables [currentCategory].Count - 1);
+				}
+				setTooltip ();
+			} else {
+				currentCategory--;
+				currentCategory = currentCategory % spawnables.Length;
+				setCategoryTooltip ();
+			}
+		} else if (Input.GetKeyDown (KeyCode.UpArrow)) {
+			categorySelected = true;
 			setTooltip ();
+		} else if (Input.GetKeyDown (KeyCode.DownArrow)) {
+			categorySelected = false;
+			Destroy (toBuild);
+			toBuild = null;
+			setCategoryTooltip ();
 		}
 	}
 
@@ -442,7 +427,7 @@ public class ConstructionController : NetworkBehaviour {
 				RaycastHit hit;
 
 				if (Physics.Raycast (playerCamera.transform.position, fwd, out hit, 100, layerMask)) {
-					toBuild = (GameObject)Instantiate (spawnables [targetBuilding].dummy, hit.point, constructionRotation);
+					toBuild = (GameObject)Instantiate (spawnables [currentCategory][targetBuilding].dummy, hit.point, constructionRotation);
 				}
 			} else {
 				Vector3 fwd = playerCamera.transform.TransformDirection (Vector3.forward); // ray shooting from camera
@@ -529,10 +514,10 @@ public class ConstructionController : NetworkBehaviour {
 	public int findBuildingSpawnable (GameObject b) {
 		int index = -1;
 		if (b != null) {
-			for (int i = 0; i < spawnables.Count; i++) {
-				if (b.name.Contains (spawnables [i].spawnable.name)) {
+			for (int i = 0; i < spawnables [currentCategory].Count; i++) {
+				if (b.name.Contains (spawnables  [currentCategory][i].spawnable.name)) {
 					index = i;
-					i = spawnables.Count;
+					i = spawnables [currentCategory].Count;
 				}
 			}
 		}
