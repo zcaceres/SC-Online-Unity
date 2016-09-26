@@ -6,14 +6,14 @@ public class EnterVehicle : MonoBehaviour {
 
 	void Start() {
 		vehicle = GetComponentInParent<Vehicle> ();
-
 	}
 
 	void OnTriggerEnter (Collider coll) {
-		if (coll.CompareTag("Player")) {
+		if (coll.CompareTag("Player")) { //Check player ownership here
 			Player p = coll.gameObject.GetComponent<Player> ();
-			p.message = "Press F to enter your car";
-
+			if (vehicle.getOwner () == p.id) {
+				p.message = "Press F to enter your car";
+			}
 		}
 
 
@@ -21,10 +21,12 @@ public class EnterVehicle : MonoBehaviour {
 
 	void OnTriggerStay (Collider coll)
 	{
-		if (coll.CompareTag ("Player")) {
+		if (coll.CompareTag ("Player")) { // check player ownership
 			Player p = coll.gameObject.GetComponent<Player> ();
 			if (Input.GetKeyDown (KeyCode.F)) {
-				vehicle.StartVehicle (p);
+				if (vehicle.getOwner () == p.id) {
+					vehicle.StartVehicle (p);
+				}
 			}
 		}
 	}

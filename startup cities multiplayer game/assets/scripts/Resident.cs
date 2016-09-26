@@ -63,11 +63,13 @@ public class Resident : NetworkBehaviour {
 
 	public SyncListInt traits = new SyncListInt();
 	public SyncListInt bossTraits = new SyncListInt();
+	public SyncListInt factoryBossTraits = new SyncListInt();
 
 	protected static ResidentManager rm;
 	protected static System.Random rng = new System.Random ();
 	protected static List<Trait> managerTraits = new List<Trait>();
 	protected static List<Trait> residentTraits = new List<Trait>();
+	protected static List<Trait> factoryTraits = new List<Trait> ();
 
 	protected static List<Building> lowHomes = new List<Building>();  // list of homes rated for low skill people
 	protected static List<Building> medHomes = new List<Building>();  // list of homes rated for med skill people
@@ -90,6 +92,10 @@ public class Resident : NetworkBehaviour {
 		if (residentTraits.Count == 0) {
 			initializeTraits ();
 		}
+		if (factoryTraits.Count == 0) {
+			initializeFactoryTraits ();
+		}
+
 		if (rm == null) {
 			rm = FindObjectOfType<ResidentManager> ();
 		}
@@ -115,6 +121,32 @@ public class Resident : NetworkBehaviour {
 	/// <param name="p">The person.</param>
 	public virtual string personToString() {
 		string s;
+ 
+		if (residenceBuilding == null) {
+			if (applyingAt == null) {
+				s = residentToString ();
+			} else {
+				Building b = applyingAt.gameObject.GetComponent<Building> ();
+				if (b is Factory) {
+					s = factoryBossToString ();
+				} else if (b is Restaurant || b is CheapRestaurant) {
+					s = rBossToString ();
+				} else {
+					s = residentToString ();
+				}
+			}
+		} else if (residenceBuilding is Restaurant || residenceBuilding is CheapRestaurant) {
+			s = rBossToString ();
+		} else if (residenceBuilding is Factory) {
+			s = factoryBossToString ();
+		} else {
+			s = residentToString ();
+		}
+		return s;
+	}
+
+	public virtual string residentToString() {
+		string s;
 		//s = "\n" + p.name + "\n" + traits.ElementAt (p.traits [0]).name + "\n" + traits.ElementAt (p.traits [1]).name + "\n" + traits.ElementAt (p.traits [2]).name;
 		s = residentName + "\nSkill Level: " + skill + "\n";
 
@@ -139,7 +171,6 @@ public class Resident : NetworkBehaviour {
 		s += "\nSpending Money: $" + spendingMoney;
 		return s;
 	}
-
 	/// <summary>
 	/// Returns the data associated with a person as a string.
 	/// </summary>
@@ -153,6 +184,36 @@ public class Resident : NetworkBehaviour {
 		for (int i = 0; i < bossTraits.Count; i++) {
 			if (i < VISIBLE_TRAITS) {
 				s += managerTraits.ElementAt (bossTraits [i]).name + "\n";
+			} else {
+				s += "???\n";
+			}
+		}
+
+		if (jobBuilding == null) {
+			s += "\nUnemployed";
+		} else {
+			s += "\nWorks at " + jobBuilding.buildingName;
+		}
+		if (residenceBuilding == null) {
+			s += "\nHomeless";
+		} else {
+			s += "\nLives at " + residenceBuilding.buildingName;
+		}
+		return s;
+	}
+
+	/// <summary>
+	/// Returns the data associated with a person as a string.
+	/// </summary>
+	/// <returns>The string.</returns>
+	/// <param name="p">The person.</param>
+	public virtual string factoryBossToString() {
+		string s;
+		s = residentName + "\nSkill Level: " + skill + "\n";
+
+		for (int i = 0; i < factoryBossTraits.Count; i++) {
+			if (i < VISIBLE_TRAITS) {
+				s += factoryTraits.ElementAt (factoryBossTraits [i]).name + "\n";
 			} else {
 				s += "???\n";
 			}
@@ -243,6 +304,8 @@ public class Resident : NetworkBehaviour {
 	public virtual void applyEffects() {
 		if (residenceBuilding is Restaurant) {
 			applyRestaurantEffects ();
+		} else if (residenceBuilding is Factory) {
+			applyFactoryEffects();
 		} else {
 			applyResidentialEffects ();
 		}
@@ -345,15 +408,7 @@ public class Resident : NetworkBehaviour {
 				damChance += managerTraits.ElementAt (t).damageChance;
 				//criminalChance += managerTraits.ElementAt (t).crimeChance;
 			}
-
-//			if (criminal == true) {
-//				lowerSafety (2);
-//			}
-//			if ((Random.value < criminalChance) && !criminal) {
-//				criminal = true;
-//				lowerSafety (12);
-//				residenceBuilding.messageOwner ("A crime has been commited in the vicinity of " + residenceBuilding.buildingName + "!");
-//			}
+		
 			if (Random.value < damChance) {
 				if (fireRisk) {
 					residenceBuilding.setFire ();
@@ -377,6 +432,66 @@ public class Resident : NetworkBehaviour {
 					case 3:
 						residenceBuilding.modManager.addMalusUnique ("Cockroach infestation", 1, .8f, 1, 200, 1);
 						residenceBuilding.messageOwner ("Roaches have infested " + residenceBuilding.buildingName + "!");
+						break;
+					default:
+						residenceBuilding.modManager.addMalusUnique ("Broken freezer", .9f, 1, 1, 800, 5);
+						residenceBuilding.messageOwner ("The freezer has broken down at " + residenceBuilding.buildingName + "!");
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	public virtual void applyFactoryEffects() {
+		float damChance = 0;
+		//float criminalChance = 0;
+		bool fireRisk = false;
+
+		if (!leaveResidence ()) { // do the following only if the tenant is not going to leave the building this turn
+			foreach (int t in bossTraits) {
+				if (t == 2) { // experimenter, random bonus
+					if (Random.value < .10f) {
+						int bonus = (int)Random.Range (0, residenceBuilding.rent);
+						residenceBuilding.messageOwner (residentName + "'s experimental management has paid off! They made an extra $" + bonus + " for you.");
+						residenceBuilding.giveOwnerMoney (bonus);
+					}
+				} else if (t == 5) { // unionizer
+					if (Random.value < .05f) {
+						residenceBuilding.modManager.addMalusUnique ("Strike!", 0, 1, 1, 25000, 9);
+						residenceBuilding.messageOwner ("The workers are striking at " + residenceBuilding.buildingName + "!");
+					}
+				} else if (t == 8) { // luddite
+					if (Random.value < .01f) {
+						residenceBuilding.modManager.addMalusUnique ("Outdated Machinery", .7f, 1, 1, 9000, 10);
+					}
+				}
+				damChance += managerTraits.ElementAt (t).damageChance;
+			}
+
+			if (Random.value < damChance) {
+				if (fireRisk) {
+					residenceBuilding.setFire ();
+					residenceBuilding.messageOwner (residentName + " has accidentally set " + residenceBuilding.buildingName + " on fire!");
+				} else {
+					int malus = (int)Random.Range (0, 4);
+
+					switch (malus) {
+					case 0:
+						residenceBuilding.modManager.addMalusUnique ("Damaged Machinery", .7f, 1, 1, 8000, 5);
+						residenceBuilding.messageOwner ("Factory machinery has been damaged at " + residenceBuilding.buildingName + "!");
+						break;
+					case 1:
+						residenceBuilding.modManager.addMalusUnique ("Industrial waste", .8f, 1, 1, 6000, 3);
+						residenceBuilding.messageOwner ("Industrial waste is building up at " + residenceBuilding.buildingName + "!");
+						break;
+					case 2:
+						residenceBuilding.modManager.addMalusUnique ("Radioactive waste", .5f, 1, 1, 12000, 1);
+						residenceBuilding.messageOwner ("Dangerous radioactive waste is building up at " + residenceBuilding.buildingName);
+						break;
+					case 3:
+						residenceBuilding.modManager.addMalusUnique ("Broken Machinery", .5f, 1, 1, 16000, 5);
+						residenceBuilding.messageOwner ("Factory machinery has been broken at " + residenceBuilding.buildingName + "!");
 						break;
 					default:
 						residenceBuilding.modManager.addMalusUnique ("Broken freezer", .9f, 1, 1, 800, 5);
@@ -499,23 +614,12 @@ public class Resident : NetworkBehaviour {
 	/// </summary>
 	protected virtual void generatePerson() {
 		int[] array = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 }; // indices of all traits
-		int[] managerArray = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};   // indices of all manager traits
+		int[] managerArray = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};   // indices of all restaurant manager traits
+		int[] factoryArray = {0,1,2,3,4,5,6,7,8,9};                 // indices of all factory manager traits
 
-		int n = array.Length;
-		while (n > 1) { // scrambles the trait array
-			int k = rng.Next(n--);
-			int temp = array[n];
-			array[n] = array[k];
-			array[k] = temp;
-		}
-
-		n = managerArray.Length;
-		while (n > 1) { // scrambles the manager trait array
-			int k = rng.Next(n--);
-			int temp = managerArray[n];
-			managerArray[n] = managerArray[k];
-			managerArray[k] = temp;
-		}
+		array = scrambleArray (array);
+		managerArray = scrambleArray (managerArray);
+		factoryArray = scrambleArray (factoryArray);
 
 		string[] names = System.IO.File.ReadAllLines (@"Assets\names\residentialSmallFirst.txt");
 		residentName = names [rng.Next (names.Length - 1)]; // choose random name from file for the resident
@@ -527,6 +631,10 @@ public class Resident : NetworkBehaviour {
 		bossTraits.Add (managerArray [0]); // assign manager traits
 		bossTraits.Add (managerArray [1]);
 		bossTraits.Add (managerArray [2]);
+
+		factoryBossTraits.Add (factoryArray [0]);
+		factoryBossTraits.Add (factoryArray [1]);
+		factoryBossTraits.Add (factoryArray [2]);
 
 		if (traits.Contains(2)) { // 2 is the elderly trait. If they have it, use the old-looking portraits
 			int[] oldguys = { 4, 8, 13 };
@@ -543,22 +651,11 @@ public class Resident : NetworkBehaviour {
 	protected virtual void generateLowlife() {
 		int[] array = {6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}; // array of all negative traits (lowlives only use negative traits
 		int[] managerArray = {6, 7, 8, 9, 10};  // array of all negative manager traits
+		int[] factoryArray = {5,6,7,8,9}; // indices of all negative factory manager traits
 
-		int n = array.Length;
-		while (n > 1) { // scrambles the trait array
-			int k = rng.Next(n--);
-			int temp = array[n];
-			array[n] = array[k];
-			array[k] = temp;
-		}
-
-		n = managerArray.Length;
-		while (n > 1) { // scrambles the manager trait array
-			int k = rng.Next(n--);
-			int temp = managerArray[n];
-			managerArray[n] = managerArray[k];
-			managerArray[k] = temp;
-		}
+		array = scrambleArray (array);
+		managerArray = scrambleArray (managerArray);
+		factoryArray = scrambleArray (factoryArray);
 
 		string[] names = System.IO.File.ReadAllLines (@"Assets\names\residentialSmallFirst.txt");
 		residentName = names [rng.Next (names.Length - 1)]; // choose random name from file for the resident
@@ -570,6 +667,10 @@ public class Resident : NetworkBehaviour {
 		bossTraits.Add (managerArray [0]); // assign manager traits
 		bossTraits.Add (managerArray [1]);
 		bossTraits.Add (managerArray [2]);
+
+		factoryBossTraits.Add (factoryArray [0]);
+		factoryBossTraits.Add (factoryArray [1]);
+		factoryBossTraits.Add (factoryArray [2]);
 
 		// elderly counts as a positive trait, so give a lowlife a young-looking portrait
 		int[] youngGuys = { 0, 1, 2, 3, 5, 6, 7, 9, 10, 11, 12, 14, 15, 16, 17, 18, 19 };
@@ -662,6 +763,36 @@ public class Resident : NetworkBehaviour {
 		managerTraits.Add (t);
 		t = new Trait ("Shady Operator", "This manager employs unconventional business techniques.", 0, 0, 0, .001f);// 10
 		managerTraits.Add (t);
+
+
+	}
+
+	protected virtual void initializeFactoryTraits() {
+		// Good traits
+		Trait t;
+		t = new Trait ("Efficient", "This manager is unusually productive.", 0, .3f, 0, 0);                     // 0 
+		factoryTraits.Add(t);
+		t = new Trait ("Engineer", "This manager keeps the factory's machinery in great condition.", 2,0,0,0);  // 1 
+		factoryTraits.Add(t);
+		t = new Trait ("Experimenter", "This manager is always trying new things.", 0, 0, 0, 0);                // 2 (used like Entrepreneurial)
+		factoryTraits.Add(t);
+		t = new Trait ("OSHA Compliant", "This manager values safety on the job.", 1, 0, 0, 0);                 // 3
+		factoryTraits.Add(t);
+		t = new Trait ("Organized", "This manager is well-organized.", 1, 0, 0, 0);                             // 4
+		factoryTraits.Add(t);
+
+		// Bad
+		t = new Trait ("Union Organizer", "This manager is involved with organized labor movements.", 0, 0, 0, 0); // 5 causes special modifier 
+		factoryTraits.Add(t);
+		t = new Trait ("Slave Driver", "This manager pushes their employees too hard.", -1, 0, .01f, 0);           // 6 
+		factoryTraits.Add(t);
+		t = new Trait ("Reckless", "This manager take unecessary risks.", 0, 0, .05f, 0);                          // 7
+		factoryTraits.Add (t);
+		t = new Trait ("Luddite", "This manager is slow to adapt to new technology.", 0, 0, .01f, 0);              // 8
+		factoryTraits.Add(t);
+		t = new Trait ("Stingy", "This manager avoids spending money on important repair work.", -2, 0, .01f, 0);   // 9
+		factoryTraits.Add(t);
+
 	}
 
 	protected virtual bool leaveResidence() {
@@ -680,6 +811,18 @@ public class Resident : NetworkBehaviour {
 			}
 		}
 		return b;
+	}
+
+	private int[] scrambleArray(int[] array) {
+		int n;
+		n = array.Length;
+		while (n > 1) { // scrambles the manager trait array
+			int k = rng.Next(n--);
+			int temp = array[n];
+			array[n] = array[k];
+			array[k] = temp;
+		}
+		return array;
 	}
 
 	private GameObject getLocalInstance(NetworkInstanceId id) {

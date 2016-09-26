@@ -79,11 +79,9 @@ public class Tenant : NetworkBehaviour {
 			Resident p = getResident (id.id);
 			if (p != null) {
 				GameObject obj = (GameObject)Instantiate (Resources.Load ("TenantPanel"));
-				if (building is Restaurant) {
-					obj.GetComponent<TenantPanel> ().person = p.rBossToString ();
-				} else {
-					obj.GetComponent<TenantPanel> ().person = p.personToString ();
-				}
+
+				obj.GetComponent<TenantPanel> ().person = p.personToString ();
+				
 				obj.GetComponent<TenantPanel> ().portNum = p.portrait;
 				obj.transform.SetParent (GameObject.Find ("Canvas").transform.Find ("ReadoutPanel").transform, false);
 				obj.transform.position = new Vector3 (obj.transform.position.x + (101 * i), obj.transform.position.y, obj.transform.position.z);
@@ -125,11 +123,9 @@ public class Tenant : NetworkBehaviour {
 			} else {
 				obj.GetComponent<Image> ().color = Color.blue;
 			}
-			if (building is Restaurant) {
-				obj.GetComponent<TenantPanel> ().person = resident.rBossToString ();
-			} else {
-				obj.GetComponent<TenantPanel> ().person = resident.personToString ();
-			}
+
+			obj.GetComponent<TenantPanel> ().person = resident.personToString ();
+			
 			if (resident.employed()) {
 				obj.GetComponent<TenantPanel> ().job = "Works at " + resident.jobBuilding.buildingName;
 			} else {

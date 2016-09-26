@@ -31,7 +31,7 @@ public class Player : NetworkBehaviour {
 	const int CHANNEL = 1;
 	static int numPlayers = 0;
 	static Color[] colors = { Color.red, Color.blue, Color.green, Color.yellow, Color.cyan, Color.black, Color.magenta };
-	static int[] ignoredTypes = { 18, 17, 15, 21, 25 };
+	static int[] ignoredTypes = { 18, 17, 15, 21, 25};
 
 	[SyncVar]
 	public string playerName;
@@ -61,6 +61,7 @@ public class Player : NetworkBehaviour {
 	public SyncListNetId owned = new SyncListNetId();
 
 	public Building targetBuilding;
+	public Vehicle targetVehicle;
 	public int destinationBuilding;
 	public MonthManager monthManager;
 	public Player targetPlayer;
@@ -342,7 +343,7 @@ public class Player : NetworkBehaviour {
 			targetPlayer   = hit.collider.GetComponent<Player> ();
 			targetMods     = hit.collider.GetComponent<BuildingModifier> ();
 			Resident targetResident = hit.collider.GetComponent<Resident> ();
-
+			targetVehicle = hit.collider.GetComponentInParent<Vehicle> ();
 			if (targetBuilding != null) {
 				ui.readoutToggle (true);
 				ui.updateReadout (targetBuilding.getReadout (gameObject.GetComponent<NetworkIdentity> ().netId));
@@ -378,7 +379,11 @@ public class Player : NetworkBehaviour {
 			} else if (targetResident != null) {
 				ui.playerReadoutToggle (true);
 				ui.updatePlayerReadout (targetResident.personToString ());
-			} else {
+			} else if (targetVehicle != null) {
+				ui.playerReadoutToggle(true);
+				ui.updatePlayerReadout (targetVehicle.getReadout());
+			}
+			else {
 				ui.updateReadout ("");
 				ui.setPriceToggle (false);
 				ui.readoutToggle (false);
@@ -390,6 +395,8 @@ public class Player : NetworkBehaviour {
 	public void buy() {
 		if (targetBuilding != null) {
 			CmdBuy (netId, targetBuilding.netId);
+		} else if (targetVehicle != null) {
+			CmdBuy (netId, targetVehicle.netId);
 		}
 	}
 
@@ -475,7 +482,7 @@ public class Player : NetworkBehaviour {
 
 		Building b = obj.GetComponent<Building> ();
 		Player player = p.GetComponent<Player> ();
-	
+
 		if (b != null) {
 			if ((b.cost <= player.budget) && !b.notForSale) {
 				if (b.validLot ()) {
@@ -512,7 +519,30 @@ public class Player : NetworkBehaviour {
 				player.SetDirtyBit(int.MaxValue);
 				player.message = "You can't buy that building.";
 			}
-		}
+		} else {
+			GameObject vehicleObject = getLocalInstance (buildingId);
+			Vehicle v = vehicleObject.GetComponent<Vehicle> ();
+			if ((v.cost <= player.budget) && !v.notForSale) {
+					player.budget -= v.cost;
+					v.notForSale = true;
+					GameObject eventLightRay = (GameObject)Resources.Load ("GodRays");
+					GameObject tmp = (GameObject)Instantiate (eventLightRay, new Vector3 (v.transform.position.x, v.getHighest () + 8, v.transform.position.z), Quaternion.identity);
+					tmp.GetComponent<EventLightRayColorSet> ().particleColor = player.color;
+					NetworkServer.Spawn (tmp);
+
+					if (v.getOwner () != -1) {
+						Player oldOwner = v.getPlayerOwner ();
+						oldOwner.budget += v.cost;
+						oldOwner.message = player.playerName + " bought " + v.vehicleName + " from you for $" + v.cost;
+					}
+					v.setOwner (playerId);
+					monthManager.RpcUpdateColors ();
+				}
+			else {
+				player.SetDirtyBit(int.MaxValue);
+				player.message = "You can't buy that vehicle.";
+			} 
+			}
 		RpcUpdateUI ();
 	}
 
@@ -1246,8 +1276,10 @@ public class Player : NetworkBehaviour {
 			revenue = 0;
 			foreach (NetId buildingId in owned) {
 				Building b = getBuilding (buildingId.id);
-				revenue += b.getRent();
-				revenue -= b.upkeep;
+				if (b != null) { //prevents null ref on vehicles
+					revenue += b.getRent ();
+					revenue -= b.upkeep;
+				}
 			}
 			updateRevenue (revenue);
 		}
@@ -1330,8 +1362,7 @@ public class Player : NetworkBehaviour {
 			
 		foreach (NetId buildingId in owned) {
 			Building b = getBuilding (buildingId.id);
-
-			if (!ignoredTypes.Contains (b.type)) {
+			if (b != null && !ignoredTypes.Contains (b.type)) { //null check prevents null ref on Vehicle class
 				if (b.fire) {
 					spawnNotification (notification, b.buildingName + " is on fire!", Color.red, 3, b, x, y);
 					x += width;
