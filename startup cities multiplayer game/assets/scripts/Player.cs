@@ -60,7 +60,7 @@ public class Player : NetworkBehaviour {
 
 	public SyncListNetId owned = new SyncListNetId();
 
-	public Building targetBuilding;
+	public OwnableObject targetObject;
 	public Vehicle targetVehicle;
 	public int destinationBuilding;
 	public MonthManager monthManager;
@@ -179,7 +179,7 @@ public class Player : NetworkBehaviour {
 			if (Physics.Raycast (playerCamera.transform.position, fwd, out hit, 100)) {
 				GameObject tmp = hit.collider.gameObject;
 				if (tmp != null) {
-					Building b = tmp.GetComponent<Building> ();
+					OwnableObject b = tmp.GetComponent<OwnableObject> ();
 					if ((b != null) && b.ownedBy(netId) && (getLocalInstance(b.lot) != null) && (getBuilding(b.lot).validOwner())) {
 						moveMode = true;
 						moveTarget = tmp;
@@ -221,10 +221,10 @@ public class Player : NetworkBehaviour {
 		}
 
 		if (Input.GetKeyDown (KeyCode.N)) {
-			formNeighborhood (targetBuilding);
+			formNeighborhood (targetObject);
 		}
 		if (Input.GetKeyDown (KeyCode.K)) { 
-			addToNeighborhood (targetBuilding);
+			addToNeighborhood (targetObject);
 		}
 		if (Input.GetKeyDown (KeyCode.F)) {
 			spawnGiveMoneyPanel ();
@@ -238,9 +238,9 @@ public class Player : NetworkBehaviour {
 
 		// Repair
 		if (Input.GetKeyDown (KeyCode.R)) {
-			if (targetBuilding != null) {
-				if (targetBuilding.getOwner () == id) { // personally owned building
-					CmdRepair (gameObject.GetComponent<NetworkIdentity> ().netId, targetBuilding.gameObject.GetComponent<NetworkIdentity> ().netId);
+			if (targetObject != null) {
+				if (targetObject.getOwner () == id) { // personally owned building
+					CmdRepair (gameObject.GetComponent<NetworkIdentity> ().netId, targetObject.gameObject.GetComponent<NetworkIdentity> ().netId);
 				}
 				updateUI ();
 			}
@@ -255,22 +255,24 @@ public class Player : NetworkBehaviour {
 
 		// Fire test button
 		if (Input.GetKeyDown (KeyCode.Z)) {
-			if (targetBuilding != null) {
-				targetBuilding.setFire ();
+			if (targetObject != null) {
+				if (targetObject is DamageableObject) {
+					targetObject.GetComponent<DamageableObject> ().setFire ();
+				}
 			}
 		}
 
 		if (Input.GetKeyDown (KeyCode.P)) {
-			if (targetBuilding != null) {
-				if (targetBuilding.getOwner() == id) {
+			if (targetObject != null) {
+				if (targetObject.getOwner() == id) {
 					sellChoice ();
 				}
 			}
 		}
 
 		if (Input.GetKeyDown (KeyCode.X)) {
-			if (targetBuilding != null && targetBuilding.isDestructable() && targetBuilding.ownedBy(this.netId)) {
-				activePanel = constructionController.confirmDestroy (targetBuilding.gameObject);
+			if (targetObject != null && targetObject.isDestructable() && targetObject.ownedBy(this.netId)) {
+				activePanel = constructionController.confirmDestroy (targetObject.gameObject);
 				controlsAllowed (false);
 			}
 		}
@@ -298,7 +300,7 @@ public class Player : NetworkBehaviour {
 				localPlayer.updateUI ();
 			}
 		}
-		if (targetBuilding != null) {
+		if (targetObject != null) {
 			updateBuildingReadout ();
 		}
 	}
@@ -329,9 +331,11 @@ public class Player : NetworkBehaviour {
 	/// </summary>
 	public void targetSelect() {
 		
-		if (targetBuilding != null) { // a building is currently targeted, clear its buttons
-			targetBuilding.tenant.clearButtons();
-			targetBuilding = null;
+		if (targetObject != null) { // a building is currently targeted, clear its buttons
+			if (targetObject is Building) {
+				targetObject.GetComponent<Building>().tenant.clearButtons ();
+			}
+			targetObject = null;
 		}
 
 		targetPlayer = null;
@@ -346,33 +350,35 @@ public class Player : NetworkBehaviour {
 				targetMods.clearButtons ();
 			}
 				
-			targetBuilding = hit.collider.GetComponent<Building> ();
+			targetObject = hit.collider.GetComponent<OwnableObject> ();
 			targetPlayer   = hit.collider.GetComponent<Player> ();
 			targetMods     = hit.collider.GetComponent<BuildingModifier> ();
 			Resident targetResident = hit.collider.GetComponent<Resident> ();
 			targetVehicle = hit.collider.GetComponentInParent<Vehicle> ();
-			if (targetBuilding != null) {
+			if (targetObject != null) {
 				ui.readoutToggle (true);
-				ui.updateReadout (targetBuilding.getReadout (gameObject.GetComponent<NetworkIdentity> ().netId));
-				ui.updateWorkers (targetBuilding.getWorkerText ());
-
-				soundPlayer.PlayRaycastSound (targetBuilding.type);
-
-				if ((targetBuilding.getOwner() == id) && !ignoredTypes.Contains(targetBuilding.type) && !(targetBuilding is Business)) {
-					ui.setPriceToggle (true);
-					button.setRentPrice (netId, targetBuilding.netId, targetBuilding.rent);
-				} else {
-					ui.setPriceToggle (false);
+				ui.updateReadout (targetObject.getReadout (gameObject.GetComponent<NetworkIdentity> ().netId));
+				if (targetObject is Building) {
+					Building tmpBuilding = targetObject.GetComponent<Building> ();
+					ui.updateWorkers (targetObject.GetComponent<Building>().getWorkerText ());
+					soundPlayer.PlayRaycastSound (tmpBuilding.type);
+					if ((tmpBuilding.getOwner() == id) && !ignoredTypes.Contains(tmpBuilding.type) && !(tmpBuilding is Business)) {
+						ui.setPriceToggle (true);
+						button.setRentPrice (netId, tmpBuilding.netId, tmpBuilding.rent);
+					} else {
+						ui.setPriceToggle (false);
+					}
+					if (tmpBuilding.ownedBy(this) && !tmpBuilding.occupied) {
+						tmpBuilding.tenant.setButtons ();
+					} else if (tmpBuilding.ownedBy(this) && tmpBuilding.occupied && !tmpBuilding.tenant.isNone ()) {
+						tmpBuilding.tenant.showActive ();
+					}
 				}
-				if (targetBuilding.ownedBy(this) && !targetBuilding.occupied) {
-					targetBuilding.tenant.setButtons ();
-				} else if (targetBuilding.ownedBy(this) && targetBuilding.occupied && !targetBuilding.tenant.isNone ()) {
-					targetBuilding.tenant.showActive ();
-				}
-				Neighborhood n = targetBuilding.getNeighborhood ();
+
+				Neighborhood n = targetObject.getNeighborhood ();
 				if (n == null) {
-					if (targetBuilding is Neighborhood) {
-						ui.updateNeighborhoodName (targetBuilding.buildingName);
+					if (targetObject is Neighborhood) {
+						ui.updateNeighborhoodName (targetObject.GetComponent<Neighborhood>().buildingName);
 					} else {
 						ui.updateNeighborhoodName ("No neighborhood");
 					}
@@ -400,8 +406,8 @@ public class Player : NetworkBehaviour {
 	}
 
 	public void buy() {
-		if (targetBuilding != null) {
-			CmdBuy (netId, targetBuilding.netId);
+		if (targetObject != null) {
+			CmdBuy (netId, targetObject.netId);
 		} else if (targetVehicle != null) {
 			CmdBuy (netId, targetVehicle.netId);
 		}
@@ -489,18 +495,21 @@ public class Player : NetworkBehaviour {
 		obj = getLocalInstance (buildingId);
 		p = getLocalInstance (playerId);
 
-		Building b = obj.GetComponent<Building> ();
+		OwnableObject b = obj.GetComponent<Building> ();
+		Building building = b.GetComponent<Building> ();
 		Player player = p.GetComponent<Player> ();
 
 		if (b != null) {
 			if ((b.cost <= player.budget) && !b.notForSale) {
 				if (b.validLot ()) {
-					player.message = "You cannot buy that building without owning its lot.";
+					player.message = "You cannot buy that without owning its lot.";
 				} else if ((b is Lot) && (player.lots >= MAX_LOTS)) {
 					player.message = "Add lots to neighborhoods to expand further.";
 				} else {
 					player.budget -= b.cost;
-					player.revenue += b.getRent ();
+					if (building != null) {
+						player.revenue += building.getRent ();
+					}
 
 					b.notForSale = true;
 					GameObject eventLightRay = (GameObject)Resources.Load ("GodRays");
@@ -511,7 +520,9 @@ public class Player : NetworkBehaviour {
 					if (b.getOwner () != -1) {
 						Player oldOwner = b.getPlayerOwner ();
 						oldOwner.budget += b.cost;
-						oldOwner.message = player.playerName + " bought " + b.buildingName + " from you for $" + b.cost;
+						if (building != null) {
+							oldOwner.message = player.playerName + " bought " + building.buildingName + " from you for $" + b.cost;
+						}
 						if (b is Lot) {
 							oldOwner.lots -= 1;
 						}
@@ -563,11 +574,13 @@ public class Player : NetworkBehaviour {
 		obj = getLocalInstance (buildingId);
 		p = getLocalInstance (playerId);
 
-		Building b = obj.GetComponent<Building> ();
+		OwnableObject b = obj.GetComponent<Building> ();
 		Player player = p.GetComponent<Player> ();
 
 		if (b != null) {
-			player.revenue += b.getRent ();
+			if (b is Building) {
+				player.revenue += b.GetComponent<Building>().getRent ();
+			}
 
 			b.notForSale = true;
 			b.setOwner(player.netId);
@@ -604,7 +617,7 @@ public class Player : NetworkBehaviour {
 
 	[Command(channel=CHANNEL)]
 	public void CmdRemove(NetworkInstanceId buildingId) {
-		Building b = getBuilding(buildingId);
+		OwnableObject b = getLocalInstance (buildingId).GetComponent<OwnableObject> ();
 		if (b.getOwner () > -1) {
 			Player tmp = b.getPlayerOwner ();
 			tmp.owned.removeId (buildingId);
@@ -615,6 +628,11 @@ public class Player : NetworkBehaviour {
 		RpcUpdateUI ();
 	}
 
+	/// <summary>
+	/// Initiates an auction on the building
+	/// </summary>
+	/// <param name="playerId">Player identifier.</param>
+	/// <param name="buildingId">Building identifier.</param>
 	[Command(channel=CHANNEL)]
 	public void CmdSell(NetworkInstanceId playerId, NetworkInstanceId buildingId) {
 		GameObject obj;
@@ -638,7 +656,7 @@ public class Player : NetworkBehaviour {
 
 	[Command(channel=CHANNEL)]
 	public void CmdRepo(NetworkInstanceId bid) {
-		Building b = getLocalInstance (bid).GetComponent<Building> ();
+		OwnableObject b = getLocalInstance (bid).GetComponent<OwnableObject> ();
 		b.repo ();
 	}
 
@@ -771,9 +789,9 @@ public class Player : NetworkBehaviour {
 	/// <param name="playerId">Player identifier.</param>
 	/// <param name="buildingId">Building identifier.</param>
 	public void sellChoice() {
-		if (targetBuilding != null) {
+		if (targetObject != null) {
 			NetworkInstanceId playerId = this.netId;
-			NetworkInstanceId buildingId = targetBuilding.netId;
+			NetworkInstanceId buildingId = targetObject.netId;
 			GameObject r;
 			GameObject p;
 			GameObject obj;
@@ -781,7 +799,7 @@ public class Player : NetworkBehaviour {
 			obj = getLocalInstance (buildingId);
 			p = getLocalInstance (playerId);
 
-			Building b = obj.GetComponent<Building> ();
+			OwnableObject b = obj.GetComponent<Building> ();
 			Lot l = b.getLot ();
 			Player player = p.GetComponent<Player> ();
 
@@ -842,7 +860,7 @@ public class Player : NetworkBehaviour {
 
 		obj = getLocalInstance (buildingId);
 
-		Building b = obj.GetComponent <Building> ();
+		OwnableObject b = obj.GetComponent <OwnableObject> ();
 		InputField field = panel.transform.Find ("PriceField").GetComponent<InputField> ();
 		field.text = b.cost.ToString();
 
@@ -862,14 +880,16 @@ public class Player : NetworkBehaviour {
 		obj = getLocalInstance (buildingId);
 		p = getLocalInstance (playerId);
 
-		Building b = obj.GetComponent<Building> ();
+		OwnableObject b = obj.GetComponent<OwnableObject> ();
 		Player player = p.GetComponent<Player> ();
 
 		if (b != null) {
 			if (int.Parse (price) > 0) {
 				b.cost = int.Parse (price);
 				b.notForSale = false;
-				RpcMessageAll (player.playerName + " is selling " + b.buildingName + " for " + b.cost + "!");
+				if (b is Building) {
+					RpcMessageAll (player.playerName + " is selling " + b.GetComponent<Building>().buildingName + " for " + b.cost + "!");
+				}
 			} else {
 				player.message = "Price must be positive";
 			}
@@ -885,7 +905,7 @@ public class Player : NetworkBehaviour {
 		obj = getLocalInstance (buildingId);
 		p = getLocalInstance (playerId);
 
-		Building b = obj.GetComponent<Building> ();
+		OwnableObject b = obj.GetComponent<Building> ();
 		Player player = p.GetComponent<Player> ();
 
 		if (b.ownedBy(player)) {
@@ -1202,35 +1222,32 @@ public class Player : NetworkBehaviour {
 		string s = "No owned buildings.";
 		if (owned.Count > 0) {
 			s = "Owned Properties:";
-//			foreach (NetId buildingId in owned) {
-//				Building building = getBuilding (buildingId.id);
-//				if (building.type != 18) {
-//					s += building.getLedgerReadout ();
-//				}
-//			}
 		}
 
 		if (ui != null) {
 			ui.clearButtons ();
 			ui.updateLedger (s);
 
-			if (targetBuilding != null) {
-				ui.updateReadout (targetBuilding.getReadout (gameObject.GetComponent<NetworkIdentity> ().netId));
-				Neighborhood n = targetBuilding.getNeighborhood ();
+			if (targetObject != null) {
+				ui.updateReadout (targetObject.getReadout (gameObject.GetComponent<NetworkIdentity> ().netId));
+				Neighborhood n = targetObject.getNeighborhood ();
 				if (n == null) {
-					if (targetBuilding is Neighborhood) {
-						ui.updateNeighborhoodName (targetBuilding.buildingName);
+					if (targetObject is Neighborhood) {
+						ui.updateNeighborhoodName (targetObject.GetComponent<Neighborhood>().buildingName);
 					} else {
 						ui.updateNeighborhoodName ("No neighborhood");
 					}
 				} else {
 					ui.updateNeighborhoodName ("Part of " + n.buildingName);
 				}
-				targetBuilding.tenant.clearButtons ();
-				if (targetBuilding.ownedBy(this)) {
-					targetBuilding.tenant.showActive ();
-					if (!targetBuilding.occupied) {
-						targetBuilding.tenant.setButtons ();
+				if (targetObject is Building) {
+					Building targetBuilding = targetObject.GetComponent<Building> ();
+					targetBuilding.tenant.clearButtons ();
+					if (targetBuilding.ownedBy (this)) {
+						targetBuilding.tenant.showActive ();
+						if (!targetBuilding.occupied) {
+							targetBuilding.tenant.setButtons ();
+						}
 					}
 				}
 			} else if (targetPlayer != null) {
@@ -1248,7 +1265,7 @@ public class Player : NetworkBehaviour {
 	}
 
 	public void updateBuildingReadout() {
-		ui.updateReadout (targetBuilding.getReadoutText (gameObject.GetComponent<NetworkIdentity> ().netId));
+		ui.updateReadout (targetObject.getReadoutText (gameObject.GetComponent<NetworkIdentity> ().netId));
 	}
 
 	/// <summary>
@@ -1318,7 +1335,7 @@ public class Player : NetworkBehaviour {
 			revenue = 0;
 			foreach (NetId buildingId in owned) {
 				Building b = getBuilding (buildingId.id);
-				if (b != null) { //prevents null ref on vehicles
+				if (b != null) { //prevents null ref on vehicles and non-buildings
 					revenue += b.getRent ();
 					revenue -= b.upkeep;
 				}
@@ -1447,16 +1464,16 @@ public class Player : NetworkBehaviour {
 	}
 
 	public void targetNeighborhood() {
-		if (!(targetBuilding is Neighborhood)) {
-			Neighborhood n = targetBuilding.getNeighborhood ();
+		if (!(targetObject is Neighborhood)) {
+			Neighborhood n = targetObject.getNeighborhood ();
 			if (n != null) {
-				targetBuilding = n;
+				targetObject = n;
 			}
 		}
 		updateUI ();
 	}
 
-	private void formNeighborhood(Building target) {
+	private void formNeighborhood(OwnableObject target) {
 		if (target != null) {
 			Lot l = target.GetComponent<Lot> ();
 			if ((l != null) && target.ownedBy(netId)) {
@@ -1488,7 +1505,7 @@ public class Player : NetworkBehaviour {
 		}
 	}
 
-	private void addToNeighborhood(Building target) {
+	private void addToNeighborhood(OwnableObject target) {
 		if (target != null && target is Lot && target.ownedBy(netId)) {
 			if (target.getNeighborhood () == null) {
 //				NetworkInstanceId tmp = owned.Where (b => (getBuilding (b.id) is Neighborhood)).ToList () [0].id;
@@ -1519,7 +1536,10 @@ public class Player : NetworkBehaviour {
 	public List<Building> getBuildings() {
 		List<Building> buildings = new List<Building> ();
 		foreach (NetId tmp in owned) {
-			buildings.Add (getBuilding (tmp.id));
+			Building tmpBuilding = getBuilding (tmp.id);
+			if (tmpBuilding != null) {
+				buildings.Add (tmpBuilding);
+			}
 		}
 		return buildings;
 	}
@@ -1593,9 +1613,9 @@ public class Player : NetworkBehaviour {
 	}
 
 	private void toggleManager() {
-		if (targetBuilding != null) {
-			if (targetBuilding is Neighborhood) {
-				Neighborhood n = targetBuilding.GetComponent<Neighborhood> ();
+		if (targetObject != null) {
+			if (targetObject is Neighborhood) {
+				Neighborhood n = targetObject.GetComponent<Neighborhood> ();
 				if (n.isManaged()) {
 					CmdToggleManager (netId, n.netId, false);
 					showMessage (n.buildingName + " no longer has a manager.");

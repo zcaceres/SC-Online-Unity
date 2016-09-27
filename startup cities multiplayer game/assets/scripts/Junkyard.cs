@@ -121,20 +121,20 @@ public class Junkyard : Building {
 	public override void advanceMonth () {
 		if (isServer) {
 			if (condition > 25) {
-				damageBuilding (1); 
+				damageObject (1); 
 			}
 			if (safety < 100) {
 				damageBuildingSafety (-1); // recover 1 safety each month
 			}
 				
-			if (validOwner() || validCompany()) {
+			if (validOwner()) {
 				activePark = true;
 			}
-			if (!validOwner() && !validCompany()) { 
+			if (!validOwner()) { 
 				notForSale = false;
 			} else if (occupied) {                         // occupied, apply effects from the tenant
 				tenant.clearButtons ();
-				damageBuilding (tenant.condition ());
+				damageObject (tenant.condition ());
 				tenant.applyEffects ();
 				paying = tenant.willPay ();
 
@@ -149,7 +149,7 @@ public class Junkyard : Building {
 					endFire ();
 				} else {
 					spreadFire ();
-					damageBuilding (50);
+					damageObject (50);
 				}
 			}
 
@@ -180,7 +180,7 @@ public class Junkyard : Building {
 					Building buildingTest = o.gameObject.GetComponent<Building> ();
 					if (buildingTest != null && buildingTest.id != id) {
 						buildingList += 1;
-						if ((buildingTest.validOwner()) || (buildingTest.validCompany())) {
+						if (buildingTest.validOwner()) {
 							ownedBuildings += 1;
 						}
 					}

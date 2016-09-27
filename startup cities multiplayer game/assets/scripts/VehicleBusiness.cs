@@ -5,7 +5,6 @@ using UnityEngine.Networking;
 
 public class VehicleBusiness : NetworkBehaviour
 {
-	const int ATTRACTIVENESS_EFFECT = -20;
 	const int COST_PER_VISIT = 20;
 	private IceCreamTruckVehicle iceCreamTruck;
 	protected const int CHANNEL = 1;
@@ -25,13 +24,15 @@ public class VehicleBusiness : NetworkBehaviour
 	{
 		Player p = iceCreamTruck.getPlayerOwner ();
 		if (res.skill <= 1) { //Checks to make sure resident has less than 2 skill level (cheap restaurant type)
-			//	if (Random.Range (0, 100) <= condition) {
-			if (res.spendingMoney >= GetCostOfVisit ()) {
-				int spent = GetCostOfVisit ();
-				res.spendingMoney -= spent;
-				p.CmdAddMoney (p.netId, spent);
-				Debug.Log ("Sent " + spent + " to owner " + p.netId);
-				//	}
+			if (Random.Range (0, 100) <= iceCreamTruck.condition) {
+				if (res.spendingMoney >= GetCostOfVisit ()) {
+					int spent = GetCostOfVisit ();
+					res.spendingMoney -= spent;
+					p.CmdAddMoney (p.netId, spent);
+					Debug.Log ("Sent " + spent + " to owner " + p.netId);
+				}
+			} else {
+				Debug.Log ("condition too crappy for sale");
 			}
 		}
 	}

@@ -7,7 +7,7 @@ using UnityEngine.Networking;
 [RequireComponent(typeof(BuildingModifier))]
 [RequireComponent(typeof(Tenant))]
 
-public class Building : NetworkBehaviour {
+public class Building : DamageableObject {
 	const int ATTRACTIVENESS_EFFECT = 0;
 	public int type;
 	const int TYPENUM = 0;
@@ -19,13 +19,9 @@ public class Building : NetworkBehaviour {
 	[SyncVar]
 	public int safety;
 	[SyncVar]
-	public int condition;
-	[SyncVar]
 	public int rent;
 	[SyncVar]
 	public int baseRent;
-	[SyncVar]
-	public int cost;
 	[SyncVar]
 	public int upkeep;
 	[SyncVar]
@@ -35,30 +31,18 @@ public class Building : NetworkBehaviour {
 	[SyncVar]
 	public bool occupied;
 	[SyncVar]
-	public bool notForSale;
-	[SyncVar]
 	public bool onAuction;
-	[SyncVar]
-	protected NetworkInstanceId owner;
-	[SyncVar]
-	public NetworkInstanceId lot;
 	[SyncVar]
 	public int rentOffset;
 	[SyncVar]
 	public int playerSetRent;
 
-	public Lot localLot;
 	public Color color;           // The original building color
 	public Collider c;            // Building's collider
-	private FireTransform[] fireTrans; //The number of fire transforms connected to the building
 
-	[SyncVar]
-	public NetworkInstanceId company;
 	public BuildingModifier modManager; // The modmanager attached to the building
 	public Tenant tenant;
 
-	[SyncVar]
-	public bool fire;             // Is the building on fire?
 	[SyncVar]
 	public bool ruin;             // Ruined buildings provide no rent and cannot have occupants
 	[SyncVar]
@@ -66,11 +50,7 @@ public class Building : NetworkBehaviour {
 	[SyncVar]
 	public int lowestSkill;       // lowest skilled residents who will live at the building. 
 	[SyncVar]
-	public int baseCondition;
-	[SyncVar]
 	protected int baseSafety;
-	[SyncVar]
-	protected int baseCost;
 	[SyncVar]
 	protected bool paying;
 	protected const int UPKEEP_PORTION = 4;
@@ -118,10 +98,6 @@ public class Building : NetworkBehaviour {
 		typeName = buildingTypes [type];
 	}
 
-	public virtual int getAttractEffect() {
-		return ATTRACTIVENESS_EFFECT;
-	}
-
 	/// <summary>
 	/// Applies any modifiers to the rent
 	/// </summary>
@@ -166,16 +142,16 @@ public class Building : NetworkBehaviour {
 	public virtual void advanceMonth() {
 		if (isServer) {
 			if (condition > 25) {
-				damageBuilding (1); 
+				damageObject (1); 
 			}
 			if (safety < 100) {
 				damageBuildingSafety(-1); // recover 1 safety each month
 			}
-			if (!validOwner() && !validCompany()) { 
+			if (!validOwner()) { 
 				notForSale = false;
 			} else if (occupied) {                         // occupied, apply effects from the tenant
 				tenant.clearButtons();
-				damageBuilding(tenant.condition());
+				damageObject(tenant.condition());
 				paying = tenant.willPay ();
 
 				if (!paying) {
@@ -190,7 +166,7 @@ public class Building : NetworkBehaviour {
 				}
 				else {
 					spreadFire ();
-					damageBuilding (50);
+					damageObject (50);
 				}
 			}
 				
@@ -222,45 +198,10 @@ public class Building : NetworkBehaviour {
 		}
 	}
 
-	public virtual int getCost() {
-		return cost;
-	}
-
-	public virtual int getBaseCost() {
-		return baseCost;
-	}
-
-	public virtual bool isDestructable() {
-		return true;
-	}
-
-	public virtual Neighborhood getNeighborhood() {
-		Neighborhood n = null;
-		if (validLot ()) {
-			n = getLot ().getNeighborhood ();
-		}
-		return n;
-	}
-
 	protected void makeRuin() {
 		if (isServer) {
 			tenant.leaveJob ();
 			RpcMakeRuin ();
-		}
-	}
-	/// <summary>
-	/// Spreads fire to neighbors.
-	/// </summary>
-	protected void spreadFire() {
-		Collider[] colliding = Physics.OverlapSphere(c.transform.position, 5);
-		foreach (Collider hit in colliding) {
-			Building b = hit.GetComponent<Building> ();
-
-			if (b != null && !b.fire) {
-				if (Random.value < .1f) {
-					b.setFire ();
-				}
-			}
 		}
 	}
 
@@ -286,10 +227,11 @@ public class Building : NetworkBehaviour {
 			baseCondition += numPoints;
 		}
 	}
+
 	/// <summary>
 	/// Sets the building on fire.
 	/// </summary>
-	public virtual void setFire() {
+	public override void setFire() {
 		if (isServer) {
 			if (validOwner()) {
 				RpcMessageOwner( buildingName + " is on fire!");
@@ -314,45 +256,10 @@ public class Building : NetworkBehaviour {
 	}
 
 	/// <summary>
-	/// Ends the fire.
-	/// </summary>
-	public void endFire() {
-		if (isServer) {
-			fire = false;
-		}
-	}
-		
-	/// <summary>
-	/// returns the owner ID (player number) or -1 if unowned
-	/// </summary>
-	/// <returns>The owner ID.</returns>
-	public int getOwner() {
-		int id;
-
-		if (!validOwner()) {
-			id = -1;
-		} else {
-			id = getPlayer(owner).id;
-		}
-
-		return id;
-	}
-
-	public int getAttractiveness() {
-		int a = 0;
-		GameObject tmp = getLocalInstance (lot);
-		if (tmp != null) {
-			Lot l = tmp.GetComponent<Lot> ();
-			a += l.getAttractiveness ();
-		}
-		return a;
-	}
-
-	/// <summary>
 	/// Returns the data associated with the building
 	/// </summary>
 	/// <returns>The readout.</returns>
-	public virtual string getReadout(NetworkInstanceId pid) {
+	public override string getReadout(NetworkInstanceId pid) {
 		string s;
 		updateRent ();
 		modManager.clearButtons ();
@@ -393,7 +300,7 @@ public class Building : NetworkBehaviour {
 	/// Returns the data associated with the building, does not do anything with buttons
 	/// </summary>
 	/// <returns>The readout.</returns>
-	public virtual string getReadoutText(NetworkInstanceId pid) {
+	public override string getReadoutText(NetworkInstanceId pid) {
 		string s;
 		string ownerName = "";
 		if (!validOwner()) {
@@ -497,28 +404,6 @@ public class Building : NetworkBehaviour {
 	}
 
 	/// <summary>
-	/// Returns the highest point of the building's mesh.
-	/// </summary>
-	/// <returns>Highest point.</returns>
-	public float getHighest()
-	{
-		if ((c != null) && (c.gameObject.GetComponent<MeshCollider>() != null) && (c.gameObject.GetComponent<MeshCollider>().sharedMesh != null)) {
-			Vector3[] verts = c.gameObject.GetComponent<MeshCollider> ().sharedMesh.vertices;
-			Vector3 topVertex = new Vector3 (0, float.NegativeInfinity, 0);
-			for (int i = 0; i < verts.Length; i++) {
-				Vector3 vert = transform.TransformPoint (verts [i]);
-				if (vert.y > topVertex.y) {
-					topVertex = vert;
-				}
-			}
-
-			return topVertex.y;
-		} else {
-			return 0;
-		}
-	}
-
-	/// <summary>
 	/// Gets the cost to restore the building to 100 condition
 	/// </summary>
 	/// <returns>The repair cost.</returns>
@@ -589,25 +474,6 @@ public class Building : NetworkBehaviour {
 	}
 
 	/// <summary>
-	/// Damages the building. Decrements base condition & condition--base condition manages the condition without considering modifiers
-	/// </summary>
-	/// <param name="damage">Damage.</param>
-	protected void damageBuilding(int damage) {
-		if (isServer) {
-			if ((baseCondition - damage) > 100) {      // don't go above 100
-				baseCondition = 100;
-				condition = 100;
-			} else if ((baseCondition - damage) < 0) { // don't go below 0
-				baseCondition = 0;
-				condition = 0;
-			} else {
-				baseCondition -= damage;
-				condition -= damage;
-			}
-		}
-	}
-
-	/// <summary>
 	/// Damages the building's safety. Decrements base safety & safety--base safety manages the condition without considering modifiers
 	/// </summary>
 	/// <param name="damage">Damage.</param>
@@ -622,30 +488,6 @@ public class Building : NetworkBehaviour {
 			} else {
 				baseSafety -= damage;
 				safety -= damage;
-			}
-		}
-	}
-
-	/// <summary>
-	/// Messages the owner.
-	/// </summary>
-	/// <param name="s">Message.</param>
-	public void messageOwner(string s) {
-		if (isServer) {
-			if (validOwner()) {
-				getPlayer(owner).message = s;
-			}
-		}
-	}
-
-	/// <summary>
-	/// Gives the owner money.
-	/// </summary>
-	/// <param name="money">amount of money.</param>
-	public void giveOwnerMoney(int money) {
-		if (isServer) {
-			if (validOwner()) {
-				getPlayer(owner).budget += money;
 			}
 		}
 	}
@@ -700,119 +542,15 @@ public class Building : NetworkBehaviour {
 		return s;
 	}
 
-	public virtual bool inNeighborhood() {
-		bool b = false;
-		if (validLot ()) {
-			if (getLot ().inNeighborhood ()) {
-				b = true;
-			}
-		}
-		return b;
-	}
-
-	/// <summary>
-	/// gives the base cost of the building (cost before modifiers/condition changes/rent changes)
-	/// </summary>
-	public virtual int appraise() {
-		return baseCost;
-	}
-
-	public virtual Player getPlayer(NetworkInstanceId playerId) {
-		GameObject tmp = getLocalInstance (playerId);
-		Player p;
-		if (tmp != null) {
-			p = tmp.GetComponent<Player> ();
-		} else {
-			p = null;
-		}
-		return p;
-	}
-
-	public virtual NetworkInstanceId getOwnerNetId() {
-		return owner;
-	}
-
-	public virtual Player getPlayerOwner() {
-		Player p;
-		if (validOwner()) {
-			p = getPlayer (owner);
-		} else {
-			p = null;
-		}
-		return p;
-	}
-
-	public virtual Lot getLot() {
-		Lot l;
-
-		if (this is Lot) {
-			l = this.GetComponent<Lot> ();
-		} else {
-			if (validLot ()) {
-				l = getLocalInstance (lot).GetComponent<Lot> ();
-			} else {
-				l = null;
-			}
-		}
-		return l;
-	}
-
 	public virtual void setRent(int newRent) {
 		rentOffset = newRent - baseRent;
 		updateRent ();
 	}
 
 	/// <summary>
-	/// Sets the owner and removes the building from the owned list of its previous owner.
-	/// </summary>
-	/// <param name="newOwner">New owner's id.</param>
-	public virtual void setOwner(NetworkInstanceId newOwner) {
-		if (newOwner == owner)
-			return;
-		Player oldOwner = getPlayerOwner ();
-		if (oldOwner != null) {
-			oldOwner.owned.removeId (this.netId);
-		}
-		Player p = getLocalInstance (newOwner).GetComponent<Player> ();
-		p.owned.addId (this.netId);
-		owner = newOwner;
-	}
-
-	/// <summary>
-	/// Checks ownership by netId
-	/// </summary>
-	/// <returns><c>true</c>, if owned by the object (company or player) whose netId was passed, <c>false</c> otherwise.</returns>
-	/// <param name="o">Owner.</param>
-	public virtual bool ownedBy(NetworkInstanceId o) {
-		bool owned = false;
-		if (validOwner()) {
-			if (owner == o) {
-				owned = true;
-			}
-		}
-		return owned;
-	}
-
-	public virtual bool ownedBy(Player p) {
-		bool owned = false;
-		if (owner == p.netId) {
-			owned = true;
-		}
-		return owned;
-	}
-
-	public virtual void unsetOwner() {
-		owner = NetworkInstanceId.Invalid;
-	}
-
-	public virtual void unsetCompany() {
-		company = NetworkInstanceId.Invalid;
-	}
-
-	/// <summary>
 	/// City reclaims the building and pays the player the base cost
 	/// </summary>
-	public virtual void repo() {
+	public override void repo() {
 		if (validOwner ()) {
 			Player p = getPlayerOwner ();
 			p.budget += this.appraise ();
@@ -825,50 +563,6 @@ public class Building : NetworkBehaviour {
 		}
 	}
 
-	public virtual bool validOwner() {
-		bool isValid = false;
-		if (!owner.IsEmpty() && (owner != NetworkInstanceId.Invalid) && (getLocalInstance(owner) != null)) {
-			isValid = true;
-		}
-		return isValid;
-	}
-
-	public virtual bool validCompany() {
-		bool isValid = false;
-		if (!company.IsEmpty() && (company != NetworkInstanceId.Invalid) && (getLocalInstance(company) != null)) {
-			isValid = true;
-		}
-		return isValid;
-	}
-
-	public virtual bool validLot() {
-		bool isValid = false;
-		if (!lot.IsEmpty() && (lot != NetworkInstanceId.Invalid) && (getLocalInstance(lot) != null)) {
-			isValid = true;
-		}
-		return isValid;
-	}
-
-	protected virtual void updateNeighborhoodValue() {
-		if (validLot ()) {
-			Neighborhood n = getLot ().getNeighborhood ();
-			if (n != null) {
-				n.calcPrice ();
-			}
-		}
-	}
-
-	protected GameObject getLocalInstance(NetworkInstanceId id) {
-		GameObject g;
-		if (isClient) {
-			g = ClientScene.FindLocalObject (id);
-		} else {
-			g = NetworkServer.FindLocalObject (id); 
-		}
-		return g;
-	}
-
-
 	//BEGIN EARTHQUAKE STUFF
 
 	/// <summary>
@@ -878,7 +572,7 @@ public class Building : NetworkBehaviour {
 	/// <param name="explosion">Explosion prefab</param>
 	/// <param name="delay">Delay to wait before explosion</param>
 	public void earthQuakeDamage (float prob, GameObject explosion, float delay) {
-		damageBuilding (30);
+		damageObject (30);
 		if (prob <= 3.0f) {
 			StartCoroutine (earthQuakeDelay(delay, explosion));
 		}
@@ -908,8 +602,7 @@ public class Building : NetworkBehaviour {
 	private void earthQuakeExplosion (GameObject explosion) {
 		GameObject tmp = (GameObject)Instantiate (explosion, gameObject.transform.position, gameObject.transform.rotation);
 		NetworkServer.Spawn (tmp);
-		damageBuilding (15);
+		damageObject (15);
 		setFire ();
 	}
-
 }

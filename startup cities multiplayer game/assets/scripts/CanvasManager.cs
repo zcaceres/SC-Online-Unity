@@ -373,7 +373,7 @@ public class CanvasManager : MonoBehaviour {
 		obj.transform.Find ("Viewport/Content/Name").GetComponent<Text> ().text = l.buildingName;
 		obj.transform.Find ("Viewport/Content/Body").GetComponent<Text> ().text = "Revenue: $" + l.calcRents() + "\nUpkeep: $" + l.calcUpkeep() +
 		"\nAttractiveness: " + l.getAttractiveness ();
-		List<Building> tmp = l.getBuildings ();
+		List<Building> tmp = l.getBuildings();
 		Transform p = obj.transform.Find ("Viewport/Content");
 		foreach (Building b in tmp) {
 			GameObject lotObj = (GameObject)Instantiate(Resources.Load("NButton"));

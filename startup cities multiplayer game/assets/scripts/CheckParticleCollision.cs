@@ -9,6 +9,7 @@ public class CheckParticleCollision : NetworkBehaviour
 	bool modulateDownFirst;
 	bool modulateDownSecond;
 	int initialFireLife;
+
 	// Use this for initialization
 	void Start () {
 		fk = GetComponent<FireKiller> ();
@@ -36,7 +37,6 @@ public class CheckParticleCollision : NetworkBehaviour
 	}
 
 	void ModulateDownOnce () {
-		Debug.LogError ("First Modulation!");
 		foreach (ParticleSystem pt in pts) {
 			pt.maxParticles = Mathf.RoundToInt ((pt.maxParticles * .8f));
 		}
@@ -44,7 +44,6 @@ public class CheckParticleCollision : NetworkBehaviour
 
 	void ModulateDownFinal ()
 	{
-		Debug.LogError ("Second Modulation!");
 		foreach (ParticleSystem pt in pts) {
 			pt.maxParticles = Mathf.RoundToInt ((pt.maxParticles * .4f));
 		}

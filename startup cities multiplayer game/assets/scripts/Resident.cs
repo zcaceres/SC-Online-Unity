@@ -567,7 +567,7 @@ public class Resident : NetworkBehaviour {
 
 		int[] nonResidential = { 15, 17, 18, 21, 25 };
 		List<Building> buildings = FindObjectsOfType<Building> ().ToList();
-		buildings = buildings.Where (b => (!b.ruin && !b.fire && !b.occupied && (b.validOwner() || b.validCompany())
+		buildings = buildings.Where (b => (!b.ruin && !b.fire && !b.occupied && (b.validOwner())
 			&& !nonResidential.Contains(b.type))).ToList<Building>();
 		lowHomes = buildings.Where (b => ( (b.rent <= rentLimits [LOW_SKILL]) || (b is Business)) ).ToList ();
 		medHomes = buildings.Where (b => (( (b.rent <= rentLimits [MED_SKILL]) || (b is Business) ) && (b.lowestSkill >= MED_SKILL))).ToList ();

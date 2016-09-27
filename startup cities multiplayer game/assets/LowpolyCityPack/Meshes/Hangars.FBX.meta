@@ -1,0 +1,102 @@
+fileFormatVersion: 2
+guid: 543f4c707e4acac40bceaac20c2f15aa
+ModelImporter:
+  serializedVersion: 18
+  fileIDToRecycleName:
+    100000: Hangar_A
+    100002: Hangar_B
+    100004: Hangar_B_Door
+    100006: Hangar_B_Door 1
+    100008: Hangar_B_Door 2
+    100010: Hangar_B_Door 3
+    100012: //RootNode
+    400000: Hangar_A
+    400002: Hangar_B
+    400004: Hangar_B_Door
+    400006: Hangar_B_Door 1
+    400008: Hangar_B_Door 2
+    400010: Hangar_B_Door 3
+    400012: //RootNode
+    2300000: Hangar_A
+    2300002: Hangar_B
+    2300004: Hangar_B_Door
+    2300006: Hangar_B_Door 1
+    2300008: Hangar_B_Door 2
+    2300010: Hangar_B_Door 3
+    3300000: Hangar_A
+    3300002: Hangar_B
+    3300004: Hangar_B_Door
+    3300006: Hangar_B_Door 1
+    3300008: Hangar_B_Door 2
+    3300010: Hangar_B_Door 3
+    4300000: Hangar_A
+    4300002: Hangar_B
+    4300004: Hangar_B_Door
+    4300006: Hangar_B_Door
+    4300008: Hangar_B_Door
+    4300010: Hangar_B_Door
+    9500000: //RootNode
+  materials:
+    importMaterials: 0
+    materialName: 0
+    materialSearch: 1
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    optimizeGameObjects: 0
+    motionNodeName: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    animationCompression: 1
+    animationRotationError: .5
+    animationPositionError: .5
+    animationScaleError: .5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    clipAnimations: []
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: .00999999978
+    meshCompression: 0
+    addColliders: 0
+    importBlendShapes: 0
+    swapUVChannels: 0
+    generateSecondaryUV: 1
+    useFileUnits: 1
+    optimizeMeshForGPU: 0
+    keepQuads: 0
+    weldVertices: 1
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 0
+  tangentSpace:
+    normalSmoothAngle: 60
+    splitTangentsAcrossUV: 1
+    normalImportMode: 0
+    tangentImportMode: 1
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    human: []
+    skeleton: []
+    armTwist: .5
+    foreArmTwist: .5
+    upperLegTwist: .5
+    legTwist: .5
+    armStretch: .0500000007
+    legStretch: .0500000007
+    feetSpacing: 0
+    rootMotionBoneName: 
+    hasTranslationDoF: 0
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 2
+  humanoidOversampling: 1
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

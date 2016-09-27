@@ -37,7 +37,7 @@ public class NeighborhoodChoice : MonoBehaviour {
 			t.text = n.buildingName;
 			Neighborhood tmpN = n;
 			tmpButton.onClick.AddListener(delegate{
-				localPlayer.CmdAddToNeighborhood(localPlayer.netId, localPlayer.targetBuilding.netId, tmpN.netId);
+				localPlayer.CmdAddToNeighborhood(localPlayer.netId, localPlayer.targetObject.netId, tmpN.netId);
 				localPlayer.controlsAllowed(true);
 				Destroy(this.gameObject);
 			});

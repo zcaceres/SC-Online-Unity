@@ -1,0 +1,132 @@
+fileFormatVersion: 2
+guid: 42ea94501bfa0074db624933c7554df4
+ModelImporter:
+  serializedVersion: 18
+  fileIDToRecycleName:
+    100000: //RootNode
+    100002: Building_I_V01_A
+    100004: Building_I_V01_B
+    100006: Building_I_V01_C
+    100008: Building_I_V01_D
+    100010: Building_I_V02_A
+    100012: Building_I_V02_B
+    100014: Building_I_V02_C
+    100016: Building_I_V02_D
+    100018: Building_I_V03_A
+    100020: Building_I_V03_B
+    100022: Building_I_V03_C
+    100024: Building_I_V03_D
+    400000: //RootNode
+    400002: Building_I_V01_A
+    400004: Building_I_V01_B
+    400006: Building_I_V01_C
+    400008: Building_I_V01_D
+    400010: Building_I_V02_A
+    400012: Building_I_V02_B
+    400014: Building_I_V02_C
+    400016: Building_I_V02_D
+    400018: Building_I_V03_A
+    400020: Building_I_V03_B
+    400022: Building_I_V03_C
+    400024: Building_I_V03_D
+    2300000: Building_I_V01_A
+    2300002: Building_I_V01_B
+    2300004: Building_I_V01_C
+    2300006: Building_I_V01_D
+    2300008: Building_I_V02_A
+    2300010: Building_I_V02_B
+    2300012: Building_I_V02_C
+    2300014: Building_I_V02_D
+    2300016: Building_I_V03_A
+    2300018: Building_I_V03_B
+    2300020: Building_I_V03_C
+    2300022: Building_I_V03_D
+    3300000: Building_I_V01_A
+    3300002: Building_I_V01_B
+    3300004: Building_I_V01_C
+    3300006: Building_I_V01_D
+    3300008: Building_I_V02_A
+    3300010: Building_I_V02_B
+    3300012: Building_I_V02_C
+    3300014: Building_I_V02_D
+    3300016: Building_I_V03_A
+    3300018: Building_I_V03_B
+    3300020: Building_I_V03_C
+    3300022: Building_I_V03_D
+    4300000: Building_I_V01_C
+    4300002: Building_I_V01_D
+    4300004: Building_I_V01_B
+    4300006: Building_I_V01_A
+    4300008: Building_I_V02_A
+    4300010: Building_I_V02_B
+    4300012: Building_I_V02_C
+    4300014: Building_I_V02_D
+    4300016: Building_I_V03_A
+    4300018: Building_I_V03_B
+    4300020: Building_I_V03_D
+    4300022: Building_I_V03_C
+    9500000: //RootNode
+  materials:
+    importMaterials: 0
+    materialName: 0
+    materialSearch: 1
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    optimizeGameObjects: 0
+    motionNodeName: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    animationCompression: 1
+    animationRotationError: .5
+    animationPositionError: .5
+    animationScaleError: .5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    clipAnimations: []
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: .00999999978
+    meshCompression: 0
+    addColliders: 0
+    importBlendShapes: 0
+    swapUVChannels: 0
+    generateSecondaryUV: 1
+    useFileUnits: 1
+    optimizeMeshForGPU: 0
+    keepQuads: 0
+    weldVertices: 1
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 0
+  tangentSpace:
+    normalSmoothAngle: 60
+    splitTangentsAcrossUV: 1
+    normalImportMode: 0
+    tangentImportMode: 1
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    human: []
+    skeleton: []
+    armTwist: .5
+    foreArmTwist: .5
+    upperLegTwist: .5
+    legTwist: .5
+    armStretch: .0500000007
+    legStretch: .0500000007
+    feetSpacing: 0
+    rootMotionBoneName: 
+    hasTranslationDoF: 0
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 2
+  humanoidOversampling: 1
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

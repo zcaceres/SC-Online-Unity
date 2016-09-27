@@ -1,0 +1,147 @@
+fileFormatVersion: 2
+guid: 8940987eb31498542bbfdec00377b39c
+ModelImporter:
+  serializedVersion: 18
+  fileIDToRecycleName:
+    100000: //RootNode
+    100002: Building_L_A
+    100004: Building_L_A_LOD_01
+    100006: Building_L_B
+    100008: Building_L_B_LOD_01
+    100010: Building_L_C
+    100012: Building_L_C_LOD_01
+    100014: Building_L_v01_A
+    100016: Building_L_v01_B
+    100018: Building_L_v01_C
+    100020: Building_L_v02_A
+    100022: Building_L_v02_B
+    100024: Building_L_v02_C
+    100026: Building_L_v03_A
+    100028: Building_L_v03_B
+    100030: Building_L_v03_C
+    400000: //RootNode
+    400002: Building_L_A
+    400004: Building_L_A_LOD_01
+    400006: Building_L_B
+    400008: Building_L_B_LOD_01
+    400010: Building_L_C
+    400012: Building_L_C_LOD_01
+    400014: Building_L_v01_A
+    400016: Building_L_v01_B
+    400018: Building_L_v01_C
+    400020: Building_L_v02_A
+    400022: Building_L_v02_B
+    400024: Building_L_v02_C
+    400026: Building_L_v03_A
+    400028: Building_L_v03_B
+    400030: Building_L_v03_C
+    2300000: Building_L_A
+    2300002: Building_L_A_LOD_01
+    2300004: Building_L_B
+    2300006: Building_L_B_LOD_01
+    2300008: Building_L_C
+    2300010: Building_L_C_LOD_01
+    2300012: Building_L_v01_A
+    2300014: Building_L_v01_B
+    2300016: Building_L_v01_C
+    2300018: Building_L_v02_A
+    2300020: Building_L_v02_B
+    2300022: Building_L_v02_C
+    2300024: Building_L_v03_A
+    2300026: Building_L_v03_B
+    2300028: Building_L_v03_C
+    3300000: Building_L_A
+    3300002: Building_L_A_LOD_01
+    3300004: Building_L_B
+    3300006: Building_L_B_LOD_01
+    3300008: Building_L_C
+    3300010: Building_L_C_LOD_01
+    3300012: Building_L_v01_A
+    3300014: Building_L_v01_B
+    3300016: Building_L_v01_C
+    3300018: Building_L_v02_A
+    3300020: Building_L_v02_B
+    3300022: Building_L_v02_C
+    3300024: Building_L_v03_A
+    3300026: Building_L_v03_B
+    3300028: Building_L_v03_C
+    4300000: Building_L_A
+    4300002: Building_L_B
+    4300004: Building_L_C
+    4300006: Building_L_A_LOD_01
+    4300008: Building_L_B_LOD_01
+    4300010: Building_L_C_LOD_01
+    4300012: Building_L_v03_B
+    4300014: Building_L_v03_A
+    4300016: Building_L_v03_C
+    4300018: Building_L_v02_B
+    4300020: Building_L_v02_A
+    4300022: Building_L_v02_C
+    4300024: Building_L_v01_C
+    4300026: Building_L_v01_B
+    4300028: Building_L_v01_A
+    9500000: //RootNode
+  materials:
+    importMaterials: 0
+    materialName: 0
+    materialSearch: 1
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    optimizeGameObjects: 0
+    motionNodeName: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    animationCompression: 1
+    animationRotationError: .5
+    animationPositionError: .5
+    animationScaleError: .5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    clipAnimations: []
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: .00999999978
+    meshCompression: 0
+    addColliders: 0
+    importBlendShapes: 0
+    swapUVChannels: 0
+    generateSecondaryUV: 1
+    useFileUnits: 1
+    optimizeMeshForGPU: 0
+    keepQuads: 0
+    weldVertices: 1
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 0
+  tangentSpace:
+    normalSmoothAngle: 60
+    splitTangentsAcrossUV: 1
+    normalImportMode: 0
+    tangentImportMode: 1
+  importAnimation: 0
+  copyAvatar: 0
+  humanDescription:
+    human: []
+    skeleton: []
+    armTwist: .5
+    foreArmTwist: .5
+    upperLegTwist: .5
+    legTwist: .5
+    armStretch: .0500000007
+    legStretch: .0500000007
+    feetSpacing: 0
+    rootMotionBoneName: 
+    hasTranslationDoF: 0
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 2
+  humanoidOversampling: 1
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

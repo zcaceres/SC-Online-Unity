@@ -8,35 +8,8 @@ public class IceCreamTruckVehicle : Vehicle
 	private UnityStandardAssets.Vehicles.Car.CarController carController;
 	private AudioSource megaPhoneLoop;
 	private Megaphone mega; //used for mobile collection of $$ from customers
-	protected int earnings;
-//	public bool vehicleOccupied;
-//	private AudioSource horn;
-//	public int type;
-//	[SyncVar]
-//	public int cost;
-//	[SyncVar]
-//	public int upkeep;
-//	[SyncVar]
-//	public int id;
-//	[SyncVar]
-//	public bool notForSale;
-//	[SyncVar]
-//	public bool fire;
-//	[SyncVar]
-//	public string vehicleName;
-//	[SyncVar]
-//	public string typeName;
-//	[SyncVar]
-//	protected NetworkInstanceId owner;
 
-//	public Color color;
-//	// The original vehicle color
-//	public Collider c;
-	// vehicle's collider
-
-//	private FireTransform[] fireTrans;
-	//The number of fire transforms connected to the building
-
+	//Names for Vehicles
 	private static string[] rSmallFirst = {
 		"Yumsters",
 		"Frozen",
@@ -44,8 +17,7 @@ public class IceCreamTruckVehicle : Vehicle
 		"Dairy",
 		"Icey"
 	};
-
-	//Names for Vehicles
+		
 	private static string[] rSmallLast = { "Ice Cream", "Delights", "Pops" };
 
 
@@ -55,13 +27,18 @@ public class IceCreamTruckVehicle : Vehicle
 		horn = carSounds [1];
 		vehicleOccupied = false;
 		mega = GetComponentInChildren<Megaphone> ();
-//		type = TYPENUM;
+
 		foreach (AudioSource aSources in carSounds) {
 			aSources.enabled = false;
 		}
+
 		if (isServer) {
 			cost = 10000;
 			fire = false;
+			baseCost = cost;
+			baseCondition = 100;
+			condition = 10;
+			ruin = false;
 			upkeep = 0; // ADD UPKEEP HERE
 			typeName = "Vehicle";
 			vehicleName = nameGen ();
@@ -84,21 +61,15 @@ public class IceCreamTruckVehicle : Vehicle
 				Player p = gameObject.GetComponentInChildren<Player> ();
 				ExitVehicle (p);
 			}
-			if (carController.CurrentSpeed <= 15f && vehicleOccupied) {
+			if (carController.CurrentSpeed <= 15f && getOwner() != -1 && !ruin) {
 				mega.ToggleFoodTruck (true);
 			} else {
 				mega.ToggleFoodTruck (false);
 			}
 		}
+		CheckCondition ();
 	}
-
-//	public void addMoney (int i)
-//	{
-//		earnings += i;
-//	}
-
-	//BEGIN OWNERSHIP METHODS
-
+		
 	//advance month function here?
 
 
