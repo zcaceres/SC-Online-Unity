@@ -51,7 +51,7 @@ public class Decoration : Building {
 	/// put vehicle/other node spawning here
 	/// </summary>
 	public override void advanceMonth() {
-		if (!validOwner() && !validCompany()) { 
+		if (!validOwner()) { 
 			notForSale = false;
 		}	
 	}

@@ -127,10 +127,10 @@ public class Junkyard : Building {
 				damageBuildingSafety (-1); // recover 1 safety each month
 			}
 				
-			if (validOwner() || validCompany()) {
+			if (validOwner()) {
 				activePark = true;
 			}
-			if (!validOwner() && !validCompany()) { 
+			if (!validOwner()) { 
 				notForSale = false;
 			} else if (occupied) {                         // occupied, apply effects from the tenant
 				tenant.clearButtons ();
@@ -180,7 +180,7 @@ public class Junkyard : Building {
 					Building buildingTest = o.gameObject.GetComponent<Building> ();
 					if (buildingTest != null && buildingTest.id != id) {
 						buildingList += 1;
-						if ((buildingTest.validOwner()) || (buildingTest.validCompany())) {
+						if (buildingTest.validOwner()) {
 							ownedBuildings += 1;
 						}
 					}

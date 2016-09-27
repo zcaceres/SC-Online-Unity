@@ -95,7 +95,7 @@ public class CityHall : Business {
 			if (safety < 100) {
 				damageBuildingSafety(-1); // recover 1 safety each month
 			}
-			if (!validOwner() && !validCompany()) { 
+			if (!validOwner()) { 
 				notForSale = false;
 			}
 
