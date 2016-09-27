@@ -661,21 +661,21 @@ public class Player : NetworkBehaviour {
 		obj = getLocalInstance (buildingId);
 		p = getLocalInstance (playerId);
 
-		Building b = obj.GetComponent<Building> ();
+		DamageableObject b = obj.GetComponent<DamageableObject> ();
 		Player player = p.GetComponent<Player> ();
 
 		if (b != null) {
 			if (b.fire) {
-				player.message = "You can't repair a burning building!";
+				player.message = "You can't repair that while it is on fire!";
 			} else if (!b.ownedBy(player)) {
-				player.message = "You don't own that building!";
+				player.message = "You don't own that!";
 			} else if (b.baseCondition < 100) {
 				int repairCost = b.getRepairCost ();
 				int point = b.getPointRepairCost ();
 				if (player.budget >= repairCost) {
 					player.budget -= repairCost;
 					b.repair ();
-					player.message = "Building repaired for $" + repairCost + ".";
+					player.message = "Object repaired for $" + repairCost + ".";
 				} else if (player.budget >= point) {
 					repairCost = 0;
 					int numPoints = 0;
@@ -686,12 +686,12 @@ public class Player : NetworkBehaviour {
 
 					player.budget -= repairCost;
 					b.repairByPoint (numPoints);
-					player.message = "Building repaired for $" + repairCost + ".";
+					player.message = "Object repaired for $" + repairCost + ".";
 				} else {
 					player.message = "You don't have enough money to repair that.";
 				}
 			} else {
-				player.message = "That building does not need repairs.";
+				player.message = "That object does not need repairs.";
 			}
 		}
 		RpcUpdateUI ();

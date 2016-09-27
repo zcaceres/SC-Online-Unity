@@ -208,7 +208,7 @@ public class Building : DamageableObject {
 	/// <summary>
 	/// Repair the building to 100 condition.
 	/// </summary>
-	public void repair() {
+	public override void repair() {
 
 		if (isServer) {
 			if (ruin) {
@@ -221,7 +221,7 @@ public class Building : DamageableObject {
 		}
 	}
 
-	public void repairByPoint(int numPoints) {
+	public override void repairByPoint(int numPoints) {
 		if (isServer && !ruin) {
 			condition += numPoints;
 			baseCondition += numPoints;
@@ -407,7 +407,7 @@ public class Building : DamageableObject {
 	/// Gets the cost to restore the building to 100 condition
 	/// </summary>
 	/// <returns>The repair cost.</returns>
-	public int getRepairCost() {
+	public override int getRepairCost() {
 		int repairCost;
 		if (ruin) {
 			repairCost = baseCost;
@@ -421,7 +421,7 @@ public class Building : DamageableObject {
 	/// Gets the cost of repairing a single point of condition.
 	/// </summary>
 	/// <returns>The point repair cost.</returns>
-	public int getPointRepairCost() {
+	public override int getPointRepairCost() {
 		int repairCost;
 		if (ruin) {
 			repairCost = baseCost;
@@ -430,6 +430,7 @@ public class Building : DamageableObject {
 		}
 		return repairCost;
 	}
+
 	/// <summary>
 	/// Turns the building to a ruin--used when condition is 0.
 	/// </summary>

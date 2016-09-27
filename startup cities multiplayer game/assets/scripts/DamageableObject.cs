@@ -37,7 +37,7 @@ public class DamageableObject : OwnableObject {
 			if (fireTrans.Length < 1) {
 				GameObject tmp = (GameObject)Instantiate (fireObj, new Vector3 (gameObject.transform.position.x, getHighest(), gameObject.transform.position.z), fireObj.transform.rotation);
 				NetworkServer.Spawn (tmp);
-				Debug.LogError ("Building is on fire but has no transforms");
+				Debug.LogError ("Object is on fire but has no transforms");
 			}
 			foreach (FireTransform ft in fireTrans) {
 				GameObject tmp = (GameObject)Instantiate (fireObj, ft.transform.position, fireObj.transform.rotation);
@@ -92,6 +92,48 @@ public class DamageableObject : OwnableObject {
 				baseCondition -= damage;
 				condition -= damage;
 			}
+		}
+	}
+
+	/// <summary>
+	/// Gets the cost to restore the building to 100 condition
+	/// </summary>
+	/// <returns>The repair cost.</returns>
+	public virtual int getRepairCost() {
+		int repairCost;
+		repairCost = (100 - baseCondition) * (baseCost / 100);
+		return repairCost;
+	}
+
+	/// <summary>
+	/// Gets the cost of repairing a single point of condition.
+	/// </summary>
+	/// <returns>The point repair cost.</returns>
+	public virtual int getPointRepairCost() {
+		int repairCost;
+		repairCost = baseCost / 100;
+		return repairCost;
+	}
+
+	/// <summary>
+	/// Repair the building to 100 condition.
+	/// </summary>
+	public virtual void repair() {
+
+		if (isServer) {
+			condition = 100;
+			baseCondition = 100;
+		}
+	}
+
+	/// <summary>
+	/// Repairs the by point.
+	/// </summary>
+	/// <param name="numPoints">Number points.</param>
+	public virtual void repairByPoint(int numPoints) {
+		if (isServer) {
+			condition += numPoints;
+			baseCondition += numPoints;
 		}
 	}
 }
