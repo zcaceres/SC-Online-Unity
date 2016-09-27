@@ -90,7 +90,7 @@ public class CityHall : Business {
 		if (isServer) {
 			occupied = true;
 			if (condition > 25) {
-				damageBuilding (1); 
+				damageObject (1); 
 			}
 			if (safety < 100) {
 				damageBuildingSafety(-1); // recover 1 safety each month
@@ -104,7 +104,7 @@ public class CityHall : Business {
 					endFire ();
 				} else {
 					spreadFire ();
-					damageBuilding (50);
+					damageObject (50);
 				}
 			}
 

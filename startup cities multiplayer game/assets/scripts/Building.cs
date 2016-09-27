@@ -7,7 +7,7 @@ using UnityEngine.Networking;
 [RequireComponent(typeof(BuildingModifier))]
 [RequireComponent(typeof(Tenant))]
 
-public class Building : OwnableObject {
+public class Building : DamageableObject {
 	const int ATTRACTIVENESS_EFFECT = 0;
 	public int type;
 	const int TYPENUM = 0;
@@ -18,8 +18,6 @@ public class Building : OwnableObject {
 	public string typeName;
 	[SyncVar]
 	public int safety;
-	[SyncVar]
-	public int condition;
 	[SyncVar]
 	public int rent;
 	[SyncVar]
@@ -41,21 +39,16 @@ public class Building : OwnableObject {
 
 	public Color color;           // The original building color
 	public Collider c;            // Building's collider
-	private FireTransform[] fireTrans; //The number of fire transforms connected to the building
 
 	public BuildingModifier modManager; // The modmanager attached to the building
 	public Tenant tenant;
 
-	[SyncVar]
-	public bool fire;             // Is the building on fire?
 	[SyncVar]
 	public bool ruin;             // Ruined buildings provide no rent and cannot have occupants
 	[SyncVar]
 	public bool upgrade;          // Upgrade buildings don't start with maluses 
 	[SyncVar]
 	public int lowestSkill;       // lowest skilled residents who will live at the building. 
-	[SyncVar]
-	public int baseCondition;
 	[SyncVar]
 	protected int baseSafety;
 	[SyncVar]
@@ -149,7 +142,7 @@ public class Building : OwnableObject {
 	public virtual void advanceMonth() {
 		if (isServer) {
 			if (condition > 25) {
-				damageBuilding (1); 
+				damageObject (1); 
 			}
 			if (safety < 100) {
 				damageBuildingSafety(-1); // recover 1 safety each month
@@ -158,7 +151,7 @@ public class Building : OwnableObject {
 				notForSale = false;
 			} else if (occupied) {                         // occupied, apply effects from the tenant
 				tenant.clearButtons();
-				damageBuilding(tenant.condition());
+				damageObject(tenant.condition());
 				paying = tenant.willPay ();
 
 				if (!paying) {
@@ -173,7 +166,7 @@ public class Building : OwnableObject {
 				}
 				else {
 					spreadFire ();
-					damageBuilding (50);
+					damageObject (50);
 				}
 			}
 				
@@ -211,21 +204,6 @@ public class Building : OwnableObject {
 			RpcMakeRuin ();
 		}
 	}
-	/// <summary>
-	/// Spreads fire to neighbors.
-	/// </summary>
-	protected void spreadFire() {
-		Collider[] colliding = Physics.OverlapSphere(c.transform.position, 5);
-		foreach (Collider hit in colliding) {
-			Building b = hit.GetComponent<Building> ();
-
-			if (b != null && !b.fire) {
-				if (Random.value < .1f) {
-					b.setFire ();
-				}
-			}
-		}
-	}
 
 	/// <summary>
 	/// Repair the building to 100 condition.
@@ -249,10 +227,11 @@ public class Building : OwnableObject {
 			baseCondition += numPoints;
 		}
 	}
+
 	/// <summary>
 	/// Sets the building on fire.
 	/// </summary>
-	public virtual void setFire() {
+	public override void setFire() {
 		if (isServer) {
 			if (validOwner()) {
 				RpcMessageOwner( buildingName + " is on fire!");
@@ -273,15 +252,6 @@ public class Building : OwnableObject {
 				fk.setBuilding (gameObject.GetComponent<Building> ());
 				NetworkServer.Spawn (tmp);
 			}
-		}
-	}
-
-	/// <summary>
-	/// Ends the fire.
-	/// </summary>
-	public void endFire() {
-		if (isServer) {
-			fire = false;
 		}
 	}
 
@@ -434,28 +404,6 @@ public class Building : OwnableObject {
 	}
 
 	/// <summary>
-	/// Returns the highest point of the building's mesh.
-	/// </summary>
-	/// <returns>Highest point.</returns>
-	public float getHighest()
-	{
-		if ((c != null) && (c.gameObject.GetComponent<MeshCollider>() != null) && (c.gameObject.GetComponent<MeshCollider>().sharedMesh != null)) {
-			Vector3[] verts = c.gameObject.GetComponent<MeshCollider> ().sharedMesh.vertices;
-			Vector3 topVertex = new Vector3 (0, float.NegativeInfinity, 0);
-			for (int i = 0; i < verts.Length; i++) {
-				Vector3 vert = transform.TransformPoint (verts [i]);
-				if (vert.y > topVertex.y) {
-					topVertex = vert;
-				}
-			}
-
-			return topVertex.y;
-		} else {
-			return 0;
-		}
-	}
-
-	/// <summary>
 	/// Gets the cost to restore the building to 100 condition
 	/// </summary>
 	/// <returns>The repair cost.</returns>
@@ -522,25 +470,6 @@ public class Building : OwnableObject {
 	public void RpcMessageOwner(string s) {
 		if (validOwner()) {
 			getPlayer(owner).showMessage(s);
-		}
-	}
-
-	/// <summary>
-	/// Damages the building. Decrements base condition & condition--base condition manages the condition without considering modifiers
-	/// </summary>
-	/// <param name="damage">Damage.</param>
-	protected void damageBuilding(int damage) {
-		if (isServer) {
-			if ((baseCondition - damage) > 100) {      // don't go above 100
-				baseCondition = 100;
-				condition = 100;
-			} else if ((baseCondition - damage) < 0) { // don't go below 0
-				baseCondition = 0;
-				condition = 0;
-			} else {
-				baseCondition -= damage;
-				condition -= damage;
-			}
 		}
 	}
 
@@ -619,25 +548,9 @@ public class Building : OwnableObject {
 	}
 
 	/// <summary>
-	/// Sets the owner and removes the building from the owned list of its previous owner.
-	/// </summary>
-	/// <param name="newOwner">New owner's id.</param>
-	public virtual void setOwner(NetworkInstanceId newOwner) {
-		if (newOwner == owner)
-			return;
-		Player oldOwner = getPlayerOwner ();
-		if (oldOwner != null) {
-			oldOwner.owned.removeId (this.netId);
-		}
-		Player p = getLocalInstance (newOwner).GetComponent<Player> ();
-		p.owned.addId (this.netId);
-		owner = newOwner;
-	}
-
-	/// <summary>
 	/// City reclaims the building and pays the player the base cost
 	/// </summary>
-	public virtual void repo() {
+	public override void repo() {
 		if (validOwner ()) {
 			Player p = getPlayerOwner ();
 			p.budget += this.appraise ();
@@ -659,7 +572,7 @@ public class Building : OwnableObject {
 	/// <param name="explosion">Explosion prefab</param>
 	/// <param name="delay">Delay to wait before explosion</param>
 	public void earthQuakeDamage (float prob, GameObject explosion, float delay) {
-		damageBuilding (30);
+		damageObject (30);
 		if (prob <= 3.0f) {
 			StartCoroutine (earthQuakeDelay(delay, explosion));
 		}
@@ -689,7 +602,7 @@ public class Building : OwnableObject {
 	private void earthQuakeExplosion (GameObject explosion) {
 		GameObject tmp = (GameObject)Instantiate (explosion, gameObject.transform.position, gameObject.transform.rotation);
 		NetworkServer.Spawn (tmp);
-		damageBuilding (15);
+		damageObject (15);
 		setFire ();
 	}
 }

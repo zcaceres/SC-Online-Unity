@@ -174,10 +174,12 @@ public class ConstructionController : NetworkBehaviour {
 
 
 		// deduct some amount from the player's budget
-		Building b = tmp.GetComponent<Building> ();
+		OwnableObject b = tmp.GetComponent<OwnableObject> ();
 
 		if (b != null) {
-			b.upgrade = true;     // it should not spawn with bad modifiers
+			if (b is Building) {
+				b.GetComponent<Building>().upgrade = true;     // it should not spawn with bad modifiers
+			}
 			b.lot = lotId;
 			lot.addObject (b.netId);
 
@@ -193,7 +195,7 @@ public class ConstructionController : NetworkBehaviour {
 	[Command]
 	public void CmdMove (NetworkInstanceId buildingId, NetworkInstanceId player, Vector3 pos, Quaternion rotation) {
 		Player p = getLocalInstance (player).GetComponent<Player> ();
-		Building b = getLocalInstance (buildingId).GetComponent<Building> ();
+		OwnableObject b = getLocalInstance (buildingId).GetComponent<OwnableObject> ();
 
 		if ((p != null) && b.ownedBy(p.netId)) {
 			b.transform.position = pos;
@@ -204,7 +206,7 @@ public class ConstructionController : NetworkBehaviour {
 	[Command]
 	public void CmdDemolish (NetworkInstanceId buildingId, NetworkInstanceId player) {
 		Player p = getLocalInstance (player).GetComponent<Player> ();
-		Building b = getLocalInstance (buildingId).GetComponent<Building> ();
+		OwnableObject b = getLocalInstance (buildingId).GetComponent<OwnableObject> ();
 		Lot l = b.getLot ();
 
 		if ((p != null) && b.ownedBy(p)) {
@@ -214,8 +216,11 @@ public class ConstructionController : NetworkBehaviour {
 			if (l != null) {
 				l.removeObject (b.netId);
 			}
-			if (b.isOccupied ()) {
-				b.tenant.evict ();
+			if (b is Building) {
+				Building tmp = b.GetComponent<Building> ();
+				if (tmp.isOccupied ()) {
+					tmp.tenant.evict ();
+				}
 			}
 			Destroy (b.gameObject);
 		}
@@ -242,9 +247,9 @@ public class ConstructionController : NetworkBehaviour {
 	/// </summary>
 	/// <returns><c>true</c>, if player is able to move the building, <c>false</c> otherwise.</returns>
 	/// <param name="b">The building.</param>
-	public bool canMove (Building b) {
+	public bool canMove (OwnableObject b) {
 		bool canMove = false;
-		if ((b.lot != null) && getLocalInstance (b.lot).GetComponent<Building> ().ownedBy(player)) {
+		if ((b.lot != null) && getLocalInstance (b.lot).GetComponent<OwnableObject> ().ownedBy(player)) {
 			canMove = true;
 		}
 		return canMove;
@@ -397,7 +402,7 @@ public class ConstructionController : NetworkBehaviour {
 	}
 
 	public void moveMode (GameObject target) {
-		Building building = target.GetComponent<Building> ();
+		OwnableObject building = target.GetComponent<OwnableObject> ();
 		if (targetBuilding == -1) {
 			int tmp = findBuildingCategory (target);
 			if (tmp > 0) {
@@ -498,10 +503,10 @@ public class ConstructionController : NetworkBehaviour {
 	public GameObject confirmDestroy(GameObject target) {
 		confirm = (GameObject)Instantiate (Resources.Load ("Confirm"));
 		confirm.transform.SetParent (GameObject.Find ("Canvas").transform, false);
-		confirm.transform.Find ("ConfirmMessage").GetComponent<Text> ().text = "Demolish this building? It will cost $" + getDestroyCost(target.GetComponent<Building>()) + ".";
+		confirm.transform.Find ("ConfirmMessage").GetComponent<Text> ().text = "Demolish this building? It will cost $" + getDestroyCost(target.GetComponent<OwnableObject>()) + ".";
 		confirm.transform.Find ("Ok").GetComponent<Button> ().onClick.AddListener (delegate {
 			NetworkInstanceId tmp = target.GetComponent<NetworkIdentity>().netId;
-			player.targetBuilding = null;
+			player.targetObject = null;
 			player.updateUI();
 			CmdDemolish (tmp, player.netId);
 			Destroy (toBuild);
@@ -562,7 +567,7 @@ public class ConstructionController : NetworkBehaviour {
 		return new Vector3(GetSnapValue(originalPosition.x, snap), GetSnapValue(originalPosition.y, snap), GetSnapValue(originalPosition.z, snap));
 	}
 
-	private int getDestroyCost(Building b) {
+	private int getDestroyCost(OwnableObject b) {
 		int price = b.getBaseCost () / 4;
 		return price;
 	}

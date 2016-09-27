@@ -108,6 +108,22 @@ public class OwnableObject : NetworkBehaviour {
 	}
 
 	/// <summary>
+	/// Sets the owner and removes the building from the owned list of its previous owner.
+	/// </summary>
+	/// <param name="newOwner">New owner's id.</param>
+	public virtual void setOwner(NetworkInstanceId newOwner) {
+		if (newOwner == owner)
+			return;
+		Player oldOwner = getPlayerOwner ();
+		if (oldOwner != null) {
+			oldOwner.owned.removeId (this.netId);
+		}
+		Player p = getLocalInstance (newOwner).GetComponent<Player> ();
+		p.owned.addId (this.netId);
+		owner = newOwner;
+	}
+
+	/// <summary>
 	/// Messages the owner.
 	/// </summary>
 	/// <param name="s">Message.</param>
@@ -278,5 +294,41 @@ public class OwnableObject : NetworkBehaviour {
 
 	public virtual int getBaseCost() {
 		return baseCost;
+	}
+
+	/// <summary>
+	/// Returns the highest point of the building's mesh.
+	/// </summary>
+	/// <returns>Highest point.</returns>
+	public float getHighest()
+	{
+		Collider c = gameObject.GetComponent<Collider> ();
+		if ((c != null) && (c.gameObject.GetComponent<MeshCollider>() != null) && (c.gameObject.GetComponent<MeshCollider>().sharedMesh != null)) {
+			Vector3[] verts = c.gameObject.GetComponent<MeshCollider> ().sharedMesh.vertices;
+			Vector3 topVertex = new Vector3 (0, float.NegativeInfinity, 0);
+			for (int i = 0; i < verts.Length; i++) {
+				Vector3 vert = transform.TransformPoint (verts [i]);
+				if (vert.y > topVertex.y) {
+					topVertex = vert;
+				}
+			}
+
+			return topVertex.y;
+		} else {
+			return 0;
+		}
+	}
+
+	/// <summary>
+	/// City reclaims the building and pays the player the base cost
+	/// </summary>
+	public virtual void repo() {
+		if (validOwner ()) {
+			Player p = getPlayerOwner ();
+			p.budget += this.appraise ();
+			p.owned.removeId (this.netId);
+			owner = NetworkInstanceId.Invalid;
+			notForSale = false;
+		}
 	}
 }

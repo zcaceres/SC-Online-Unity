@@ -26,7 +26,7 @@ public class Lot : Building {
 	protected int lotAttractiveness;
 	[SyncVar]
 	protected NetworkInstanceId neighborhood;
-	protected List<Building> lotBuildings;
+	protected List<OwnableObject> lotObjects;
 	public List<int> types = new List<int> ();              // permitted types, use canBuild() for comparisons, not this
 	protected SyncListInt allowedTypes = new SyncListInt(); // permitted types for the lot, null is all
 	public SyncListNetId lotItems = new SyncListNetId();
@@ -65,7 +65,7 @@ public class Lot : Building {
 			onAuction = false;
 			paying = false;
 			buildingNum++;
-			if (lotBuildings == null) { // do this only if items weren't added before Start() was run
+			if (lotObjects == null) { // do this only if items weren't added before Start() was run
 				lotSetup (); 
 			} else {
 				cost = calcPrice ();
@@ -75,7 +75,7 @@ public class Lot : Building {
 	}
 
 	private void lotSetup() {
-		lotBuildings = new List<Building> ();
+		lotObjects = new List<OwnableObject> ();
 		lotAttractiveness = 100;
 	}
 
@@ -100,7 +100,7 @@ public class Lot : Building {
 	public int calcPrice() {
 		int price = 600; // base cost of the lot
 		foreach (NetId id in lotItems) { // add cost from each building
-			Building b = getLocalInstance (id.id).GetComponent<Building> ();
+			OwnableObject b = getLocalInstance (id.id).GetComponent<OwnableObject> ();
 			price += b.appraise();
 		}
 		return price;
@@ -205,25 +205,22 @@ public class Lot : Building {
 
 	public void addObject(NetworkInstanceId id) {
 		lotItems.addId (id);
-		//calcAttractiveness ();
-		Building tmp = getLocalInstance (id).GetComponent<Building> ();
-		if (lotBuildings == null) {
+		OwnableObject tmp = getLocalInstance (id).GetComponent<OwnableObject> ();
+		if (lotObjects == null) {
 			lotSetup ();
 		}
-		lotBuildings.Add (tmp);
+		lotObjects.Add (tmp);
 		if (!validOwner ()) {
 			cost = calcPrice ();
 		}
 		lotAttractiveness += tmp.getAttractEffect();
-		//updateNeighborhoodValue ();
 	}
 
 	public void removeObject(NetworkInstanceId id) {
 		lotItems.removeId(id);
-		Building tmp = getLocalInstance (id).GetComponent<Building> ();
+		OwnableObject tmp = getLocalInstance (id).GetComponent<OwnableObject> ();
 		lotAttractiveness -= tmp.getAttractEffect();
-		lotBuildings.Remove (tmp);
-		//updateNeighborhoodValue ();
+		lotObjects.Remove (tmp);
 	}
 
 	/// <summary>
@@ -237,15 +234,26 @@ public class Lot : Building {
 		}
 	}
 
-	public List<Building> getBuildings() {
-		List<Building> buildings;
+	public List<OwnableObject> getObjects() {
+		List<OwnableObject> buildings;
 		if (isServer) {
-			buildings = lotBuildings;
+			buildings = lotObjects;
 		} else {
-			buildings = new List<Building> ();
+			buildings = new List<OwnableObject> ();
 			foreach (NetId n in lotItems) {
-				Building tmp = getLocalInstance (n.id).GetComponent<Building> ();
+				OwnableObject tmp = getLocalInstance (n.id).GetComponent<OwnableObject> ();
 				buildings.Add (tmp);
+			}
+		}
+		return buildings;
+	}
+
+	public List<Building> getBuildings() {
+		List<Building> buildings = new List<Building> ();
+		foreach (NetId n in lotItems) {
+			Building b = getLocalInstance (n.id).GetComponent<Building> ();
+			if (b != null) {
+				buildings.Add (b);
 			}
 		}
 		return buildings;
@@ -264,7 +272,7 @@ public class Lot : Building {
 			owner = newOwner;
 			foreach (NetId netId in lotItems) {
 				NetworkInstanceId id = netId.id;
-				Building b = getLocalInstance (id).GetComponent<Building> ();
+				OwnableObject b = getLocalInstance (id).GetComponent<OwnableObject> ();
 				Player tmp = b.getPlayerOwner ();
 				if (tmp != null) {
 					b.getPlayerOwner ().owned.removeId (id);
@@ -337,7 +345,7 @@ public class Lot : Building {
 	/// </summary>
 	public override void repo () {
 		if (validOwner ()) {
-			foreach (Building b in lotBuildings) {
+			foreach (OwnableObject b in lotObjects) {
 				b.repo ();
 			}
 			Player p = getPlayerOwner ();

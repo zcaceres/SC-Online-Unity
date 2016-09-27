@@ -121,7 +121,7 @@ public class Junkyard : Building {
 	public override void advanceMonth () {
 		if (isServer) {
 			if (condition > 25) {
-				damageBuilding (1); 
+				damageObject (1); 
 			}
 			if (safety < 100) {
 				damageBuildingSafety (-1); // recover 1 safety each month
@@ -134,7 +134,7 @@ public class Junkyard : Building {
 				notForSale = false;
 			} else if (occupied) {                         // occupied, apply effects from the tenant
 				tenant.clearButtons ();
-				damageBuilding (tenant.condition ());
+				damageObject (tenant.condition ());
 				tenant.applyEffects ();
 				paying = tenant.willPay ();
 
@@ -149,7 +149,7 @@ public class Junkyard : Building {
 					endFire ();
 				} else {
 					spreadFire ();
-					damageBuilding (50);
+					damageObject (50);
 				}
 			}
 
