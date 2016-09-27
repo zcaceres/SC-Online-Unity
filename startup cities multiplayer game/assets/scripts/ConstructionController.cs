@@ -128,7 +128,7 @@ public class ConstructionController : NetworkBehaviour {
 			s += "\n" + "No market data for this building.";
 		}
 		Text t = tooltip.transform.Find ("message").GetComponent<Text> ();
-		t.alignment = TextAnchor.UpperRight;
+		t.alignment = TextAnchor.UpperLeft;
 		t.text = s;
 	}
 
@@ -303,7 +303,7 @@ public class ConstructionController : NetworkBehaviour {
 				Lot l = hit.collider.gameObject.GetComponent<Lot> ();
 				if (lotBoundary.isConstructable) {
 					if ((l != null)) {
-						if (l.ownedBy (this.netId)) {
+						if (l.ownedBy (this.netId) && l.canBuild(spawnables[currentCategory][index].buildingType)) {
 							readyToConstruct = true;
 							lotBoundary.turnGreen ();
 						}
@@ -380,6 +380,9 @@ public class ConstructionController : NetworkBehaviour {
 			} else {
 				currentCategory--;
 				currentCategory = currentCategory % spawnables.Length;
+				if (currentCategory < 0) {
+					currentCategory = (spawnables.Count () - 1);
+				}
 				setCategoryTooltip ();
 			}
 		} else if (Input.GetKeyDown (KeyCode.UpArrow)) {
@@ -396,7 +399,11 @@ public class ConstructionController : NetworkBehaviour {
 	public void moveMode (GameObject target) {
 		Building building = target.GetComponent<Building> ();
 		if (targetBuilding == -1) {
-			targetBuilding = findBuildingSpawnable (target); // index of placement prefab
+			int tmp = findBuildingCategory (target);
+			if (tmp > 0) {
+				currentCategory = tmp;
+			}
+			targetBuilding = findBuildingSpawnable (target, currentCategory); // index of placement prefab
 		}
 		if (confirm != null) { // don't move the object around while the player is dealing with the confirmation box
 			if (Input.GetKeyDown (KeyCode.E) || Input.GetKeyDown (KeyCode.Return)) {
@@ -511,13 +518,28 @@ public class ConstructionController : NetworkBehaviour {
 		return confirm;
 	}
 
-	public int findBuildingSpawnable (GameObject b) {
+	public int findBuildingCategory(GameObject b) {
 		int index = -1;
 		if (b != null) {
-			for (int i = 0; i < spawnables [currentCategory].Count; i++) {
-				if (b.name.Contains (spawnables  [currentCategory][i].spawnable.name)) {
+			for (int i = 0; i < spawnables.Count () && index == -1; i++) {
+				foreach (Spawnable s in spawnables[i]) {
+					if (b.name.Contains (s.spawnable.name)) {
+						index = i;
+						break;
+					}
+				}
+			}
+		}
+		return index;
+	}
+
+	public int findBuildingSpawnable (GameObject b, int category) {
+		int index = -1;
+		if (b != null && category != -1) {
+			for (int i = 0; i < spawnables [category].Count; i++) {
+				if (b.name.Contains (spawnables  [category][i].spawnable.name)) {
 					index = i;
-					i = spawnables [currentCategory].Count;
+					i = spawnables [category].Count;
 				}
 			}
 		}

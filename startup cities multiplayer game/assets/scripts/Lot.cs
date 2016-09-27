@@ -27,6 +27,8 @@ public class Lot : Building {
 	[SyncVar]
 	protected NetworkInstanceId neighborhood;
 	protected List<Building> lotBuildings;
+	public List<int> types = new List<int> ();              // permitted types, use canBuild() for comparisons, not this
+	protected SyncListInt allowedTypes = new SyncListInt(); // permitted types for the lot, null is all
 	public SyncListNetId lotItems = new SyncListNetId();
 	private GameObject lotSizeMarker;
 
@@ -39,6 +41,7 @@ public class Lot : Building {
 		//Gets LotSizeMarker, which shows size as overlay. Toggles it off to start.
 		lotSizeMarker = gameObject.transform.Find ("LotSizeMarker").gameObject;
 		lotSizeMarker.SetActive (false);
+		setAllowedTypes ();
 
 		if (isServer) {
 			buildingName = "Lot " + lotNum.ToString();
@@ -352,6 +355,25 @@ public class Lot : Building {
 		Neighborhood n = getNeighborhood ();
 		if (n != null) {
 			n.calcPrice ();
+		}
+	}
+
+	public bool canBuild(int type) {
+		bool b = false;
+		if (allowedTypes.Count == 0) {
+			b = true;
+		} else if (allowedTypes.Contains (type)) {
+			b = true;
+		}
+		return b;
+	}
+
+	/// <summary>
+	/// Sets the allowed types in the synclist. 
+	/// </summary>
+	private void setAllowedTypes() {
+		foreach (int i in types) {
+			allowedTypes.Add (i);
 		}
 	}
 }

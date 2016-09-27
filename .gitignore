@@ -28,3 +28,5 @@ sysinfo.txt
 # Builds
 *.apk
 *.unitypackage
+startup cities multiplayer game/ProjectSettings/ProjectSettings.asset
+startup cities multiplayer game/ProjectSettings/ProjectVersion.txt
