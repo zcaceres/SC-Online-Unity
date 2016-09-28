@@ -495,11 +495,11 @@ public class Player : NetworkBehaviour {
 		obj = getLocalInstance (buildingId);
 		p = getLocalInstance (playerId);
 
-		OwnableObject b = obj.GetComponent<Building> ();
-		Building building = b.GetComponent<Building> ();
+		OwnableObject b = obj.GetComponent<OwnableObject> ();
 		Player player = p.GetComponent<Player> ();
 
 		if (b != null) {
+			Building building = b.GetComponent<Building> ();
 			if ((b.cost <= player.budget) && !b.notForSale) {
 				if (b.validLot ()) {
 					player.message = "You cannot buy that without owning its lot.";
