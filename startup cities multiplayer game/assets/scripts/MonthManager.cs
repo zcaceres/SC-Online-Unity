@@ -242,18 +242,21 @@ public class MonthManager : NetworkBehaviour {
 				b.earthQuakeDamage (probability, explosionObj, delay);
 			}
 		}
+
 	}
 
 	[ClientRpc]
 	private void RpcEarthQuake () {
+		Camera[] cameras = GameObject.FindObjectsOfType<Camera> ();
 		Player p = GameObject.FindObjectOfType<Player> ().localPlayer;
 		AudioClip quakeLoop = (AudioClip) Resources.Load ("Sounds/Earthquake/earthQuakeSound");
-		GameObject cs = p.gameObject.GetComponentInChildren<EZCameraShake.CameraShaker> ().gameObject;
+		foreach (Camera c in cameras) {
+			c.GetComponentInChildren<EZCameraShake.CameraShaker> ().ShakeOnce (10f, 10f, 15f, 15f);
+		}
 		p.message = "Uh oh...";
 		AudioSource pa = p.GetComponentInChildren<AudioSource> ();
 		pa.clip = quakeLoop;
 		pa.Play ();
-		cs.GetComponent<EZCameraShake.CameraShaker> ().ShakeOnce (10f, 10f, 15f, 15f);
 	}
 
 

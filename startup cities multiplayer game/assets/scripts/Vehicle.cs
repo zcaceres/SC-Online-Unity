@@ -3,12 +3,17 @@ using System.Collections;
 using System.Linq;
 using UnityEngine.Networking;
 
-public class Vehicle : NetworkBehaviour {
+public class Vehicle : NetworkBehaviour
+{
 	public bool vehicleOccupied;
 	protected AudioSource horn;
 	public int type;
 	[SyncVar]
 	public int cost;
+	[SyncVar]
+	public int baseCondition;
+	[SyncVar]
+	protected int baseCost;
 	[SyncVar]
 	public int upkeep;
 	[SyncVar]
@@ -23,13 +28,20 @@ public class Vehicle : NetworkBehaviour {
 	public string typeName;
 	[SyncVar]
 	protected NetworkInstanceId owner;
+	[SyncVar]
+	public int condition;
+	[SyncVar]
+	public bool ruin;
 	const int TYPENUM = 27;
 	public bool eligibleToExit;
 
-	public Color color;           // The original vehicle color
-	public Collider c;            // vehicle's collider
+	public Color color;
+	// The original vehicle color
+	public Collider c;
+	// vehicle's collider
 
-	protected FireTransform[] fireTrans; //The number of fire transforms connected to the building
+	protected FireTransform[] fireTrans;
+	//The number of fire transforms connected to the building
 
 	private static string[] rSmallFirst = {
 		"Swag",
@@ -40,10 +52,11 @@ public class Vehicle : NetworkBehaviour {
 	};
 
 	//Names for Vehicles
-	private static string[] rSmallLast = { "Wagon", "Mobile", "Car"};
+	private static string[] rSmallLast = { "Wagon", "Mobile", "Car" };
 
 
-	void Start () {
+	void Start ()
+	{
 		AudioSource[] carSounds = GetComponents<AudioSource> ();
 		horn = carSounds [1];
 		vehicleOccupied = false;
@@ -55,6 +68,10 @@ public class Vehicle : NetworkBehaviour {
 		if (isServer) {
 			cost = 4000;
 			fire = false;
+			baseCost = cost;
+			baseCondition = 100;
+			condition = 100;
+			ruin = false;
 			upkeep = 0; // ADD UPKEEP HERE
 			typeName = "Vehicle";
 			vehicleName = nameGen ();
@@ -62,7 +79,8 @@ public class Vehicle : NetworkBehaviour {
 	}
 
 
-	void Update() {
+	void Update ()
+	{
 		if (vehicleOccupied) {
 			if (Input.GetKeyDown (KeyCode.Mouse0) && !horn.isPlaying) {
 				horn.Play ();
@@ -74,31 +92,62 @@ public class Vehicle : NetworkBehaviour {
 				Player p = gameObject.GetComponentInChildren<Player> ();
 				ExitVehicle (p);
 			}
+			CheckCondition ();
+		}
+	}
+
+	protected virtual void CheckCondition ()
+	{
+		if (condition <= 0) {
+			AudioSource[] carSounds = GetComponents<AudioSource> ();
+			foreach (AudioSource aSources in carSounds) {
+				aSources.enabled = false;
+			}
+			Player p = gameObject.GetComponentInChildren<Player> ();
+			condition = 0;
+			ruin = true;
+			UnityStandardAssets.Vehicles.Car.CarUserControl carU = GetComponent<UnityStandardAssets.Vehicles.Car.CarUserControl> ();
+			UnityStandardAssets.Vehicles.Car.CarController carC = GetComponent<UnityStandardAssets.Vehicles.Car.CarController> ();
+			carC.enabled = false;
+			carU.enabled = false;
+		} else {
+			ruin = false;
 		}
 	}
 		
 
 	//Vehicle Initialization here
-	public void StartVehicle (Player p) {
+	public void StartVehicle (Player p)
+	{
+		NetworkInstanceId netId = p.netId;
 		HidePlayer (p, true);
+		if (isServer) {
+			RpcHidePlayer (netId, true);
+		}
 		EnableCar (true);
 		StartCoroutine ("DelayToExit");
 	}
 
 
-	public void ExitVehicle (Player p) {
+	public void ExitVehicle (Player p)
+	{
+		NetworkInstanceId netId = p.netId;
 		HidePlayer (p, false);
+		if (isServer) {
+			RpcHidePlayer (netId, false);
+		}
 		EnableCar (false);
 		StartCoroutine ("DelayToEnter");
 	}
 
 
-	protected virtual void EnableCar (bool active) {
+	protected virtual void EnableCar (bool active)
+	{
 		AudioSource[] carSounds = GetComponents<AudioSource> ();
 		foreach (AudioSource aSources in carSounds) {
 			aSources.enabled = active;
 		}
-		UnityStandardAssets.Vehicles.Car.CarAudio carA = GetComponent<UnityStandardAssets.Vehicles.Car.CarAudio>();
+		UnityStandardAssets.Vehicles.Car.CarAudio carA = GetComponent<UnityStandardAssets.Vehicles.Car.CarAudio> ();
 		carA.enabled = active;
 		UnityStandardAssets.Vehicles.Car.CarUserControl carU = GetComponent<UnityStandardAssets.Vehicles.Car.CarUserControl> ();
 		UnityStandardAssets.Vehicles.Car.CarController carC = GetComponent<UnityStandardAssets.Vehicles.Car.CarController> ();
@@ -115,15 +164,47 @@ public class Vehicle : NetworkBehaviour {
 
 	private void HidePlayer (Player play, bool active)
 	{
+		if (play.isLocalPlayer) {
+			Renderer[] rends = play.GetComponentsInChildren<Renderer> ();
+			if (active) {
+				play.GetComponent<Rigidbody> ().isKinematic = true;
+				play.GetComponent<CapsuleCollider> ().enabled = false;
+				foreach (Renderer r in rends) {
+					r.enabled = false;
+				}
+				play.gameObject.transform.Find ("MainCamera").GetComponent<Camera> ().enabled = false;
+				play.gameObject.transform.SetParent (this.gameObject.transform);
+				vehicleOccupied = true;
+				play.message = "Press F to leave the vehicle.";
+			} else {
+				play.GetComponent<Rigidbody> ().isKinematic = false;
+				play.GetComponent<Collider> ().enabled = true;
+				foreach (Renderer r in rends) {
+					r.enabled = true;
+				}
+				play.gameObject.transform.Find ("MainCamera").GetComponent<Camera> ().enabled = true;
+				play.gameObject.transform.SetParent (null);
+				vehicleOccupied = false;
+			}
+		}
+	}
+
+
+	[ClientRpc]
+	private void RpcHidePlayer (NetworkInstanceId netId, bool active)
+	{
+		Player play = getPlayer (netId);
+		Debug.Log ("Player check in RpcHidePlayer: " + play.name);
 		Renderer[] rends = play.GetComponentsInChildren<Renderer> ();
+		Debug.Log ("Renderer check should be more than 1: " + rends.Length);
 		if (active) {
 			play.GetComponent<Rigidbody> ().isKinematic = true;
 			play.GetComponent<CapsuleCollider> ().enabled = false;
 			foreach (Renderer r in rends) {
 				r.enabled = false;
 			}
-			play.gameObject.transform.Find("MainCamera").GetComponent<Camera>().enabled = false;
-			play.gameObject.transform.SetParent(this.gameObject.transform);
+			play.gameObject.transform.Find ("MainCamera").GetComponent<Camera> ().enabled = false;
+			play.gameObject.transform.SetParent (this.gameObject.transform);
 			vehicleOccupied = true;
 			play.message = "Press F to leave the vehicle.";
 		} else {
@@ -132,8 +213,8 @@ public class Vehicle : NetworkBehaviour {
 			foreach (Renderer r in rends) {
 				r.enabled = true;
 			}
-			play.gameObject.transform.Find("MainCamera").GetComponent<Camera>().enabled = true;
-			play.gameObject.transform.SetParent(null);
+			play.gameObject.transform.Find ("MainCamera").GetComponent<Camera> ().enabled = true;
+			play.gameObject.transform.SetParent (null);
 			vehicleOccupied = false;
 		}
 	}
@@ -145,7 +226,8 @@ public class Vehicle : NetworkBehaviour {
 	/// Generates a name for the building from the residential names file.
 	/// </summary>
 	/// <returns>The gen.</returns>
-	private string nameGen() {
+	private string nameGen ()
+	{
 		string name;
 
 		name = rSmallFirst [(int)Random.Range (0, rSmallFirst.Length)] + " " + rSmallLast [(int)Random.Range (0, rSmallLast.Length)];
@@ -154,17 +236,24 @@ public class Vehicle : NetworkBehaviour {
 
 	//advance month function here?
 
-	public virtual int getCost() {
+	public virtual int getCost ()
+	{
 		return cost;
 	}
 
-	private IEnumerator DelayToExit() {
-		yield return new WaitForSeconds(2f);
+
+
+	private IEnumerator DelayToExit ()
+	{
+		yield return new WaitForSeconds (2f);
 		eligibleToExit = true;
 	}
 
-	private IEnumerator DelayToEnter() {
-		yield return new WaitForSeconds(2f);
+
+
+	private IEnumerator DelayToEnter ()
+	{
+		yield return new WaitForSeconds (2f);
 		eligibleToExit = false;
 	}
 
@@ -173,24 +262,31 @@ public class Vehicle : NetworkBehaviour {
 	/// returns the owner ID (player number) or -1 if unowned
 	/// </summary>
 	/// <returns>The owner ID.</returns>
-	public int getOwner() {
+	public int getOwner ()
+	{
 		int id;
 
-		if (!validOwner()) {
+		if (!validOwner ()) {
 			id = -1;
 		} else {
-			id = getPlayer(owner).id;
+			id = getPlayer (owner).id;
 		}
 
 		return id;
 	}
 
-	public virtual bool validOwner() {
+	public virtual bool validOwner ()
+	{
 		bool isValid = false;
-		if (!owner.IsEmpty() && (owner != NetworkInstanceId.Invalid) && (getLocalInstance(owner) != null)) {
+		if (!owner.IsEmpty () && (owner != NetworkInstanceId.Invalid) && (getLocalInstance (owner) != null)) {
 			isValid = true;
 		}
 		return isValid;
+	}
+
+	public void damageCar (int damage)
+	{
+		condition -= damage;
 	}
 
 
@@ -198,16 +294,17 @@ public class Vehicle : NetworkBehaviour {
 	/// Returns the data associated with the vehicle
 	/// </summary>
 	/// <returns>The readout.</returns>
-	public virtual string getReadout() {
+	public virtual string getReadout ()
+	{
 		string s;
 //		modManager.clearButtons ();
 		string ownerName = "";
-		if (!validOwner()) {
+		if (!validOwner ()) {
 			ownerName = "None";
 		} else {
-			ownerName = getPlayer(owner).getName();
+			ownerName = getPlayer (owner).getName ();
 		}
-		s = "Type: " + typeName + "\nName : " + vehicleName + "\nOwner: " + ownerName + "\nPrice: " + cost /*+ "\nCondition: " + conditionToString()*/;
+		s = "Type: " + typeName + "\nName : " + vehicleName + "\nOwner: " + ownerName + "\nPrice: " + cost + "\nCondition: " + condition.ToString ();
 
 		if (notForSale) {
 			s += "\nNot for sale";
@@ -221,15 +318,16 @@ public class Vehicle : NetworkBehaviour {
 	/// Returns the data associated with the vehicle, does not do anything with buttons
 	/// </summary>
 	/// <returns>The readout.</returns>
-	public virtual string getReadoutText() {
+	public virtual string getReadoutText ()
+	{
 		string s;
 		string ownerName = "";
-		if (!validOwner()) {
+		if (!validOwner ()) {
 			ownerName = "None";
-		} else  {
-			ownerName = getPlayer(owner).getName();
+		} else {
+			ownerName = getPlayer (owner).getName ();
 		}
-		s = "Type: " + typeName + "\nName : " + vehicleName + "\nOwner: " + ownerName + "\nPrice: " + cost /*+ "\nCondition: " + conditionToString ()*/;
+		s = "Type: " + typeName + "\nName : " + vehicleName + "\nOwner: " + ownerName + "\nPrice: " + cost + "\nCondition: " + condition.ToString ();
 
 		if (notForSale) {
 			s += "\nNot for sale";
@@ -241,10 +339,72 @@ public class Vehicle : NetworkBehaviour {
 
 
 	/// <summary>
+	/// Gets the cost to restore the building to 100 condition
+	/// </summary>
+	/// <returns>The repair cost.</returns>
+	public int getRepairCost ()
+	{
+		int repairCost;
+		if (ruin) {
+			repairCost = baseCost;
+		} else {			
+			repairCost = (100 - baseCondition) * 5;
+		}
+		return repairCost;
+	}
+
+	/// <summary>
+	/// Gets the cost of repairing a single point of condition.
+	/// </summary>
+	/// <returns>The point repair cost.</returns>
+	public int getPointRepairCost ()
+	{
+		int repairCost;
+		if (ruin) {
+			repairCost = baseCost;
+		} else {
+			repairCost = baseCost / 24;
+		}
+		return repairCost;
+	}
+
+	/// <summary>
+	/// Turns the building to a ruin--used when condition is 0.
+	/// </summary>
+	[ClientRpc]
+	protected void RpcMakeRuin ()
+	{
+		setColor (Color.black);
+		if (isServer) {
+			ruin = true;
+			//occupied = false;
+			//endFire ();
+		}
+	}
+
+	/// <summary>
+	/// Repair a ruined building
+	/// </summary>
+	[ClientRpc]
+	protected void RpcFixRuin ()
+	{
+		if (ruin) {
+			if (isServer) {
+				condition = 100;
+				baseCondition = 100;
+				ruin = false;
+			}
+			setColor (color);
+		}
+	}
+
+
+	/// <summary>
 	/// Adds a color overlay to the building
 	/// </summary>
 	/// <param name="newColor">New color.</param>
-	public virtual void setColor(Color newColor) {
+	public virtual void setColor (Color newColor)
+	{
 		if (c != null) {
 			c.gameObject.GetComponent<MeshRenderer> ().materials.ElementAt (0).color = newColor;
 		}
@@ -253,15 +413,17 @@ public class Vehicle : NetworkBehaviour {
 	/// <summary>
 	/// Returns the building to its original color, or black if its a ruin
 	/// </summary>
-	public void resetColor() {
-	//	if (ruin) {
-	//		setColor (Color.black);
-	//	} else {
-	//		setColor(color);
-	//	}
+	public void resetColor ()
+	{
+		if (ruin) {
+			setColor (Color.black);
+		} else {
+			setColor (color);
+		}
 	}
 
-	public virtual Player getPlayer(NetworkInstanceId playerId) {
+	public virtual Player getPlayer (NetworkInstanceId playerId)
+	{
 		GameObject tmp = getLocalInstance (playerId);
 		Player p;
 		if (tmp != null) {
@@ -272,13 +434,15 @@ public class Vehicle : NetworkBehaviour {
 		return p;
 	}
 
-	public virtual NetworkInstanceId getOwnerNetId() {
+	public virtual NetworkInstanceId getOwnerNetId ()
+	{
 		return owner;
 	}
 
-	public virtual Player getPlayerOwner() {
+	public virtual Player getPlayerOwner ()
+	{
 		Player p;
-		if (validOwner()) {
+		if (validOwner ()) {
 			p = getPlayer (owner);
 		} else {
 			p = null;
@@ -291,7 +455,8 @@ public class Vehicle : NetworkBehaviour {
 	/// Sets the owner and removes the building from the owned list of its previous owner.
 	/// </summary>
 	/// <param name="newOwner">New owner's id.</param>
-	public virtual void setOwner(NetworkInstanceId newOwner) {
+	public virtual void setOwner (NetworkInstanceId newOwner)
+	{
 		if (newOwner == owner)
 			return;
 		Player oldOwner = getPlayerOwner ();
@@ -309,9 +474,10 @@ public class Vehicle : NetworkBehaviour {
 	/// </summary>
 	/// <returns><c>true</c>, if owned by the object (company or player) whose netId was passed, <c>false</c> otherwise.</returns>
 	/// <param name="o">Owner.</param>
-	public virtual bool ownedBy(NetworkInstanceId o) {
+	public virtual bool ownedBy (NetworkInstanceId o)
+	{
 		bool owned = false;
-		if (validOwner()) {
+		if (validOwner ()) {
 			if (owner == o) {
 				owned = true;
 			}
@@ -319,7 +485,8 @@ public class Vehicle : NetworkBehaviour {
 		return owned;
 	}
 
-	public virtual bool ownedBy(Player p) {
+	public virtual bool ownedBy (Player p)
+	{
 		bool owned = false;
 		if (owner == p.netId) {
 			owned = true;
@@ -327,13 +494,38 @@ public class Vehicle : NetworkBehaviour {
 		return owned;
 	}
 
-	public virtual void unsetOwner() {
+	public virtual void unsetOwner ()
+	{
 		owner = NetworkInstanceId.Invalid;
 	}
 
 
+	/// <summary>
+	/// Repair the vehicle to 100 condition.
+	/// </summary>
+	public void repair() {
 
-	protected GameObject getLocalInstance(NetworkInstanceId id) {
+		if (isServer) {
+			if (ruin) {
+				RpcFixRuin ();
+			} else {
+				condition = 100;
+				baseCondition = 100;
+			}
+		}
+	}
+
+	public void repairByPoint(int numPoints) {
+		if (isServer && !ruin) {
+			condition += numPoints;
+			baseCondition += numPoints;
+		}
+	}
+
+
+
+	protected GameObject getLocalInstance (NetworkInstanceId id)
+	{
 		GameObject g;
 		if (isClient) {
 			g = ClientScene.FindLocalObject (id);
@@ -345,81 +537,88 @@ public class Vehicle : NetworkBehaviour {
 
 
 
-	//	/// <summary>
-	//	/// Checks the state of the fire.
-	//	/// </summary>
-	//	public void CheckFireState () {
-	//		int fires = 0;
-	//		FireTransform[] fireTrans = gameObject.GetComponentsInChildren<FireTransform> ();
-	//		foreach (FireTransform ft in fireTrans) {
-	//			if (ft.onFire) {
-	//				fires += 1;
-	//			}
-	//		}
-	//		if (fires == 0) {
-	//			endFire ();
-	//		}
-	//	}
+	/// <summary>
+	/// Checks the state of the fire.
+	/// </summary>
+	public void CheckFireState ()
+	{
+		int fires = 0;
+		FireTransform[] fireTrans = gameObject.GetComponentsInChildren<FireTransform> ();
+		foreach (FireTransform ft in fireTrans) {
+			if (ft.onFire) {
+				fires += 1;
+			}
+		}
+		if (fires == 0) {
+			endFire ();
+		}
+	}
 
-	//	/// <summary>
-	//	/// Sets the building on fire.
-	//	/// </summary>
-	//	public virtual void setFire() {
-	//		if (isServer) {
-	//			if (validOwner()) {
-	//				RpcMessageOwner( buildingName + " is on fire!");
-	//			}
-	//			fire = true;
-	//			GameObject fireObj = (GameObject)Resources.Load ("HouseFire");
-	//			FireTransform[] fireTrans = gameObject.GetComponentsInChildren<FireTransform>();
-	//			if (fireTrans.Length < 1) {
-	//				GameObject tmp = (GameObject)Instantiate (fireObj, new Vector3 (gameObject.transform.position.x, getHighest(), gameObject.transform.position.z), fireObj.transform.rotation);
-	//				NetworkServer.Spawn (tmp);
-	//				Debug.LogError ("Building is on fire but has no transforms");
-	//			}
-	//			foreach (FireTransform ft in fireTrans) {
-	//				GameObject tmp = (GameObject)Instantiate (fireObj, ft.transform.position, fireObj.transform.rotation);
-	//				FireKiller fk = tmp.GetComponent<FireKiller> ();
-	//				ft.onFire = true; //Tells the fire transform that it is on fire. All fts must report back OnFire = false for advance month to consider the building not on fire!
-	//				fk.myTransform = ft; //sets the FireKiller's firetransform, which allows it to update the FT about the state of the fire!
-	//				fk.setBuilding (gameObject.GetComponent<Building> ());
-	//				NetworkServer.Spawn (tmp);
-	//			}
-	//		}
-	//	}
-	//
-	//	/// <summary>
-	//	/// Ends the fire.
-	//	/// </summary>
-	//	public void endFire() {
-	//		if (isServer) {
-	//			fire = false;
-	//		}
-	//	}
+	/// <summary>
+	/// Sets the building on fire.
+	/// </summary>
+	public virtual void setFire ()
+	{
 
-	//	/// <summary>
-	//	/// Spreads fire to neighbors.
-	//	/// </summary>
-	//	protected void spreadFire() {
-	//		Collider[] colliding = Physics.OverlapSphere(c.transform.position, 5);
-	//		foreach (Collider hit in colliding) {
-	//			Building b = hit.GetComponent<Building> ();
-	//
-	//			if (b != null && !b.fire) {
-	//				if (Random.value < .1f) {
-	//					b.setFire ();
-	//				}
-	//			}
-	//		}
-	//	}
+		if (isServer) {
+			if (validOwner ()) {
+				RpcMessageOwner (vehicleName + " is on fire!");
+			}
+			fire = true;
+			GameObject fireObj = (GameObject)Resources.Load ("CarFire");
+			FireTransform[] fireTrans = gameObject.GetComponentsInChildren<FireTransform> ();
+			if (fireTrans.Length < 1) {
+				GameObject tmp = (GameObject)Instantiate (fireObj, new Vector3 (gameObject.transform.position.x, getHighest (), gameObject.transform.position.z), fireObj.transform.rotation);
+				NetworkServer.Spawn (tmp);
+				Debug.LogError (vehicleName + " is on fire but has no transforms");
+			}
+			foreach (FireTransform ft in fireTrans) {
+				GameObject tmp = (GameObject)Instantiate (fireObj, ft.transform.position, fireObj.transform.rotation);
+				//tmp.transform.SetParent (ft.transform);
+				FireKiller fk = tmp.GetComponent<FireKiller> ();
+				ft.onFire = true; //Tells the fire transform that it is on fire. All fts must report back OnFire = false for advance month to consider the building not on fire!
+				fk.myTransform = ft; //sets the FireKiller's firetransform, which allows it to update the FT about the state of the fire!
+				fk.setVehicle (gameObject.GetComponent<Vehicle> ());
+				NetworkServer.Spawn (tmp);
+			}
+		}
+	}
+
+	/// <summary>
+	/// Ends the fire.
+	/// </summary>
+	public void endFire ()
+	{
+		if (isServer) {
+			fire = false;
+		}
+	}
+
+	/// <summary>
+	/// Spreads fire to neighbors.
+	/// </summary>
+	protected void spreadFire ()
+	{
+		Collider[] colliding = Physics.OverlapSphere (c.transform.position, 5);
+		foreach (Collider hit in colliding) {
+			Building b = hit.GetComponent<Building> ();
+			//VEHICLE HERE
+	
+			if (b != null && !b.fire) {
+				if (Random.value < .1f) {
+					b.setFire ();
+				}
+			}
+		}
+	}
 
 	/// <summary>
 	/// Returns the highest point of the building's mesh.
 	/// </summary>
 	/// <returns>Highest point.</returns>
-	public float getHighest()
+	public float getHighest ()
 	{
-		if ((c != null) && (c.gameObject.GetComponent<MeshCollider>() != null) && (c.gameObject.GetComponent<MeshCollider>().sharedMesh != null)) {
+		if ((c != null) && (c.gameObject.GetComponent<MeshCollider> () != null) && (c.gameObject.GetComponent<MeshCollider> ().sharedMesh != null)) {
 			Vector3[] verts = c.gameObject.GetComponent<MeshCollider> ().sharedMesh.vertices;
 			Vector3 topVertex = new Vector3 (0, float.NegativeInfinity, 0);
 			for (int i = 0; i < verts.Length; i++) {
@@ -432,6 +631,19 @@ public class Vehicle : NetworkBehaviour {
 			return topVertex.y;
 		} else {
 			return 0;
+		}
+	}
+
+
+	/// <summary>
+	/// Messages the owner without using the message syncvar
+	/// </summary>
+	/// <param name="s">message string.</param>
+	[ClientRpc]
+	public void RpcMessageOwner (string s)
+	{
+		if (validOwner ()) {
+			getPlayer (owner).showMessage (s);
 		}
 	}
 

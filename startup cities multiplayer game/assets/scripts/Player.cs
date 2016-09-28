@@ -244,6 +244,13 @@ public class Player : NetworkBehaviour {
 				}
 				updateUI ();
 			}
+			if (targetVehicle != null) {
+				Debug.Log ("targetvehicle is not null");
+				if (targetVehicle.getOwner () == id) {
+					Debug.Log ("owner is ok");
+					CmdRepair (gameObject.GetComponent<NetworkIdentity> ().netId, targetVehicle.gameObject.GetComponent<NetworkIdentity> ().netId);
+				}
+			}
 		}
 
 		// Fire test button
@@ -663,6 +670,7 @@ public class Player : NetworkBehaviour {
 
 		DamageableObject b = obj.GetComponent<DamageableObject> ();
 		Player player = p.GetComponent<Player> ();
+		Vehicle v = obj.GetComponent<Vehicle> ();
 
 		if (b != null) {
 			if (b.fire) {
@@ -692,6 +700,36 @@ public class Player : NetworkBehaviour {
 				}
 			} else {
 				player.message = "That object does not need repairs.";
+			}
+		}
+		if (v != null) {
+			if (v.fire) {
+				player.message = "You can't repair a burning vehicle!";
+			} else if (!v.ownedBy (player)) {
+				player.message = "You don't own that vehicle!";
+			} else if (v.condition < 100) {
+				int repairCost = v.getRepairCost ();
+				int point = v.getPointRepairCost ();
+				if (player.budget >= repairCost) {
+					player.budget -= repairCost;
+					v.repair ();
+					player.message = "Vehicle repaired for $" + repairCost + ".";
+				} else if (player.budget >= point) {
+					repairCost = 0;
+					int numPoints = 0;
+					while ((repairCost + point) <= player.budget) {
+						repairCost += point;
+						numPoints++;
+					}
+
+					player.budget -= repairCost;
+					v.repairByPoint (numPoints);
+					player.message = "Vehicle repaired for $" + repairCost + ".";
+				} else {
+					player.message = "You don't have enough money to repair that.";
+				}
+			} else {
+				player.message = "That vehicle does not need repairs.";
 			}
 		}
 		RpcUpdateUI ();
