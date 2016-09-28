@@ -13,7 +13,6 @@ public class ResidentManager : NetworkBehaviour
 	private List<Transform> spawnPoints;
 	private GameObject[] bus;
 	private Object criminalPrefab;
-	private int spawnPointIndex;
 	private int lowSkillJobs;
 	private int medSkillJobs;
 	private int highSkillJobs;
@@ -24,7 +23,6 @@ public class ResidentManager : NetworkBehaviour
 
 	void Start () {
 		spawnPoints = new List<Transform> ();
-		spawnPointIndex = 0;
 		lowSkillJobs = 0;
 		medSkillJobs = 0;
 		highSkillJobs = 0;
