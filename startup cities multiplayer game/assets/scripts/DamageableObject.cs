@@ -32,7 +32,7 @@ public class DamageableObject : OwnableObject {
 	public virtual void setFire() {
 		if (isServer) {
 			fire = true;
-			GameObject fireObj = (GameObject)Resources.Load ("HouseFire");
+			GameObject fireObj = (GameObject)Resources.Load ("HouseFire"); //Must be changed for other fire prefabs in other classes
 			FireTransform[] fireTrans = gameObject.GetComponentsInChildren<FireTransform>();
 			if (fireTrans.Length < 1) {
 				GameObject tmp = (GameObject)Instantiate (fireObj, new Vector3 (gameObject.transform.position.x, getHighest(), gameObject.transform.position.z), fireObj.transform.rotation);
@@ -44,7 +44,7 @@ public class DamageableObject : OwnableObject {
 				FireKiller fk = tmp.GetComponent<FireKiller> ();
 				ft.onFire = true; //Tells the fire transform that it is on fire. All fts must report back OnFire = false for advance month to consider the building not on fire!
 				fk.myTransform = ft; //sets the FireKiller's firetransform, which allows it to update the FT about the state of the fire!
-				fk.setBuilding (gameObject.GetComponent<Building> ());
+				fk.setObject (gameObject.GetComponent<Building> ()); //Must be customized for sub classes if they are not buildings
 				NetworkServer.Spawn (tmp);
 			}
 		}
@@ -77,10 +77,29 @@ public class DamageableObject : OwnableObject {
 	}
 
 	/// <summary>
-	/// Damages the building. Decrements base condition & condition--base condition manages the condition without considering modifiers
+	/// Checks the state of the fire. If all firetransforms report !onFire then
+	/// the fire event will end for the object
+	/// </summary>
+	public virtual void CheckFireState ()
+	{
+		int fires = 0;
+		FireTransform[] fireTrans = gameObject.GetComponentsInChildren<FireTransform> ();
+		foreach (FireTransform ft in fireTrans) {
+			if (ft.onFire) {
+				fires += 1;
+			}
+		}
+		if (fires == 0) {
+			endFire ();
+		}
+	}
+
+
+	/// <summary>
+	/// Damages the object. Decrements base condition & condition--base condition manages the condition without considering modifiers
 	/// </summary>
 	/// <param name="damage">Damage.</param>
-	protected virtual void damageObject(int damage) {
+	public virtual void damageObject(int damage) {
 		if (isServer) {
 			if ((baseCondition - damage) > 100) {      // don't go above 100
 				baseCondition = 100;
@@ -94,6 +113,7 @@ public class DamageableObject : OwnableObject {
 			}
 		}
 	}
+		
 
 	/// <summary>
 	/// Gets the cost to restore the building to 100 condition
@@ -127,7 +147,7 @@ public class DamageableObject : OwnableObject {
 	}
 
 	/// <summary>
-	/// Repairs the by point.
+	/// Repairs the object by point.
 	/// </summary>
 	/// <param name="numPoints">Number points.</param>
 	public virtual void repairByPoint(int numPoints) {

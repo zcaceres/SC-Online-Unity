@@ -8,17 +8,24 @@ public class EnterVehicle : MonoBehaviour {
 		vehicle = GetComponentInParent<Vehicle> ();
 	}
 
+
+	/// <summary>
+	/// Notifies player that they can get into a vehicle that they own
+	/// </summary>
+	/// <param name="coll">Coll.</param>
 	void OnTriggerEnter (Collider coll) {
 		if (coll.CompareTag("Player")) { //Check player ownership here
 			Player p = coll.gameObject.GetComponent<Player> ();
 			if (vehicle.getOwner () == p.id) {
-				p.message = "Press F to enter your car";
+				p.message = "Press F to get in.";
 			}
 		}
-
-
 	}
 
+	/// <summary>
+	/// Permits player to enter vehicle while in EnterVehicle collider area.
+	/// </summary>
+	/// <param name="coll">Coll.</param>
 	void OnTriggerStay (Collider coll)
 	{
 		if (coll.CompareTag ("Player")) { // check player ownership

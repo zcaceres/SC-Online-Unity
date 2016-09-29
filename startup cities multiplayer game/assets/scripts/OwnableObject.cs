@@ -35,7 +35,7 @@ public class OwnableObject : NetworkBehaviour {
 	}
 
 	/// <summary>
-	/// Returns the data associated with the building
+	/// Returns the data associated with the object
 	/// </summary>
 	/// <returns>The readout.</returns>
 	public virtual string getReadout(NetworkInstanceId pid) {
@@ -63,7 +63,7 @@ public class OwnableObject : NetworkBehaviour {
 	}
 
 	/// <summary>
-	/// Returns the data associated with the building, does not do anything with buttons
+	/// Returns the data associated with the object, does not do anything with buttons
 	/// </summary>
 	/// <returns>The readout.</returns>
 	public virtual string getReadoutText(NetworkInstanceId pid) {
@@ -108,7 +108,7 @@ public class OwnableObject : NetworkBehaviour {
 	}
 
 	/// <summary>
-	/// Sets the owner and removes the building from the owned list of its previous owner.
+	/// Sets the owner and removes the object from the owned list of its previous owner.
 	/// </summary>
 	/// <param name="newOwner">New owner's id.</param>
 	public virtual void setOwner(NetworkInstanceId newOwner) {
@@ -132,6 +132,18 @@ public class OwnableObject : NetworkBehaviour {
 			if (validOwner()) {
 				getPlayer(owner).message = s;
 			}
+		}
+	}
+
+	/// <summary>
+	/// Messages the owner without using the message syncvar
+	/// </summary>
+	/// <param name="s">message string.</param>
+	[ClientRpc]
+	public void RpcMessageOwner (string s)
+	{
+		if (validOwner ()) {
+			getPlayer (owner).showMessage (s);
 		}
 	}
 
@@ -174,7 +186,7 @@ public class OwnableObject : NetworkBehaviour {
 	}
 
 	/// <summary>
-	/// gives the base cost of the building (cost before modifiers/condition changes/rent changes)
+	/// gives the base cost of the object (cost before modifiers/condition changes/rent changes)
 	/// </summary>
 	public virtual int appraise() {
 		return baseCost;
@@ -297,7 +309,7 @@ public class OwnableObject : NetworkBehaviour {
 	}
 
 	/// <summary>
-	/// Returns the highest point of the building's mesh.
+	/// Returns the highest point of the object's mesh.
 	/// </summary>
 	/// <returns>Highest point.</returns>
 	public float getHighest()
@@ -320,7 +332,7 @@ public class OwnableObject : NetworkBehaviour {
 	}
 
 	/// <summary>
-	/// City reclaims the building and pays the player the base cost
+	/// City reclaims the object and pays the player the base cost
 	/// </summary>
 	public virtual void repo() {
 		if (validOwner ()) {

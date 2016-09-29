@@ -181,23 +181,6 @@ public class Building : DamageableObject {
 		}
 	}
 
-
-	/// <summary>
-	/// Checks the state of the fire.
-	/// </summary>
-	public void CheckFireState () {
-		int fires = 0;
-		FireTransform[] fireTrans = gameObject.GetComponentsInChildren<FireTransform> ();
-		foreach (FireTransform ft in fireTrans) {
-			if (ft.onFire) {
-				fires += 1;
-			}
-		}
-		if (fires == 0) {
-			endFire ();
-		}
-	}
-
 	protected void makeRuin() {
 		if (isServer) {
 			tenant.leaveJob ();
@@ -249,7 +232,7 @@ public class Building : DamageableObject {
 				FireKiller fk = tmp.GetComponent<FireKiller> ();
 				ft.onFire = true; //Tells the fire transform that it is on fire. All fts must report back OnFire = false for advance month to consider the building not on fire!
 				fk.myTransform = ft; //sets the FireKiller's firetransform, which allows it to update the FT about the state of the fire!
-				fk.setBuilding (gameObject.GetComponent<Building> ());
+				fk.setObject (gameObject.GetComponent<Building> ());
 				NetworkServer.Spawn (tmp);
 			}
 		}

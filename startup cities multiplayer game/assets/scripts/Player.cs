@@ -495,7 +495,7 @@ public class Player : NetworkBehaviour {
 		obj = getLocalInstance (buildingId);
 		p = getLocalInstance (playerId);
 
-		OwnableObject b = obj.GetComponent<Building> ();
+		OwnableObject b = obj.GetComponent<OwnableObject> ();
 		Building building = b.GetComponent<Building> ();
 		Player player = p.GetComponent<Player> ();
 
@@ -537,7 +537,7 @@ public class Player : NetworkBehaviour {
 				}
 			} else {
 				player.SetDirtyBit(int.MaxValue);
-				player.message = "You can't buy that building.";
+				player.message = "You can't buy that.";
 			}
 		} else {
 			GameObject vehicleObject = getLocalInstance (buildingId);
@@ -702,36 +702,36 @@ public class Player : NetworkBehaviour {
 				player.message = "That object does not need repairs.";
 			}
 		}
-		if (v != null) {
-			if (v.fire) {
-				player.message = "You can't repair a burning vehicle!";
-			} else if (!v.ownedBy (player)) {
-				player.message = "You don't own that vehicle!";
-			} else if (v.condition < 100) {
-				int repairCost = v.getRepairCost ();
-				int point = v.getPointRepairCost ();
-				if (player.budget >= repairCost) {
-					player.budget -= repairCost;
-					v.repair ();
-					player.message = "Vehicle repaired for $" + repairCost + ".";
-				} else if (player.budget >= point) {
-					repairCost = 0;
-					int numPoints = 0;
-					while ((repairCost + point) <= player.budget) {
-						repairCost += point;
-						numPoints++;
-					}
-
-					player.budget -= repairCost;
-					v.repairByPoint (numPoints);
-					player.message = "Vehicle repaired for $" + repairCost + ".";
-				} else {
-					player.message = "You don't have enough money to repair that.";
-				}
-			} else {
-				player.message = "That vehicle does not need repairs.";
-			}
-		}
+//		if (v != null) {
+//			if (v.fire) {
+//				player.message = "You can't repair a burning vehicle!";
+//			} else if (!v.ownedBy (player)) {
+//				player.message = "You don't own that vehicle!";
+//			} else if (v.condition < 100) {
+//				int repairCost = v.getRepairCost ();
+//				int point = v.getPointRepairCost ();
+//				if (player.budget >= repairCost) {
+//					player.budget -= repairCost;
+//					v.repair ();
+//					player.message = "Vehicle repaired for $" + repairCost + ".";
+//				} else if (player.budget >= point) {
+//					repairCost = 0;
+//					int numPoints = 0;
+//					while ((repairCost + point) <= player.budget) {
+//						repairCost += point;
+//						numPoints++;
+//					}
+//
+//					player.budget -= repairCost;
+//					v.repairByPoint (numPoints);
+//					player.message = "Vehicle repaired for $" + repairCost + ".";
+//				} else {
+//					player.message = "You don't have enough money to repair that.";
+//				}
+//			} else {
+//				player.message = "That vehicle does not need repairs.";
+//			}
+//		}
 		RpcUpdateUI ();
 	}
 		

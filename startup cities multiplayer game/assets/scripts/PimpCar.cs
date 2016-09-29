@@ -1,40 +1,31 @@
 ﻿using UnityEngine;
 using System.Collections;
-using System.Linq;
-using UnityEngine.Networking;
 
-public class IceCreamTruckVehicle : Vehicle
-{
-	private UnityStandardAssets.Vehicles.Car.CarController carController;
-	private AudioSource megaPhoneLoop; // audio for loop
-	private Megaphone mega; //used for mobile collection of $$ from customers
+public class PimpCar : Vehicle {
+	private static string[] rSmallFirst = {
+		"Swag",
+		"Pimp",
+		"Cherry",
+		"Sweet Ass",
+		"Stylish"
+	};
 
 	//Names for Vehicles
-	private static string[] rSmallFirst = {
-		"Yumsters",
-		"Frozen",
-		"Cold",
-		"Dairy",
-		"Icey"
-	};
-		
-	private static string[] rSmallLast = { "Ice Cream", "Delights", "Pops" };
+	private static string[] rSmallLast = { "Wagon", "Mobile", "Car" };
 
 
-	void Start ()
-	{
+	void Start () {
 		AudioSource[] vehicleSounds = GetComponents<AudioSource> ();
 		horn = vehicleSounds [1];
 		vehicleOccupied = false;
 		eligibleToExit = false;
-		mega = GetComponentInChildren<Megaphone> ();
 
 		foreach (AudioSource aSources in vehicleSounds) {
 			aSources.enabled = false;
 		}
 
 		if (isServer) {
-			cost = 10000;
+			cost = 7000;
 			fire = false;
 			baseCost = cost;
 			baseCondition = 100;
@@ -42,15 +33,13 @@ public class IceCreamTruckVehicle : Vehicle
 			ruin = false;
 			upkeep = 0; // ADD UPKEEP HERE
 			type = TYPENUM;
-			typeName = "Food Truck";
+			typeName = "Car";
 			vehicleName = nameGen ();
 		}
-		carController = GetComponent<UnityStandardAssets.Vehicles.Car.CarController> ();
 	}
+	
 
-
-	void Update ()
-	{
+	void Update () {
 		if (vehicleOccupied) {
 			if (Input.GetKeyDown (KeyCode.Mouse0) && !horn.isPlaying) {
 				horn.Play ();
@@ -62,15 +51,10 @@ public class IceCreamTruckVehicle : Vehicle
 				Player p = gameObject.GetComponentInChildren<Player> ();
 				ExitVehicle (p);
 			}
-
-			if (carController.CurrentSpeed <= 15f && getOwner() != -1 && !ruin) {
-				mega.ToggleFoodTruck (true);
-			} else {
-				mega.ToggleFoodTruck (false);
-			}
 		}
 		CheckCondition ();
 		ToggleVisualizeDamage ();
+	
 	}
 
 	/// <summary>
@@ -85,5 +69,4 @@ public class IceCreamTruckVehicle : Vehicle
 		name = rSmallFirst [(int)Random.Range (0, rSmallFirst.Length)] + " " + rSmallLast [(int)Random.Range (0, rSmallLast.Length)];
 		return name;
 	}
-
 }
