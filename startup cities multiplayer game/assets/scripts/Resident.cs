@@ -544,8 +544,6 @@ public class Resident : NetworkBehaviour {
 				jobBuilding.GetComponent<Business> ().removeWorker (this.netId);
 				job = NetworkInstanceId.Invalid;
 				jobBuilding = null;
-			} else {
-				Debug.Log ("invalid job");
 			}
 		} else {
 			Debug.LogError ("Error: client tried to call leaveJob");
@@ -560,6 +558,16 @@ public class Resident : NetworkBehaviour {
 		return b;
 	}
 
+	public bool isHomeless() {
+		bool b = false;
+		if (residenceBuilding == null) {
+			b = true;
+		}
+		return b;
+	}
+
+
+
 	public virtual void sortBuildings() {
 		lowHomes.Clear ();
 		medHomes.Clear ();
@@ -569,9 +577,9 @@ public class Resident : NetworkBehaviour {
 		List<Building> buildings = FindObjectsOfType<Building> ().ToList();
 		buildings = buildings.Where (b => (!b.ruin && !b.fire && !b.occupied && (b.validOwner())
 			&& !nonResidential.Contains(b.type))).ToList<Building>();
-		lowHomes = buildings.Where (b => ( (b.rent <= rentLimits [LOW_SKILL]) || (b is Business)) ).ToList ();
-		medHomes = buildings.Where (b => (( (b.rent <= rentLimits [MED_SKILL]) || (b is Business) ) && (b.lowestSkill >= MED_SKILL))).ToList ();
-		highHomes = buildings.Where (b => (( (b.rent <= rentLimits [HIGH_SKILL]) || (b is Business) ) && (b.lowestSkill >= HIGH_SKILL))).ToList ();
+		lowHomes = buildings.Where (b => ( (b.rent <= rentLimits [LOW_SKILL]) || (b is Business && b.GetComponent<Business>().skillLevel <= LOW_SKILL)) ).ToList ();
+		medHomes = buildings.Where (b => (( (b.rent <= rentLimits [MED_SKILL]) || (b is Business && b.GetComponent<Business>().skillLevel <= MED_SKILL) ) && (b.lowestSkill >= MED_SKILL))).ToList ();
+		highHomes = buildings.Where (b => (( (b.rent <= rentLimits [HIGH_SKILL]) || (b is Business && b.GetComponent<Business>().skillLevel <= HIGH_SKILL) ) && (b.lowestSkill >= HIGH_SKILL))).ToList ();
 
 		lowHomes = lowHomes.OrderByDescending (b => (rate (b, 0))).ToList ();
 		medHomes = medHomes.OrderByDescending (b => (rate (b, 1))).ToList ();

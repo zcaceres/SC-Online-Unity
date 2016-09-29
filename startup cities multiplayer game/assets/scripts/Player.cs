@@ -500,6 +500,7 @@ public class Player : NetworkBehaviour {
 		Player player = p.GetComponent<Player> ();
 
 		if (b != null) {
+			building = b.GetComponent<Building> ();
 			if ((b.cost <= player.budget) && !b.notForSale) {
 				if (b.validLot ()) {
 					player.message = "You cannot buy that without owning its lot.";
