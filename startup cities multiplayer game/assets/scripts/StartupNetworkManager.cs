@@ -2,8 +2,10 @@
 using UnityEngine.Networking;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine.Networking.NetworkSystem;
 
 public class StartupNetworkManager : NetworkManager {
+
 
 	public override void OnServerConnect(NetworkConnection conn) {
 		Object[] prefabs = Resources.LoadAll ("ConstructableBuildings");
@@ -15,6 +17,7 @@ public class StartupNetworkManager : NetworkManager {
 	// called when connected to a server
 	public override void OnClientConnect(NetworkConnection conn)
 	{
+
 		Object[] prefabs = Resources.LoadAll ("ConstructableBuildings");
 		foreach (Object g in prefabs) {
 			ClientScene.RegisterPrefab ((GameObject)g);
@@ -48,4 +51,5 @@ public class StartupNetworkManager : NetworkManager {
 		//Debug.LogError ("Server Ready");
 		NetworkServer.SetClientReady(conn);
 	}
+
 }
