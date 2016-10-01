@@ -55,13 +55,13 @@ public class Neighborhood : Building {
 			officeName = "None";
 			type = 21;
 			typeName = buildingTypes [type];
-			id = buildingNum;
+			id = objectNum;
 			fire = false;
 			ruin = false;
 			occupied = false;
 			onAuction = false;
 			paying = false;
-			buildingNum++;
+			objectNum++;
 			updateRent ();
 			calcPrice ();
 		}

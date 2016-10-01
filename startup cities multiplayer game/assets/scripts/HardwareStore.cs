@@ -50,13 +50,13 @@ public class HardwareStore : Business {
 			upkeep = 50;
 			officeName = "None";
 			buildingName = nameGen ();
-			id = buildingNum;
+			id = objectNum;
 			fire = false;
 			ruin = false;
 			occupied = false;
 			onAuction = false;
 			paying = false;
-			buildingNum++;
+			objectNum++;
 			if (!upgrade) {
 				malusGenerator ();
 			}

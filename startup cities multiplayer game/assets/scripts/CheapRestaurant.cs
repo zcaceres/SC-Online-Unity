@@ -53,13 +53,13 @@ public class CheapRestaurant : Business {
 			officeName = "None";
 			neededWorkers = 3;
 			buildingName = nameGen ();
-			id = buildingNum;
+			id = objectNum;
 			fire = false;
 			ruin = false;
 			occupied = false;
 			onAuction = false;
 			paying = false;
-			buildingNum++;
+			objectNum++;
 			if (!upgrade) {
 				malusGenerator ();
 			}

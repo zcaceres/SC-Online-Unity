@@ -30,14 +30,14 @@ public class CityHall : Business {
 			upkeep = rent / UPKEEP_PORTION;
 			officeName = "None";
 			buildingName = nameGen ();
-			id = buildingNum;
+			id = objectNum;
 			fire = false;
 			ruin = false;
 			//Temporarily set true to test available of jobs without player ownership of building
 			occupied = true;
 			onAuction = false;
 			paying = false;
-			buildingNum++;
+			objectNum++;
 			neededWorkers = 8;
 			GameObject tmp = getLocalInstance (lot);
 			if (tmp != null) {

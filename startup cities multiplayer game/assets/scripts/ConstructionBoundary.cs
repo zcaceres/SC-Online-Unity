@@ -38,7 +38,7 @@ public class ConstructionBoundary : MonoBehaviour {
 	private void OnTriggerEnter (Collider other) {
 		if (other.GetComponent<Lot> () != null) {
 			constructionChecker += 1;
-		} 
+		}
 	}
 
 	//This is called so that the constructionboundary checker is constantly updated while a dummy object is in play

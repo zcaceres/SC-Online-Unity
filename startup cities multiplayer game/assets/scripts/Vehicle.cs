@@ -19,8 +19,6 @@ public class Vehicle : DamageableObject
 	[SyncVar]
 	public int upkeep;
 	[SyncVar]
-	public int id;
-	[SyncVar]
 	public string vehicleName;
 	[SyncVar]
 	public string typeName;

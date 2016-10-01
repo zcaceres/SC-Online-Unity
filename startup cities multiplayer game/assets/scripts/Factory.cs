@@ -31,14 +31,14 @@ public class Factory : Business {
 			upkeep = rent / UPKEEP_PORTION;
 			officeName = "None";
 			buildingName = nameGen ();
-			id = buildingNum;
+			id = objectNum;
 			fire = false;
 			ruin = false;
 			//Temporarily set true to test available of jobs without player ownership of building
 			occupied = false;
 			onAuction = false;
 			paying = false;
-			buildingNum++;
+			objectNum++;
 			neededWorkers = 40;
 			GameObject tmp = getLocalInstance (lot);
 			if (tmp != null) {

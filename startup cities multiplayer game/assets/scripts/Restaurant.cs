@@ -67,13 +67,13 @@ public class Restaurant : Business {
 			type = 3;
 			neededWorkers = 5;
 			buildingName = nameGen ();
-			id = buildingNum;
+			id = objectNum;
 			fire = false;
 			ruin = false;
 			occupied = false;
 			onAuction = false;
 			paying = false;
-			buildingNum++;
+			objectNum++;
 			if (!upgrade) {
 				malusGenerator ();
 			}

@@ -38,13 +38,13 @@ public class Billboard : Business {
 			officeName = "None";
 			neededWorkers = 0;
 			buildingName = nameGen ();
-			id = buildingNum;
+			id = objectNum;
 			fire = false;
 			ruin = false;
 			occupied = true;
 			onAuction = false;
 			paying = false;
-			buildingNum++;
+			objectNum++;
 			GameObject tmp = getLocalInstance (lot);
 			if (tmp != null) {
 				localLot = tmp.GetComponent<Lot> ();

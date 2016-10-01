@@ -46,14 +46,14 @@ public class Park : Business {
 			upkeep = rent / UPKEEP_PORTION;
 			officeName = "None";
 			buildingName = nameGen ();
-			id = buildingNum;
+			id = objectNum;
 			fire = false;
 			ruin = false;
 			occupied = false;
 			onAuction = false;
 			paying = false;
 			//notForSale = true;
-			buildingNum++;
+			objectNum++;
 			GameObject tmp = getLocalInstance (lot);
 			if (tmp != null) {
 				localLot = tmp.GetComponent<Lot> ();
