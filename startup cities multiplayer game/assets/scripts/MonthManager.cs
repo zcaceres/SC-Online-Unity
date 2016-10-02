@@ -30,6 +30,7 @@ public class MonthManager : NetworkBehaviour {
 
 	private Player[] players;
 	private Building[] buildings;
+	private Vehicle[] vehicles;
 	private ResidentManager rm;
 	public Dictionary<int, int> dictRent = new Dictionary<int, int> ();
 	public Dictionary<int, int> dictNumberOfType = new Dictionary<int, int> ();
@@ -172,6 +173,7 @@ public class MonthManager : NetworkBehaviour {
 		ui.updateCityStatus ("");
 		players = GameObject.FindObjectsOfType<Player> ();
 		buildings = GameObject.FindObjectsOfType<Building> ().Where (b => (!(b is Neighborhood))).ToArray();
+		vehicles = GameObject.FindObjectsOfType<Vehicle> ();
 		//DictAttractiveness
 		if (isServer) {
 			dictRent.Clear ();
@@ -217,6 +219,10 @@ public class MonthManager : NetworkBehaviour {
 				}
 				building.tenant.availableTenants.Clear ();
 				building.advanceMonth ();
+			}
+
+			foreach (Vehicle v in vehicles) {
+				v.advanceMonth ();
 			}
 
 			foreach (Player p in players) {

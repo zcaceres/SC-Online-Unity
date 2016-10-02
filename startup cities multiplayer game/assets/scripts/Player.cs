@@ -53,6 +53,8 @@ public class Player : NetworkBehaviour {
 	public int playerExperience;
 	[SyncVar(hook = "showMessage")]
 	public string message;
+	[SyncVar(hook = "togglePlayerVisibility")]
+	public bool playerNotVisible;
 
 	[SyncVar]
 	public string leaders;
@@ -100,6 +102,7 @@ public class Player : NetworkBehaviour {
 	private GameObject activePanel;
 	private StartupRigidbodyFirstPersonController characterController;
 	public GameObject bankruptChoice;
+	public bool eligibleToExitVehicle;
 
 	// Use this for initialization
 	void Start () {
@@ -128,6 +131,7 @@ public class Player : NetworkBehaviour {
 		characterController = GetComponent<StartupRigidbodyFirstPersonController> ();
 		deliveryDestinations = new List<Building> ();
 		oldMonth = monthManager.getMonth ();
+		eligibleToExitVehicle = false;
 
 		//Sets the player's MapMarker to their player color
 		playerMapMarker = gameObject.transform.Find ("MapMarker").gameObject;
@@ -1544,12 +1548,14 @@ public class Player : NetworkBehaviour {
 		}
 		return buildings;
 	}
+
 	/// <summary>
 	/// Sets the busyPanel variable to false, permitting extra panels to be spawned
 	/// </summary>
 	public void closePanel() {
 		busyPanel = false;
 	}
+
 
 	private void spawnGiveMoneyPanel() {
 		if (!busyPanel && (targetPlayer != null) && (targetPlayer.id != id)) {
@@ -1641,4 +1647,77 @@ public class Player : NetworkBehaviour {
 			}
 		}
 	}
+
+	public void ToggleVehicleControls (bool enabled) {
+		VehicleControls vc = GetComponent<VehicleControls> ();
+		vc.enabled = enabled;
+		if (enabled) {
+			GetComponent<StartupRigidbodyFirstPersonController> ().enabled = false;
+		} else {
+			GetComponent<StartupRigidbodyFirstPersonController> ().enabled = true;
+		}
+	}
+
+	[Command]
+	public void CmdSetPlayerVisibility (NetworkInstanceId netId, bool visible)
+	{
+		playerNotVisible = visible;
+	}
+
+	[Command]
+	public void CmdSetPlayerEligibilityToExit (NetworkInstanceId netId, bool eligible)
+	{
+		eligibleToExitVehicle = eligible;
+	}
+
+
+	/// <summary>
+	/// Utility function for hiding the player.
+	/// Used in vehicle class.
+	/// </summary>
+	/// <param name="active">If set to <c>true</c> active.</param>
+	private void togglePlayerVisibility (bool active)
+	{
+		playerNotVisible = active;
+		Debug.Log ("called toggle player visibility");
+		Renderer[] rends = gameObject.GetComponentsInChildren<Renderer> ();
+		if (playerNotVisible) {
+			gameObject.GetComponent<Rigidbody> ().isKinematic = true;
+			gameObject.GetComponent<CapsuleCollider> ().enabled = false;
+			foreach (Renderer r in rends) {
+				r.enabled = false;
+			}
+			if (isLocalPlayer) {
+				gameObject.transform.Find ("MainCamera").GetComponent<Camera> ().enabled = false;
+			}
+			//gameObject.transform.SetParent (this.gameObject.transform);
+			//play.message = "Press F to get out.";
+		} else {
+			gameObject.GetComponent<Rigidbody> ().isKinematic = false;
+			gameObject.GetComponent<Collider> ().enabled = true;
+			foreach (Renderer r in rends) {
+				r.enabled = true;
+			}
+			if (isLocalPlayer) {
+				gameObject.transform.Find ("MainCamera").GetComponent<Camera> ().enabled = true;
+			}
+		//	gameObject.transform.SetParent (null);
+		}
+	}
+
+
+	[Command]
+	public void CmdSetNewParent (NetworkInstanceId netId) {
+		Transform t = getLocalInstance (netId).transform;
+		Debug.Log ("set parent for client to.. " + t.name);
+		gameObject.transform.SetParent (t);
+		RpcSetNewParent (netId);
+	}
+
+	[ClientRpc]
+	public void RpcSetNewParent (NetworkInstanceId netId) {
+		Transform t = getLocalInstance (netId).transform;
+		gameObject.transform.SetParent (t);
+	}
+
 }

@@ -225,7 +225,7 @@ public class Building : DamageableObject {
 			if (fireTrans.Length < 1) {
 				GameObject tmp = (GameObject)Instantiate (fireObj, new Vector3 (gameObject.transform.position.x, getHighest(), gameObject.transform.position.z), fireObj.transform.rotation);
 				NetworkServer.Spawn (tmp);
-				Debug.LogError ("Building is on fire but has no transforms");
+				Debug.LogWarning ("Building is on fire but has no transforms");
 			}
 			foreach (FireTransform ft in fireTrans) {
 				GameObject tmp = (GameObject)Instantiate (fireObj, ft.transform.position, fireObj.transform.rotation);

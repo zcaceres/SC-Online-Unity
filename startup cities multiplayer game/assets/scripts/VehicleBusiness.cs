@@ -6,13 +6,13 @@ using UnityEngine.Networking;
 public class VehicleBusiness : NetworkBehaviour
 {
 	const int COST_PER_VISIT = 20;
-	private IceCreamTruckVehicle iceCreamTruck;
+	private FoodTruck iceCreamTruck;
 	protected const int CHANNEL = 1;
 	//const int TYPENUM = 3;
 
 	void Start ()
 	{
-		iceCreamTruck = GetComponent<IceCreamTruckVehicle> ();
+		iceCreamTruck = GetComponent<FoodTruck> ();
 	}
 
 	/// <summary>

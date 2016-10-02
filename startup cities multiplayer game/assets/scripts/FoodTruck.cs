@@ -3,36 +3,22 @@ using System.Collections;
 using System.Linq;
 using UnityEngine.Networking;
 
-public class IceCreamTruckVehicle : Vehicle
+public class FoodTruck : Vehicle
 {
-	private UnityStandardAssets.Vehicles.Car.CarController carController;
-	private AudioSource megaPhoneLoop; // audio for loop
-	private Megaphone mega; //used for mobile collection of $$ from customers
+	protected UnityStandardAssets.Vehicles.Car.CarController carController;
+	protected AudioSource megaPhoneLoop; // audio for loop
+	protected Megaphone mega; //used for mobile collection of $$ from customers
 
 	//Names for Vehicles
 	private static string[] rSmallFirst = {
-		"Yumsters",
-		"Frozen",
-		"Cold",
-		"Dairy",
-		"Icey"
+		"Food",
 	};
 		
-	private static string[] rSmallLast = { "Ice Cream", "Delights", "Pops" };
+	private static string[] rSmallLast = { "Truck", };
 
 
 	void Start ()
 	{
-		AudioSource[] vehicleSounds = GetComponents<AudioSource> ();
-		horn = vehicleSounds [1];
-		vehicleOccupied = false;
-		eligibleToExit = false;
-		mega = GetComponentInChildren<Megaphone> ();
-
-		foreach (AudioSource aSources in vehicleSounds) {
-			aSources.enabled = false;
-		}
-
 		if (isServer) {
 			cost = 10000;
 			fire = false;
@@ -44,8 +30,23 @@ public class IceCreamTruckVehicle : Vehicle
 			type = TYPENUM;
 			typeName = "Food Truck";
 			vehicleName = nameGen ();
+			vehicleOccupied = false;
+			vehicleToughness = 2;
+			passengerLimit = 2;
 		}
+
+		AudioSource[] vehicleSounds = GetComponents<AudioSource> ();
+		horn = vehicleSounds [1];
+		vehicleDamageParticleSystem = gameObject.transform.Find ("VehicleDamageParticles").gameObject;
+		vehicleOccupied = false;
+		mega = GetComponentInChildren<Megaphone> ();
+
+		foreach (AudioSource aSources in vehicleSounds) {
+			aSources.enabled = false;
+		}
+			
 		carController = GetComponent<UnityStandardAssets.Vehicles.Car.CarController> ();
+		//Used to get currentspeed for food truck mobile business collider
 	}
 
 
@@ -58,19 +59,20 @@ public class IceCreamTruckVehicle : Vehicle
 			if (Input.GetKeyUp (KeyCode.Mouse0)) {
 				horn.Stop ();
 			}
-			if (Input.GetKey (KeyCode.F) && eligibleToExit) {
+			if (Input.GetKey (KeyCode.F)) {
 				Player p = gameObject.GetComponentInChildren<Player> ();
-				ExitVehicle (p);
+				if (p.eligibleToExitVehicle) {
+					ExitVehicle (p);
+				}
 			}
 
-			if (carController.CurrentSpeed <= 15f && getOwner() != -1 && !ruin) {
+			if (carController.CurrentSpeed <= 15f && getOwner () != -1 && !ruin) {
 				mega.ToggleFoodTruck (true);
 			} else {
 				mega.ToggleFoodTruck (false);
 			}
 		}
 		CheckCondition ();
-		ToggleVisualizeDamage ();
 	}
 
 	/// <summary>

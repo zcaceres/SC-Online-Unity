@@ -17,8 +17,7 @@ public class PimpCar : Vehicle {
 	void Start () {
 		AudioSource[] vehicleSounds = GetComponents<AudioSource> ();
 		horn = vehicleSounds [1];
-		vehicleOccupied = false;
-		eligibleToExit = false;
+		vehicleDamageParticleSystem = gameObject.transform.Find ("Helpers").Find ("VehicleDamageParticles").gameObject;
 
 		foreach (AudioSource aSources in vehicleSounds) {
 			aSources.enabled = false;
@@ -35,11 +34,15 @@ public class PimpCar : Vehicle {
 			type = TYPENUM;
 			typeName = "Car";
 			vehicleName = nameGen ();
+			vehicleOccupied = false;
+			vehicleToughness = 1;
+			passengerLimit = 2;
 		}
 	}
 	
 
-	void Update () {
+	void Update ()
+	{
 		if (vehicleOccupied) {
 			if (Input.GetKeyDown (KeyCode.Mouse0) && !horn.isPlaying) {
 				horn.Play ();
@@ -47,14 +50,15 @@ public class PimpCar : Vehicle {
 			if (Input.GetKeyUp (KeyCode.Mouse0)) {
 				horn.Stop ();
 			}
-			if (Input.GetKey (KeyCode.F) && eligibleToExit) {
+			if (Input.GetKey (KeyCode.F)) {
 				Player p = gameObject.GetComponentInChildren<Player> ();
-				ExitVehicle (p);
+				if (p != null && p.eligibleToExitVehicle) {
+					Debug.LogError ("Exited the vehicle");
+					ExitVehicle (p);
+				}
 			}
 		}
 		CheckCondition ();
-		ToggleVisualizeDamage ();
-	
 	}
 
 	/// <summary>

@@ -1,38 +1,19 @@
 ﻿using UnityEngine;
 using System.Collections;
-using System.Linq;
-using UnityEngine.Networking;
 
-public class IceCreamTruckVehicle : Vehicle
-{
-	private UnityStandardAssets.Vehicles.Car.CarController carController;
-	private AudioSource megaPhoneLoop; // audio for loop
-	private Megaphone mega; //used for mobile collection of $$ from customers
-
-	//Names for Vehicles
+public class IceCreamFoodTruck : FoodTruck {
 	private static string[] rSmallFirst = {
-		"Yumsters",
+		"Yumster's",
 		"Frozen",
 		"Cold",
 		"Dairy",
 		"Icey"
 	};
-		
+
 	private static string[] rSmallLast = { "Ice Cream", "Delights", "Pops" };
 
 
-	void Start ()
-	{
-		AudioSource[] vehicleSounds = GetComponents<AudioSource> ();
-		horn = vehicleSounds [1];
-		vehicleOccupied = false;
-		eligibleToExit = false;
-		mega = GetComponentInChildren<Megaphone> ();
-
-		foreach (AudioSource aSources in vehicleSounds) {
-			aSources.enabled = false;
-		}
-
+	void Start () {
 		if (isServer) {
 			cost = 10000;
 			fire = false;
@@ -44,34 +25,51 @@ public class IceCreamTruckVehicle : Vehicle
 			type = TYPENUM;
 			typeName = "Food Truck";
 			vehicleName = nameGen ();
+			vehicleOccupied = false;
+			vehicleToughness = 3;
+			passengerLimit = 2;
 		}
+
+		AudioSource[] vehicleSounds = GetComponents<AudioSource> ();
+		horn = vehicleSounds [1];
+		vehicleDamageParticleSystem = gameObject.transform.Find ("Helpers").Find ("VehicleDamageParticles").gameObject;
+		vehicleOccupied = false;
+		mega = GetComponentInChildren<Megaphone> ();
+
+		foreach (AudioSource aSources in vehicleSounds) {
+			aSources.enabled = false;
+		}
+			
 		carController = GetComponent<UnityStandardAssets.Vehicles.Car.CarController> ();
+		//Used to get currentspeed for food truck mobile business collider
 	}
-
-
+	
 	void Update ()
 	{
 		if (vehicleOccupied) {
+			//if (isLocalPlayer) {
 			if (Input.GetKeyDown (KeyCode.Mouse0) && !horn.isPlaying) {
 				horn.Play ();
 			}
 			if (Input.GetKeyUp (KeyCode.Mouse0)) {
 				horn.Stop ();
 			}
-			if (Input.GetKey (KeyCode.F) && eligibleToExit) {
+			if (Input.GetKey (KeyCode.F)) {
 				Player p = gameObject.GetComponentInChildren<Player> ();
-				ExitVehicle (p);
+				if (p.eligibleToExitVehicle) {
+					ExitVehicle (p);
+				}
 			}
-
-			if (carController.CurrentSpeed <= 15f && getOwner() != -1 && !ruin) {
+			if (carController.CurrentSpeed <= 15f && getOwner () != -1 && !ruin) {
 				mega.ToggleFoodTruck (true);
 			} else {
 				mega.ToggleFoodTruck (false);
 			}
+			//}
 		}
 		CheckCondition ();
-		ToggleVisualizeDamage ();
 	}
+
 
 	/// <summary>
 	/// Generates a name for the vehicle
@@ -85,5 +83,4 @@ public class IceCreamTruckVehicle : Vehicle
 		name = rSmallFirst [(int)Random.Range (0, rSmallFirst.Length)] + " " + rSmallLast [(int)Random.Range (0, rSmallLast.Length)];
 		return name;
 	}
-
 }

@@ -7,22 +7,25 @@ using System.Collections;
 /// </summary>
 public class VehicleCollisionDetect : MonoBehaviour {
 	private Rigidbody vehicleRigidbody;
-	private UnityStandardAssets.Vehicles.Car.CarController CarC;
+	private UnityStandardAssets.Vehicles.Car.CarController carC;
 	private Vehicle parentVehicle;
-	private float damageThreshold = 1f;
+	private int damageThreshold;
 
 	void Start () {
 		parentVehicle = GetComponentInParent<Vehicle> ();
-		CarC = parentVehicle.GetComponent<UnityStandardAssets.Vehicles.Car.CarController> ();
+		carC = parentVehicle.GetComponent<UnityStandardAssets.Vehicles.Car.CarController> ();
 		vehicleRigidbody = parentVehicle.gameObject.GetComponent<Rigidbody> ();
+		damageThreshold = parentVehicle.getVehicleToughness(); //Gets vehicle toughness from vehicle (or child) class
 	}
 
 	void OnTriggerEnter (Collider other) {
 		if (other.GetComponent<Rigidbody> () != null) {
-			if (CarC.CurrentSpeed > damageThreshold) {
+			if (carC.CurrentSpeed > damageThreshold) {
+				Debug.Log ("collision exceeded threshold");
 				/*Damages car for each integer above the damage threshold when
 				it collides with another object, using CurrentSpeed for comparison*/
-				parentVehicle.damageObject((int)(CarC.CurrentSpeed));
+				int damage = (int)(carC.CurrentSpeed - damageThreshold);
+				parentVehicle.damageObject(damage);
 			}
 		}
 	}
