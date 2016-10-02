@@ -29,8 +29,7 @@ public class MonthManager : NetworkBehaviour {
 	private float time;
 
 	private Player[] players;
-	private Building[] buildings;
-	private Vehicle[] vehicles;
+	private OwnableObject[] objects;
 	private ResidentManager rm;
 	public Dictionary<int, int> dictRent = new Dictionary<int, int> ();
 	public Dictionary<int, int> dictNumberOfType = new Dictionary<int, int> ();
@@ -48,7 +47,7 @@ public class MonthManager : NetworkBehaviour {
 	void Start () {
 		colorsOn = false;
 		ui = GameObject.Find ("Canvas").GetComponent<CanvasManager> ();
-		buildings = GameObject.FindObjectsOfType<Building> ();
+		objects = GameObject.FindObjectsOfType<OwnableObject> ();
 		rm = GameObject.FindObjectOfType<ResidentManager> ();
 		isDay = true;
 
@@ -62,33 +61,36 @@ public class MonthManager : NetworkBehaviour {
 			players = GameObject.FindObjectsOfType<Player> ();
 			time = 0;
 			monthsPassed = 1;
-			foreach (Building building in buildings) {
+			foreach (OwnableObject o in objects) {
 				//Gets rents of all buildings of a type
-				if (dictRent.ContainsKey (building.type)) {
-					dictRent [building.type] += building.rent;
-				} else { 
-					dictRent.Add (building.type, building.rent);
-				}
+				if (o is Building) {
+					Building building = o.GetComponent<Building> ();
+					if (dictRent.ContainsKey (building.type)) {
+						dictRent [building.type] += building.rent;
+					} else { 
+						dictRent.Add (building.type, building.rent);
+					}
 
-				//Gets condition for all buildings of a type
-				if (dictCondition.ContainsKey (building.type)) {
-					dictCondition [building.type] += building.condition;
-				} else { 
-					dictCondition.Add (building.type, building.condition);
-				}
+					//Gets condition for all buildings of a type
+					if (dictCondition.ContainsKey (building.type)) {
+						dictCondition [building.type] += building.condition;
+					} else { 
+						dictCondition.Add (building.type, building.condition);
+					}
 
-				//Gets safety for all buildings of a type
-				if (dictSafety.ContainsKey (building.type)) {
-					dictSafety[building.type] += building.safety;
-				} else { 
-					dictSafety.Add (building.type, building.safety);
-				}
+					//Gets safety for all buildings of a type
+					if (dictSafety.ContainsKey (building.type)) {
+						dictSafety [building.type] += building.safety;
+					} else { 
+						dictSafety.Add (building.type, building.safety);
+					}
 
-				//Gets a dictionary of number of buildings of each type
-				if (dictNumberOfType.ContainsKey (building.type)) {
-					dictNumberOfType [building.type] += 1;
-				} else {
-					dictNumberOfType.Add (building.type, 1);
+					//Gets a dictionary of number of buildings of each type
+					if (dictNumberOfType.ContainsKey (building.type)) {
+						dictNumberOfType [building.type] += 1;
+					} else {
+						dictNumberOfType.Add (building.type, 1);
+					}
 				}
 			}
 		}
@@ -172,8 +174,7 @@ public class MonthManager : NetworkBehaviour {
 	private void advanceMonth () {
 		ui.updateCityStatus ("");
 		players = GameObject.FindObjectsOfType<Player> ();
-		buildings = GameObject.FindObjectsOfType<Building> ().Where (b => (!(b is Neighborhood))).ToArray();
-		vehicles = GameObject.FindObjectsOfType<Vehicle> ();
+		objects = GameObject.FindObjectsOfType<OwnableObject> ().Where (b => (!(b is Neighborhood))).ToArray();
 		//DictAttractiveness
 		if (isServer) {
 			dictRent.Clear ();
@@ -187,38 +188,41 @@ public class MonthManager : NetworkBehaviour {
 			foreach (Neighborhood n in neighborhoods) {
 				n.advanceMonth ();
 			}
-			foreach (Building building in buildings) {
-				if (!building.ruin) {
-					//Gets rents of all buildings of a type
-					if (dictRent.ContainsKey (building.type)) {
-						dictRent [building.type] += building.rent;
-					} else { 
-						dictRent.Add (building.type, building.rent);
-					}
+			foreach (OwnableObject o in objects) {
+				if (o is Building) {
+					Building building = o.GetComponent<Building> ();
+					if (!building.ruin) {
+						//Gets rents of all buildings of a type
+						if (dictRent.ContainsKey (building.type)) {
+							dictRent [building.type] += building.rent;
+						} else { 
+							dictRent.Add (building.type, building.rent);
+						}
 
-					//Gets condition for all buildings of a type
-					if (dictCondition.ContainsKey (building.type)) {
-						dictCondition [building.type] += building.condition;
-					} else { 
-						dictCondition.Add (building.type, building.condition);
-					}
+						//Gets condition for all buildings of a type
+						if (dictCondition.ContainsKey (building.type)) {
+							dictCondition [building.type] += building.condition;
+						} else { 
+							dictCondition.Add (building.type, building.condition);
+						}
 
-					//Gets safety for all buildings of a type
-					if (dictSafety.ContainsKey (building.type)) {
-						dictSafety [building.type] += building.safety;
-					} else { 
-						dictSafety.Add (building.type, building.safety);
-					}
+						//Gets safety for all buildings of a type
+						if (dictSafety.ContainsKey (building.type)) {
+							dictSafety [building.type] += building.safety;
+						} else { 
+							dictSafety.Add (building.type, building.safety);
+						}
 
-					//Gets a dictionary of number of buildings of each type
-					if (dictNumberOfType.ContainsKey (building.type)) {
-						dictNumberOfType [building.type] += 1;
-					} else {
-						dictNumberOfType.Add (building.type, 1);
+						//Gets a dictionary of number of buildings of each type
+						if (dictNumberOfType.ContainsKey (building.type)) {
+							dictNumberOfType [building.type] += 1;
+						} else {
+							dictNumberOfType.Add (building.type, 1);
+						}
 					}
+					building.tenant.availableTenants.Clear ();
 				}
-				building.tenant.availableTenants.Clear ();
-				building.advanceMonth ();
+				o.advanceMonth ();
 			}
 
 			foreach (Vehicle v in vehicles) {
@@ -229,6 +233,7 @@ public class MonthManager : NetworkBehaviour {
 				p.advanceMonth ();
 			}
 			if (Random.Range(0f, 10f) <= .01) { 
+				Building[] buildings = FindObjectsOfType<Building> ();
 				Earthquake (buildings);
 			}
 			rm.advanceMonth (); // RESIDENTS

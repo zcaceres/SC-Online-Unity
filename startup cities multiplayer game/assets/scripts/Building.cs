@@ -25,8 +25,6 @@ public class Building : DamageableObject {
 	[SyncVar]
 	public int upkeep;
 	[SyncVar]
-	public int id;              // Unique building id: not the name
-	[SyncVar]
 	public string officeName;
 	[SyncVar]
 	public bool occupied;
@@ -54,7 +52,6 @@ public class Building : DamageableObject {
 	[SyncVar]
 	protected bool paying;
 	protected const int UPKEEP_PORTION = 4;
-	protected static int buildingNum = 0;
 	protected static string[] buildingTypes = { "Generic Building", "House", "Apartment Building", "Restaurant", "Hardware Store", "Park", "Junkyard", "Abandoned Lot", "Grocery Store", "Tenement", 
 		"Small Apartment Building", "Medium Apartment Building", "Large Apartment Building", "Small Mixed-Use Building", "SuperMart", "Billboard", "City Hall", "Lot", "Decoration", "Trailer", "Factory", "Neighborhood", "Sidewalk", "Dirt Path",
 		"Neighborhood Services", "Junk", "Office"};
@@ -68,7 +65,7 @@ public class Building : DamageableObject {
 
 		if (isServer) {
 			lowestSkill = 0;
-			buildingName = buildingNum.ToString();
+			buildingName = objectNum.ToString();
 			baseRent = 100;
 			baseCondition = 100;
 			baseSafety = 100;
@@ -80,13 +77,13 @@ public class Building : DamageableObject {
 			baseCost = cost;
 			upkeep = rent / UPKEEP_PORTION;
 			officeName = "None";
-			id = buildingNum;
+			id = objectNum;
 			fire = false;
 			ruin = false;
 			occupied = false;
 			onAuction = false;
 			paying = false;
-			buildingNum++;
+			objectNum++;
 			GameObject tmp = getLocalInstance (lot);
 			if (tmp != null) {
 				localLot = tmp.GetComponent<Lot> ();
@@ -97,6 +94,7 @@ public class Building : DamageableObject {
 		}
 		typeName = buildingTypes [type];
 	}
+		
 
 	/// <summary>
 	/// Applies any modifiers to the rent
@@ -139,7 +137,7 @@ public class Building : DamageableObject {
 	/// <summary>
 	/// Advances the month, applies condition damage, updates the rent, causes fire damage.
 	/// </summary>
-	public virtual void advanceMonth() {
+	public override void advanceMonth() {
 		if (isServer) {
 			if (condition > 25) {
 				damageObject (1); 

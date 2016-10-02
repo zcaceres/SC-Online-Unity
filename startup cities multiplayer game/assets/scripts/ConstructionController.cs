@@ -308,7 +308,7 @@ public class ConstructionController : NetworkBehaviour {
 				Lot l = hit.collider.gameObject.GetComponent<Lot> ();
 				if (lotBoundary.isConstructable) {
 					if ((l != null)) {
-						if (l.ownedBy (this.netId) && l.canBuild(spawnables[currentCategory][index].buildingType)) {
+						if (l.ownedBy (this.netId) && l.canBuild (spawnables [currentCategory] [index].buildingType)) {
 							readyToConstruct = true;
 							lotBoundary.turnGreen ();
 						}

@@ -500,7 +500,7 @@ public class Player : NetworkBehaviour {
 		p = getLocalInstance (playerId);
 
 		OwnableObject b = obj.GetComponent<OwnableObject> ();
-		Building building = b.GetComponent<Building> ();
+		Building building;
 		Player player = p.GetComponent<Player> ();
 
 		if (b != null) {

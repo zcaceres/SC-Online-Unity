@@ -55,13 +55,13 @@ public class ApartmentBuilding : Building {
 			type = 2;
 			typeName = buildingTypes [type];
 			buildingName = nameGen ();
-			id = buildingNum;
+			id = objectNum;
 			fire = false;
 			ruin = false;
 			occupied = false;
 			onAuction = false;
 			paying = false;
-			buildingNum++;
+			objectNum++;
 			if (!upgrade) {
 				malusGenerator ();
 			}

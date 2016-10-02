@@ -5,7 +5,7 @@ using UnityEngine.Networking;
 
 public class OwnableObject : NetworkBehaviour {
 	const int ATTRACTIVENESS_EFFECT = 0;
-
+	protected static int objectNum = 0;
 	[SyncVar]
 	public int cost;
 	[SyncVar]
@@ -16,17 +16,27 @@ public class OwnableObject : NetworkBehaviour {
 	public NetworkInstanceId lot;
 	[SyncVar]
 	public bool notForSale;
+	[SyncVar]
+	public int id;              // Unique id
 
 	public Lot localLot;
 	// Use this for initialization
 	void Start () {
 		if (isServer) {
+			id = objectNum;
+			objectNum++;
 			GameObject tmp = getLocalInstance (lot);
 			if (tmp != null) {
 				localLot = tmp.GetComponent<Lot> ();
 			} else if (localLot != null) {
 				lot = localLot.netId; // the lot was set in the inspector, assign the netid
 			}
+		}
+	}
+
+	public virtual void advanceMonth() {
+		if (!validOwner()) {
+			notForSale = false;
 		}
 	}
 

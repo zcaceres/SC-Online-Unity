@@ -47,13 +47,13 @@ public class SmallApartmentBuilding : Building {
 			upkeep = rent / UPKEEP_PORTION;
 			officeName = "None";
 			buildingName = nameGen ();
-			id = buildingNum;
+			id = objectNum;
 			fire = false;
 			ruin = false;
 			occupied = false;
 			onAuction = false;
 			paying = false;
-			buildingNum++;
+			objectNum++;
 			if (!upgrade) {
 				malusGenerator ();
 			}

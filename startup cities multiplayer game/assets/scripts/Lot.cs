@@ -58,13 +58,13 @@ public class Lot : Building {
 			upkeep = rent / UPKEEP_PORTION;
 			officeName = "None";
 			typeName = buildingTypes [type];
-			id = buildingNum;
+			id = objectNum;
 			fire = false;
 			ruin = false;
 			occupied = false;
 			onAuction = false;
 			paying = false;
-			buildingNum++;
+			objectNum++;
 			if (lotObjects == null) { // do this only if items weren't added before Start() was run
 				lotSetup (); 
 			} else {

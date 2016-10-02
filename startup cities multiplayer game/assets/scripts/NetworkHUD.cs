@@ -108,6 +108,17 @@ namespace UnityEngine.Networking {
 					}
 				}
 				ypos += spacing;
+				if (GUI.Button (new Rect (xpos, ypos, 200, 20), "Spectator Mode")) {
+					GameObject tmp = manager.playerPrefab;
+					manager.playerPrefab = (GameObject)Resources.Load ("Spectator");
+					ClientScene.Ready (manager.client.connection);
+
+					if (ClientScene.localPlayers.Count == 0) {
+						ClientScene.AddPlayer (0);
+					}
+					manager.playerPrefab = tmp;
+				}
+				ypos += spacing;
 			}
 
 			if (NetworkServer.active || NetworkClient.active) {
