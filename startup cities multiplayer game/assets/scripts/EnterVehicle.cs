@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class EnterVehicle : MonoBehaviour {
+public class EnterVehicleDriver : MonoBehaviour {
 	private Vehicle vehicle;
 
 	void Start() {
@@ -32,6 +32,7 @@ public class EnterVehicle : MonoBehaviour {
 			Player p = coll.gameObject.GetComponent<Player> ();
 			if (Input.GetKeyDown (KeyCode.F)) {
 				if (vehicle.getOwner () == p.id && !vehicle.eligibleToExit) {
+					Debug.LogError ("eligible to enter vehicle");
 					vehicle.StartVehicle (p);
 				}
 			}
