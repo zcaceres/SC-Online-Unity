@@ -109,17 +109,19 @@ public class Vehicle : DamageableObject
 	/// vehicle prefab's hood
 	/// </summary>
 	protected virtual void ToggleVisualizeDamage () {
-		if (condition <= 25) {
+		if (isServer) {
+			if (condition <= 25) {
 //			vehicleDamageParticleSystem
-			//Turn on particle system
-			//RPC to do the same
-			RpcToggleVisualizeDamage(true);
-			//trigger particle system on prefab with black smoke from car's hood
-		} else {
-			//turn off damageparticlesystem
-			//RPC to do the same
-			RpcToggleVisualizeDamage(false);
+				//Turn on particle system
+				//RPC to do the same
+				RpcToggleVisualizeDamage (true);
+				//trigger particle system on prefab with black smoke from car's hood
+			} else {
+				//turn off damageparticlesystem
+				//RPC to do the same
+				RpcToggleVisualizeDamage (false);
 
+			}
 		}
 	}
 

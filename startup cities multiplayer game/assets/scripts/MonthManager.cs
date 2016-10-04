@@ -12,7 +12,7 @@ using UnityEngine.Networking;
 public class MonthManager : NetworkBehaviour {
 
 	// Month length in seconds
-	const int MONTH_LENGTH = 25;
+	const int MONTH_LENGTH = 10;
 	const int TURNS_UNTIL_NIGHT = 6;
 	//access for SetSunLight and AutoIntensity class other classes to MONTH_LENGTH
 	public float turnTime;
@@ -260,7 +260,9 @@ public class MonthManager : NetworkBehaviour {
 		foreach (Camera c in cameras) {
 			c.GetComponentInChildren<EZCameraShake.CameraShaker> ().ShakeOnce (10f, 10f, 15f, 15f);
 		}
-		p.message = "Uh oh...";
+		if (p != null) {
+			p.message = "Uh oh...";
+		}
 		AudioSource pa = p.GetComponentInChildren<AudioSource> ();
 		pa.clip = quakeLoop;
 		pa.Play ();

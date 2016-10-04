@@ -192,7 +192,10 @@ public class SpectatorController : NetworkBehaviour
 	{
 		if (!isLocalPlayer)
 			return;
-		RotateView ();
+
+		if (lookEnabled) {
+			RotateView ();
+		}
 		GroundCheck();
 		Vector2 input = GetInput();
 

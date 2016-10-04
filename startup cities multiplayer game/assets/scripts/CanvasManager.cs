@@ -90,6 +90,8 @@ public class CanvasManager : MonoBehaviour {
 		if (ledgerShowing) {
 			float ypos = -25;
 			Player p = FindObjectOfType<Player> ().localPlayer;
+			if (p == null)
+				return;
 			List<Building> tmp = p.getBuildings ();
 			List<Building> hoods = tmp.Where (b => (b is Neighborhood)).ToList ();
 			List<Building> lots = tmp.Where (b => ((b is Lot) && !b.inNeighborhood ())).ToList ();

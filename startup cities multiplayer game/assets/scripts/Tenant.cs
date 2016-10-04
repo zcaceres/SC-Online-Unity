@@ -247,7 +247,9 @@ public class Tenant : NetworkBehaviour {
 				building.occupied = true;
 				if (building.getOwner () > -1)  {
 					Player local = FindObjectOfType<Player> ().localPlayer;
-					local.updateUI ();
+					if (local != null) {
+						local.updateUI ();
+					}
 				}
 			} else {
 				activeTenant = NetworkInstanceId.Invalid;
@@ -274,7 +276,7 @@ public class Tenant : NetworkBehaviour {
 
 	public void messageOwner(string s) {
 		if (building.validOwner()) { // notify the player if owned by an individual, else notify the company members
-			if (building.getPlayerOwner().id == building.getPlayerOwner().localPlayer.id) {
+			if (building.getPlayerOwner().localPlayer != null && building.getPlayerOwner().id == building.getPlayerOwner().localPlayer.id) {
 				building.getPlayerOwner().showMessage (s);
 			}
 		} 

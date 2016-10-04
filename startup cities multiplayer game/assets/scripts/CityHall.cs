@@ -11,6 +11,8 @@ public class CityHall : Business {
 	};
 	private static string[] rSmallLast = { "Hall"};
 
+	[SyncVar]
+	private int budget;
 	void Start() {
 		c = GetComponent<Collider> ();
 		modManager = GetComponent<BuildingModifier> ();
@@ -18,6 +20,7 @@ public class CityHall : Business {
 		color = c.gameObject.GetComponent<MeshRenderer> ().materials.ElementAt (0).color;
 		type = TYPENUM;
 		if (isServer) {
+			budget = 0;
 			skillLevel = 0;
 			baseRent = 1000;
 			baseCondition = 100;
@@ -47,10 +50,10 @@ public class CityHall : Business {
 				localLot.addObject(this.netId);
 			}
 			updateRent ();
-			//updateNeighborhoodValue ();
 		}
 		typeName = buildingTypes [type];
 	}
+
 	public override void updateRent() {
 		if (isServer) {
 			if (ruin) {
@@ -133,4 +136,19 @@ public class CityHall : Business {
 		return name;
 	}
 
+	/// <summary>
+	/// Adds the passed amount to the city hall's budget
+	/// </summary>
+	/// <param name="amount">Amount.</param>
+	public void receiveTaxes(int amount) {
+		budget += amount;
+	}
+
+	/// <summary>
+	/// Removes the passed amount from the city hall's budget
+	/// </summary>
+	/// <param name="amount">Amount.</param>
+	public void pay(int amount) {
+		budget -= amount;
+	}
 }
