@@ -1,6 +1,10 @@
 ﻿using UnityEngine;
 using System.Collections;
 
+
+/// <summary>
+/// Class to handle driver entering vehicle from driver's side door
+/// </summary>
 public class EnterVehicle : MonoBehaviour {
 	private Vehicle vehicle;
 
@@ -17,7 +21,11 @@ public class EnterVehicle : MonoBehaviour {
 		if (coll.CompareTag("Player")) { //Check player ownership here
 			Player p = coll.gameObject.GetComponent<Player> ();
 			if (vehicle.getOwner () == p.id) {
-				p.message = "Press F to get in.";
+				p.message = "Press F to drive.";
+			} else { //Player is not owner
+				if (vehicle.getOwner () != -1) {
+					p.message = "Press F to ask for a ride.";
+				}
 			}
 		}
 	}
@@ -31,8 +39,11 @@ public class EnterVehicle : MonoBehaviour {
 		if (coll.CompareTag ("Player")) { // check player ownership
 			Player p = coll.gameObject.GetComponent<Player> ();
 			if (Input.GetKeyDown (KeyCode.F)) {
-				if (vehicle.getOwner () == p.id && !vehicle.eligibleToExit) {
+				if (vehicle.getOwner () == p.id && !p.eligibleToExitVehicle) {
 					vehicle.StartVehicle (p);
+				} else {
+					//TODO : vehicle.StartPassenger(p);
+					//check for passenger's elibigility here
 				}
 			}
 		}

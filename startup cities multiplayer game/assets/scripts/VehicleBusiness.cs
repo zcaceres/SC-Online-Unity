@@ -6,17 +6,16 @@ using UnityEngine.Networking;
 public class VehicleBusiness : NetworkBehaviour
 {
 	const int COST_PER_VISIT = 20;
-	private IceCreamTruckVehicle iceCreamTruck;
+	private FoodTruck iceCreamTruck;
 	protected const int CHANNEL = 1;
-	//const int TYPENUM = 3;
 
 	void Start ()
 	{
-		iceCreamTruck = GetComponent<IceCreamTruckVehicle> ();
+		iceCreamTruck = GetComponent<FoodTruck> ();
 	}
 
 	/// <summary>
-	/// Function called from BusinessVisitNode when a resident enters the collider around the business.
+	/// Method called from BusinessVisitNode when a resident enters the collider around the business.
 	/// Overridden by child business classes like this one to discriminate based on resident skill level and other factors.
 	/// </summary>
 	/// <param name="res">Resident</param>
@@ -29,14 +28,20 @@ public class VehicleBusiness : NetworkBehaviour
 					int spent = GetCostOfVisit ();
 					res.spendingMoney -= spent;
 					p.CmdAddMoney (p.netId, spent);
+					//TODO : Play purchase sound, low local range
+					//TODO : Play animation or trigger dollar sign spinning on top of car
 					Debug.Log ("Sent " + spent + " to owner " + p.netId);
 				}
 			} else {
-				Debug.Log ("condition too crappy for sale");
+				p.message = "Customers are turned off by your vehicle's condition.";
 			}
 		}
 	}
 
+	/// <summary>
+	/// Gets the cost of businessvisit
+	/// </summary>
+	/// <returns>The cost of visit.</returns>
 	public int GetCostOfVisit ()
 	{
 		return COST_PER_VISIT;

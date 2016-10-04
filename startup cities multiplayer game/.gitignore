@@ -9,7 +9,6 @@
 /Assets/Lowpoly_Sports_Car_2_in_1
 /Assets/LowpolyCityPack
 /Heapshots
-/test_Data
 test.exe
 
 
@@ -37,3 +36,5 @@ sysinfo.txt
 # Builds
 *.apk
 *.unitypackage
+/test_Data
+/testrun_Data
