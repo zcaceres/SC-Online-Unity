@@ -303,7 +303,9 @@ public class Player : NetworkBehaviour {
 		} else if (updateIn > 0) {
 			updateIn--;
 			if (updateIn < 1) {
-				localPlayer.updateUI ();
+				if (localPlayer != null) {
+					localPlayer.updateUI ();
+				}
 			}
 		}
 		if (targetObject != null) {
@@ -467,14 +469,19 @@ public class Player : NetworkBehaviour {
 	/// </summary>
 	public void payTaxes() {
 		if (isServer) {
+			CityHall c = FindObjectOfType<CityHall> ();
 			int tax = 0;
 			foreach (NetId buildingId in owned) {
 				Building b = getBuilding (buildingId.id);
 				if (b != null) { //used to avoid null refs on vehicles
 					if (b is Lot) {
-						tax += (int)(b.baseRent * .1f);
+						int amount = (int)(b.baseRent * .1f);
+						tax += amount;
+						c.receiveTaxes (amount);
 					} else if (!(b is Neighborhood)) {
-						tax += (int)(b.appraise () * .1f);
+						int amount = (int)(b.appraise () * .1f);
+						tax += amount;
+						c.receiveTaxes (amount);
 					}
 				}
 			}
@@ -1175,12 +1182,16 @@ public class Player : NetworkBehaviour {
 
 	[ClientRpc(channel=CHANNEL)]
 	public void RpcUpdateUI() {
-		localPlayer.updateUI ();
+		if (localPlayer != null) {
+			localPlayer.updateUI ();
+		}
 	}
 
 	[ClientRpc(channel=CHANNEL)]
 	public void RpcTimedUpdate() {
-		localPlayer.updateIn = 15;
+		if (localPlayer != null) {
+			localPlayer.updateIn = 15;
+		}
 	}
 
 	[ClientRpc(channel=CHANNEL)]

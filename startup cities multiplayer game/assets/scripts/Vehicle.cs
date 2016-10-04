@@ -129,7 +129,7 @@ public class Vehicle : DamageableObject
 			StartCoroutine (DelayToExit (netId)); //Coroutine to prevent immediate exit with "F"
 		}
 	}
-		
+
 	/// <summary>
 	/// Exits the vehicle.
 	/// </summary>
@@ -406,7 +406,7 @@ public class Vehicle : DamageableObject
 			baseCondition += numPoints;
 		}
 	}
-		
+
 	/// <summary>
 	/// Sets the vehicle on fire.
 	/// </summary>
@@ -561,7 +561,7 @@ public class Vehicle : DamageableObject
 			setColor (color);
 		}
 	}
-		
+
 	/// <summary>
 	/// Gets the vehicle's toughness (damage tolerance)
 	/// </summary>
