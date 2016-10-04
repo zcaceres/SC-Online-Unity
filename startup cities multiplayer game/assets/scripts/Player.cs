@@ -1765,6 +1765,7 @@ public class Player : NetworkBehaviour {
 			RpcSetNewParent (netId, true);
 		} else {
 			gameObject.transform.SetParent (null);
+			RpcSetNewParent (netId, false);
 		}
 	}
 

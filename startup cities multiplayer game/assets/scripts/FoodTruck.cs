@@ -67,13 +67,15 @@ public class FoodTruck : Vehicle
 				}
 			}
 
-			if (carController.CurrentSpeed <= 15f && getOwner () != -1 && !ruin) {
+			if (vehicleOccupied && carController.CurrentSpeed <= 15f && !ruin) {
 				mega.ToggleFoodTruck (true);
 			} else {
 				mega.ToggleFoodTruck (false);
 			}
 		}
-		CheckCondition ();
+		if (isServer) {
+			CheckCondition ();
+		}
 	}
 
 	/// <summary>

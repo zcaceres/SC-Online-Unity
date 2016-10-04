@@ -4,9 +4,6 @@ using System.Linq;
 using UnityEngine.Networking;
 using UnityStandardAssets.Vehicles.Car;
 
-// TODO: vehicleambient loop
-// TODO: ToggleVisualizeDamage
-// TODO: Sound synchronization
 // TODO: Write design schematic for vehicle prefabs
 // TODO: Passengers in vehicles with class PassengerEnterVehicle
 // TODO: ^ better to just expand EnterVehicle class to accommodate passengers
@@ -16,22 +13,24 @@ public class Vehicle : DamageableObject
 {
 	public AudioSource vehicleAmbientLoop;
 	//ambient loop for certain vehicles
-	protected GameObject vehicleDamageParticleSystem;
+	public GameObject vehicleDamageParticleSystem; //Set in Inspector!
+	//particle system that shows that a vehicle has fallen below 25 condition
 	protected AudioSource horn;
-	public int type;
+	public int type; //integer to indicate type of vehicle
 	[SyncVar]
 	public int upkeep;
 	[SyncVar]
-	public string vehicleName;
+	public string vehicleName; //name of vehicle using namegen
 	[SyncVar]
-	public string typeName;
+	public string typeName; //name of vehicle type
 	[SyncVar]
 	public bool ruin;
-	[SyncVar]
-	public bool vehicleOccupied;
-	[SyncVar]
-	public int passengerLimit;
+	[SyncVar(hook="ToggleVehicleSounds")]
+	public bool vehicleOccupied; //toggled based on whether vehicle has a driver
+	//[SyncVar]
+	public int passengerLimit; //limits the number of passengers for the vehicle
 
+	//TODO is this necessary??
 	protected const int TYPENUM = 27;
 
 	public Color color;
@@ -72,10 +71,11 @@ public class Vehicle : DamageableObject
 		}
 
 		AudioSource[] vehicleSounds = GetComponents<AudioSource> ();
-		vehicleDamageParticleSystem = gameObject.transform.Find ("Helpers").Find ("VehicleDamageParticles").gameObject;
 		horn = vehicleSounds [1];
 		type = TYPENUM;
-
+		if (vehicleDamageParticleSystem == null) {
+			vehicleDamageParticleSystem = gameObject.transform.Find ("Helpers").Find ("VehicleDamageParticles").gameObject;
+		}
 		foreach (AudioSource aSources in vehicleSounds) {
 			aSources.enabled = false;
 		}
@@ -93,21 +93,19 @@ public class Vehicle : DamageableObject
 			if (Input.GetKeyUp (KeyCode.Mouse0)) {
 				horn.Stop ();
 			}
-			if (vehicleOccupied) {
-				if (Input.GetKeyDown (KeyCode.F)) {
-					Player p = gameObject.GetComponentInChildren<Player> ();
-					if (p != null && p.eligibleToExitVehicle) {
-						ExitVehicle (p);
-					}
+			if (Input.GetKeyDown (KeyCode.F)) {
+				Player p = gameObject.GetComponentInChildren<Player> ();
+				if (p != null && p.eligibleToExitVehicle) {
+					ExitVehicle (p);
 				}
 			}
 		}
-		CheckCondition ();
+		if (isServer) {
+			CheckCondition ();
+		}
 	}
-		
 
-	/*Look at togglevisualize damage false for networking
-	//Can server handle all toggling of damage on and off*/
+
 
 
 
@@ -120,9 +118,6 @@ public class Vehicle : DamageableObject
 	public void StartVehicle (Player p)
 	{
 		NetworkInstanceId netId = p.netId;
-		if (vehicleAmbientLoop != null) {
-			ToggleVehicleAmbientLoop (true);
-		}
 		if (isServer) {
 			EnableVehicle (netId, true); //Enables vehicle sounds and controls
 			p.playerNotVisible = true; //Hides player model
@@ -144,14 +139,8 @@ public class Vehicle : DamageableObject
 		NetworkInstanceId netId = p.netId;
 		if (isServer) {
 			p.playerNotVisible = false; //Unhides player model
-			if (vehicleAmbientLoop != null) {
-				ToggleVehicleAmbientLoop (false); //turns off ambient loop
-			}
 		} else {
 			p.CmdSetPlayerVisibility (netId, false);
-			if (vehicleAmbientLoop != null) {
-				ToggleVehicleAmbientLoop (false); //turns off ambient loop
-			}
 		}
 		EnableVehicle (netId, false); //Enables vehicle sounds and controls
 		if (p.isLocalPlayer) {
@@ -168,18 +157,16 @@ public class Vehicle : DamageableObject
 	protected virtual void EnableVehicle (NetworkInstanceId netId, bool active)
 	{
 		Player play = getPlayer (netId);
-		if (!ruin) {
-			ToggleCoreVehicleSounds (active);
+		if (!ruin) {;
 			if (play.isLocalPlayer) {
 				CarController carC = GetComponent<CarController> ();
 				carC.enabled = active;
 				ToggleVehicleCam (play, active);
 			}
-				vehicleOccupied = active;
+			play.CmdSetVehicleOccupied (this.netId, active);
 		} else {
-			ToggleCoreVehicleSounds (false);
 			ToggleVehicleCam (play, active);
-			vehicleOccupied = active;
+			play.CmdSetVehicleOccupied (this.netId, active);
 		}
 	}
 
@@ -262,6 +249,10 @@ public class Vehicle : DamageableObject
 
 	/* CONDITION AND DAMAGE METHODS */
 
+
+	//TODO: Look at togglevisualize damage false for networking
+	//TODO: Can server handle all toggling of damage on and off*/
+
 	/// <summary>
 	/// Checks the condition of the vehicle to toggle damage visualization and ruin state
 	/// </summary>
@@ -269,6 +260,11 @@ public class Vehicle : DamageableObject
 	{
 		if (condition <= 25 && !ruin) { //Toggles visualization of damage if less than 25% condition
 			ToggleVisualizeDamage (true);
+			if (!fire) {
+				if (Random.Range (0f, 10f) >= 8f) {
+					setFire ();
+				}
+			}
 		} else if (condition > 25) {
 			ToggleVisualizeDamage (false);
 		}
@@ -311,9 +307,6 @@ public class Vehicle : DamageableObject
 		if (isServer) {
 			RpcToggleVisualizeDamage (damaged);
 		}
-		//		else {
-		//				CmdToggleVisualizeDamage (damaged);
-		//			}
 	}
 
 	/// <summary>
@@ -323,7 +316,7 @@ public class Vehicle : DamageableObject
 	[ClientRpc]
 	protected void RpcToggleVisualizeDamage (bool damaged)
 	{
-		//	vehicleDamageParticleSystem.SetActive (damaged);
+		vehicleDamageParticleSystem.SetActive (damaged);
 	}
 
 
@@ -392,7 +385,6 @@ public class Vehicle : DamageableObject
 	/// </summary>
 	public override void repair ()
 	{
-
 		if (isServer) {
 			if (ruin) {
 				RpcFixRuin ();
@@ -414,8 +406,7 @@ public class Vehicle : DamageableObject
 			baseCondition += numPoints;
 		}
 	}
-
-
+		
 	/// <summary>
 	/// Sets the vehicle on fire.
 	/// </summary>
@@ -435,7 +426,6 @@ public class Vehicle : DamageableObject
 			}
 			foreach (FireTransform ft in fireTrans) {
 				GameObject tmp = (GameObject)Instantiate (fireObj, ft.transform.position, fireObj.transform.rotation);
-				//tmp.transform.SetParent (ft.transform);
 				FireKiller fk = tmp.GetComponent<FireKiller> ();
 				ft.onFire = true; //Tells the fire transform that it is on fire. All fts must report back OnFire = false for advance month to consider the building not on fire!
 				fk.myTransform = ft; //sets the FireKiller's firetransform, which allows it to update the FT about the state of the fire!
@@ -447,9 +437,6 @@ public class Vehicle : DamageableObject
 
 
 
-
-
-
 	/* SOUND METHODS */
 
 
@@ -458,40 +445,35 @@ public class Vehicle : DamageableObject
 	/// This is NOT used for food truck audio, which is toggled when they're doing business.
 	/// </summary>
 	/// <param name="enabled">If set to <c>true</c> enabled.</param>
-	protected void ToggleVehicleAmbientLoop (bool enabled)
+	protected void ToggleVehicleSounds (bool occupied)
 	{
-		if (enabled) {
-			if (isServer) {
-				//	RpcToggleVehicleAmbientLoop (true);
+		vehicleOccupied = occupied;
+		if (vehicleOccupied) {
+			if (!ruin) {
+				ToggleCoreVehicleSounds (true);
+				if (vehicleAmbientLoop != null) {
+					ToggleAmbientVehicleLoop (true);
+				}
 			} else {
-				//CmdToggleVehicleAmbientLoop (true);
+				ToggleCoreVehicleSounds (false);
+				if (vehicleAmbientLoop != null) {
+					ToggleAmbientVehicleLoop (false);
+				}
 			}
 		} else {
-			if (isServer) {
-				//	RpcToggleVehicleAmbientLoop (false);
-			} else {
-				//	CmdToggleVehicleAmbientLoop (false);
+			ToggleCoreVehicleSounds (false);
+			if (vehicleAmbientLoop != null) {
+				ToggleAmbientVehicleLoop (false);
 			}
 		}
 	}
 
-	[ClientRpc]
-	protected void RpcToggleVehicleAmbientLoop (bool enabled)
+	protected void ToggleAmbientVehicleLoop (bool enabled)
 	{
 		if (enabled) {
-			//			vehicleAmbientLoop.enabled = true;
+			vehicleAmbientLoop.enabled = true;
 		} else {
-			//			vehicleAmbientLoop.enabled = false;
-		}
-	}
-
-	[Command]
-	protected void CmdToggleVehicleAmbientLoop (bool enabled)
-	{
-		if (enabled) {
-			//	vehicleAmbientLoop.enabled = true;
-		} else {
-			//	vehicleAmbientLoop.enabled = false;
+			vehicleAmbientLoop.enabled = false;
 		}
 	}
 
@@ -502,16 +484,6 @@ public class Vehicle : DamageableObject
 	/// <param name="active">If set to <c>true</c> active.</param>
 	protected virtual void ToggleCoreVehicleSounds (bool active)
 	{
-		if (isServer) {
-			//RpcToggleCoreVehicleSounds (active);
-		} else {
-			//CmdToggleCoreVehicleSounds (active);
-		}	
-	}
-
-	[ClientRpc]
-	protected void RpcToggleCoreVehicleSounds (bool active)
-	{
 		AudioSource[] vehicleSounds = GetComponents<AudioSource> ();
 		foreach (AudioSource aSources in vehicleSounds) {
 			aSources.enabled = active;
@@ -521,25 +493,7 @@ public class Vehicle : DamageableObject
 		if (active) {
 			vehicleSounds [2].Play ();
 			vehicleSounds [0].Play ();
-			
 		}
-	}
-
-	[Command]
-	protected void CmdToggleCoreVehicleSounds (bool active)
-	{
-		RpcToggleCoreVehicleSounds (active);
-//		AudioSource[] vehicleSounds = GetComponents<AudioSource> ();
-//		foreach (AudioSource aSources in vehicleSounds) {
-//			aSources.enabled = active;
-//		}
-//		UnityStandardAssets.Vehicles.Car.CarAudio carA = GetComponent<UnityStandardAssets.Vehicles.Car.CarAudio> ();
-//		carA.enabled = active;
-//		if (active) {
-//			vehicleSounds [2].Play ();
-//			vehicleSounds [0].Play ();
-//		}
-
 	}
 
 

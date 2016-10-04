@@ -33,7 +33,7 @@ public class VehicleBusiness : NetworkBehaviour
 					Debug.Log ("Sent " + spent + " to owner " + p.netId);
 				}
 			} else {
-				p.message = "Customers are turned off by your vehicle's condition.";
+				p.message = "Some customers won't buy from such a damaged vehicle.";
 			}
 		}
 	}
