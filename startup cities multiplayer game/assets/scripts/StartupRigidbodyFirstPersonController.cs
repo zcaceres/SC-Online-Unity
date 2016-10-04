@@ -264,6 +264,7 @@ public class StartupRigidbodyFirstPersonController : NetworkBehaviour
             }
         }
         m_Jump = false;
+
     }
 
 
