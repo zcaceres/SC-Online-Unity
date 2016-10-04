@@ -39,27 +39,7 @@ public class PimpCar : Vehicle {
 			passengerLimit = 2;
 		}
 	}
-	
 
-	void Update ()
-	{
-		if (vehicleOccupied) {
-			if (Input.GetKeyDown (KeyCode.Mouse0) && !horn.isPlaying) {
-				horn.Play ();
-			}
-			if (Input.GetKeyUp (KeyCode.Mouse0)) {
-				horn.Stop ();
-			}
-			if (Input.GetKey (KeyCode.F)) {
-				Player p = gameObject.GetComponentInChildren<Player> ();
-				if (p != null && p.eligibleToExitVehicle) {
-					Debug.LogError ("Exited the vehicle");
-					ExitVehicle (p);
-				}
-			}
-		}
-		CheckCondition ();
-	}
 
 	/// <summary>
 	/// Generates a name for the vehicle

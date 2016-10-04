@@ -2,10 +2,11 @@
 using System.Collections;
 using System.Linq;
 using UnityEngine.Networking;
+using UnityStandardAssets.Vehicles.Car;
 
 public class FoodTruck : Vehicle
 {
-	protected UnityStandardAssets.Vehicles.Car.CarController carController;
+	protected CarController carController;
 	protected AudioSource megaPhoneLoop; // audio for loop
 	protected Megaphone mega; //used for mobile collection of $$ from customers
 
@@ -45,12 +46,12 @@ public class FoodTruck : Vehicle
 			aSources.enabled = false;
 		}
 			
-		carController = GetComponent<UnityStandardAssets.Vehicles.Car.CarController> ();
+		carController = GetComponent<CarController> ();
 		//Used to get currentspeed for food truck mobile business collider
 	}
 
 
-	void Update ()
+	protected override void Update ()
 	{
 		if (vehicleOccupied) {
 			if (Input.GetKeyDown (KeyCode.Mouse0) && !horn.isPlaying) {

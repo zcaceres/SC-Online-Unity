@@ -225,10 +225,6 @@ public class MonthManager : NetworkBehaviour {
 				o.advanceMonth ();
 			}
 
-			foreach (Vehicle v in vehicles) {
-				v.advanceMonth ();
-			}
-
 			foreach (Player p in players) {
 				p.advanceMonth ();
 			}

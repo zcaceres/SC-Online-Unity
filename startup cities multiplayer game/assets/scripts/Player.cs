@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine.UI;
 using UnityEngine.Networking;
+using UnityStandardAssets.Vehicles.Car;
 
 public class Player : NetworkBehaviour {
 	public struct NetId {
@@ -56,6 +57,10 @@ public class Player : NetworkBehaviour {
 	[SyncVar(hook = "togglePlayerVisibility")]
 	public bool playerNotVisible;
 
+	//Vehicle vars
+	public bool eligibleToExitVehicle;
+	public CarController currentVehicle;
+
 	[SyncVar]
 	public string leaders;
 
@@ -102,7 +107,6 @@ public class Player : NetworkBehaviour {
 	private GameObject activePanel;
 	private StartupRigidbodyFirstPersonController characterController;
 	public GameObject bankruptChoice;
-	public bool eligibleToExitVehicle;
 
 	// Use this for initialization
 	void Start () {
@@ -249,9 +253,7 @@ public class Player : NetworkBehaviour {
 				updateUI ();
 			}
 			if (targetVehicle != null) {
-				Debug.Log ("targetvehicle is not null");
 				if (targetVehicle.getOwner () == id) {
-					Debug.Log ("owner is ok");
 					CmdRepair (gameObject.GetComponent<NetworkIdentity> ().netId, targetVehicle.gameObject.GetComponent<NetworkIdentity> ().netId);
 				}
 			}
@@ -1648,38 +1650,58 @@ public class Player : NetworkBehaviour {
 		}
 	}
 
-	public void ToggleVehicleControls (bool enabled) {
+
+
+
+
+	/* VEHICLE / DRIVING METHODS */
+
+	/// <summary>
+	/// Toggles the vehicle controls on the Player object to permit control of vehicles
+	/// </summary>
+	/// <param name="enabled">If set to <c>true</c> enabled.</param>
+	public void ToggleVehicleControls (bool enabled, NetworkInstanceId netId) {
 		VehicleControls vc = GetComponent<VehicleControls> ();
-		vc.enabled = enabled;
-		if (enabled) {
-			GetComponent<StartupRigidbodyFirstPersonController> ().enabled = false;
+		Vehicle v = getLocalInstance (netId).GetComponent<Vehicle> ();
+		//vc.m_Car = v.GetComponent<CarController> ();
+		if (isServer) {
+			currentVehicle = v.GetComponent<CarController> ();
 		} else {
-			GetComponent<StartupRigidbodyFirstPersonController> ().enabled = true;
+			CmdSetCurrentVehicle (netId);
 		}
+		vc.enabled = enabled;
 	}
 
+	/// <summary>
+	/// Command for setting the currentVehicle var in the player class. Ensures that the VehicleControls
+	/// has the CarController data in time for when it's enabled.
+	/// </summary>
+	/// <param name="netId">Net identifier.</param>
+	[Command]
+	public void CmdSetCurrentVehicle (NetworkInstanceId netId) {
+		CarController v = getLocalInstance (netId).GetComponent<Vehicle> ().GetComponent<CarController>();
+		currentVehicle = v;
+	}
+
+
+	/// <summary>
+	/// Command for toggling visibility syncvar. Linked to Syncvar Hook TogglePlayervisibility.
+	/// </summary>
+	/// <param name="netId">Network identifier.</param>
+	/// <param name="visible">If set to <c>true</c> visible.</param>
 	[Command]
 	public void CmdSetPlayerVisibility (NetworkInstanceId netId, bool visible)
 	{
 		playerNotVisible = visible;
 	}
 
-	[Command]
-	public void CmdSetPlayerEligibilityToExit (NetworkInstanceId netId, bool eligible)
-	{
-		eligibleToExitVehicle = eligible;
-	}
-
-
 	/// <summary>
-	/// Utility function for hiding the player.
-	/// Used in vehicle class.
+	/// Utility function for hiding the player. Called from syncvar hook playerNotVisible
 	/// </summary>
 	/// <param name="active">If set to <c>true</c> active.</param>
 	private void togglePlayerVisibility (bool active)
 	{
 		playerNotVisible = active;
-		Debug.Log ("called toggle player visibility");
 		Renderer[] rends = gameObject.GetComponentsInChildren<Renderer> ();
 		if (playerNotVisible) {
 			gameObject.GetComponent<Rigidbody> ().isKinematic = true;
@@ -1690,8 +1712,6 @@ public class Player : NetworkBehaviour {
 			if (isLocalPlayer) {
 				gameObject.transform.Find ("MainCamera").GetComponent<Camera> ().enabled = false;
 			}
-			//gameObject.transform.SetParent (this.gameObject.transform);
-			//play.message = "Press F to get out.";
 		} else {
 			gameObject.GetComponent<Rigidbody> ().isKinematic = false;
 			gameObject.GetComponent<Collider> ().enabled = true;
@@ -1701,23 +1721,82 @@ public class Player : NetworkBehaviour {
 			if (isLocalPlayer) {
 				gameObject.transform.Find ("MainCamera").GetComponent<Camera> ().enabled = true;
 			}
-		//	gameObject.transform.SetParent (null);
 		}
 	}
 
 
+	/// <summary>
+	/// Command for toggling the eligibility of the player to exit a vehicle.
+	/// Syncvar on player, set by the vehicle coroutine that delays immediate entrance/exit
+	/// of vehicle to prevent glitching (switching in and out by holding down enter/exit key)
+	/// </summary>
+	/// <param name="netId">Net identifier.</param>
+	/// <param name="eligible">If set to <c>true</c> eligible.</param>
 	[Command]
-	public void CmdSetNewParent (NetworkInstanceId netId) {
-		Transform t = getLocalInstance (netId).transform;
-		Debug.Log ("set parent for client to.. " + t.name);
-		gameObject.transform.SetParent (t);
-		RpcSetNewParent (netId);
+	public void CmdSetPlayerEligibilityToExit (NetworkInstanceId netId, bool eligible)
+	{
+		eligibleToExitVehicle = eligible;
 	}
 
-	[ClientRpc]
-	public void RpcSetNewParent (NetworkInstanceId netId) {
-		Transform t = getLocalInstance (netId).transform;
-		gameObject.transform.SetParent (t);
+
+	/// <summary>
+	/// Command to set the vehicleOccupied bool. Used in update functions in Vehicle.
+	/// </summary>
+	/// <param name="netId">NetworkInstance ID</param>
+	/// <param name="occupied">If set to <c>true</c> occupied.</param>
+	[Command]
+	public void CmdSetVehicleOccupied (NetworkInstanceId netId, bool occupied) {
+		Vehicle v = getLocalInstance (netId).GetComponent<Vehicle>();
+		v.vehicleOccupied = occupied;
 	}
+
+
+	/// <summary>
+	/// Command to set a new parent for the player gameobject.
+	/// Called from vehicle class for player to 'enter' door transform on the vehicle
+	/// </summary>
+	/// <param name="netId">Net identifier.</param>
+	/// <param name="parenting">If set to <c>true</c> parenting.</param>
+	[Command]
+	public void CmdSetNewParent (NetworkInstanceId netId, bool parenting) {
+		if (parenting) {
+			Transform t = getLocalInstance (netId).transform;
+			gameObject.transform.SetParent (t);
+			RpcSetNewParent (netId, true);
+		} else {
+			gameObject.transform.SetParent (null);
+		}
+	}
+
+
+	/// <summary>
+	/// Rpc to set a new parent for the player gameobject.
+	/// Called from vehicle class for player to 'enter' door transform on the vehicle
+	/// </summary>
+	/// <param name="netId">Net identifier.</param>
+	/// <param name="parenting">If set to <c>true</c> parenting.</param>
+	[ClientRpc]
+	public void RpcSetNewParent (NetworkInstanceId netId, bool parenting) {
+		if (parenting) {
+			Transform t = getLocalInstance (netId).transform;
+			gameObject.transform.SetParent (t);
+		} else {
+			gameObject.transform.SetParent (null);
+		}
+	}
+
+
+	/// <summary>
+	/// Command that enables client to send Rigidbody Force movement data to a vehicle
+	/// </summary>
+	/// <param name="h">horizontal axis</param>
+	/// <param name="v">vertical axis</param>
+	/// <param name="ve">velocity</param>
+	/// <param name="hb">handbrake</param>
+	[Command]
+	public void CmdDrive (float h, float v, float ve, float hb) {
+		currentVehicle.Move (h, v, ve, hb);
+	}
+
 
 }

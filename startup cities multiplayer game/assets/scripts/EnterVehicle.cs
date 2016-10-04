@@ -40,10 +40,9 @@ public class EnterVehicle : MonoBehaviour {
 			Player p = coll.gameObject.GetComponent<Player> ();
 			if (Input.GetKeyDown (KeyCode.F)) {
 				if (vehicle.getOwner () == p.id && !p.eligibleToExitVehicle) {
-					Debug.LogError ("eligible to enter vehicle");
 					vehicle.StartVehicle (p);
 				} else {
-					//vehicle.StartPassenger(p);
+					//TODO : vehicle.StartPassenger(p);
 					//check for passenger's elibigility here
 				}
 			}

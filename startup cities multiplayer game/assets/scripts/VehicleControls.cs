@@ -6,14 +6,12 @@ using UnityStandardAssets.Vehicles.Car;
 
 public class VehicleControls : NetworkBehaviour
 {
-	CarController m_Car;
+	private Player driver; //the local player driving the car
 
-	//Toggle from entervehicle class
+	//Toggled from Vehicle Class
 	void OnEnable () {
-		m_Car = transform.parent.GetComponent<CarController> ();
+		driver = GetComponent<Player> ();
 	}
-		
-	//OnDisable reassign m_Car to null?
 
 
 	private void FixedUpdate ()
@@ -22,30 +20,20 @@ public class VehicleControls : NetworkBehaviour
 			return;
 		}
 
+		//TODO: make this a less ugly call
 		if (gameObject.transform.parent != null) { //means that player has entered a vehicle
-			//if (m_Car != null) {
-			//}
 			float h = CrossPlatformInputManager.GetAxis("Horizontal");
 			float v = CrossPlatformInputManager.GetAxis("Vertical");
 			float handbrake = CrossPlatformInputManager.GetAxis ("Jump");
 			if (isServer) {
-				m_Car.Move (h, v, v, handbrake);
+				driver.currentVehicle.Move (h, v, v, handbrake); //Server driving
 			} else {
-				if (m_Car == null) {
-					transform.parent.GetComponent<CarController> ();
-				} else {
-					CmdDrive (h, v, v, handbrake);
+				driver.CmdDrive (h, v, v, handbrake); //Client driving
 				}
 			}
 		}
-	}
 
 
-	[Command]
-	void CmdDrive (float h, float v, float ve, float hb) {
-		Debug.LogError (m_Car);
-		m_Car.Move (h, v, ve, hb);
-	}
 
 
 

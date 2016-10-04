@@ -5,13 +5,11 @@ using UnityEngine.Networking;
 using UnityStandardAssets.Vehicles.Car;
 
 // TODO: vehicleambient loop
-// ToggleVisualizeDamage
-// Sound synchronization
-// Write design schematic for vehicle prefabs
-// Passengers in vehicles with class PassengerEnterVehicle
-// ^ better to just expand EnterVehicle class to accommodate passengers
-// Client cannot enter vehicle
-// Client sees Server player renderers attached to car object
+// TODO: ToggleVisualizeDamage
+// TODO: Sound synchronization
+// TODO: Write design schematic for vehicle prefabs
+// TODO: Passengers in vehicles with class PassengerEnterVehicle
+// TODO: ^ better to just expand EnterVehicle class to accommodate passengers
 
 
 public class Vehicle : DamageableObject
@@ -31,12 +29,8 @@ public class Vehicle : DamageableObject
 	public bool ruin;
 	[SyncVar]
 	public bool vehicleOccupied;
-//	[SyncVar]
-//	public Player driver;
 	[SyncVar]
 	public int passengerLimit;
-	//	[SyncVar]
-	//	public bool eligibleToExitVehicle;
 
 	protected const int TYPENUM = 27;
 
@@ -51,6 +45,7 @@ public class Vehicle : DamageableObject
 	 * lowers the likelihood of damage being applied and also lowers the amount of damage
 	 * applied in the event of a collision.
 	*/
+
 	private static string[] rSmallFirst = {
 		"Generic",
 	};
@@ -86,8 +81,10 @@ public class Vehicle : DamageableObject
 		}
 	}
 
-
-	void Update ()
+	/// <summary>
+	/// Override as needed in sub-classes for special Update behaviour (such as Food Trucks)
+	/// </summary>
+	protected virtual void Update ()
 	{
 		if (vehicleOccupied) {
 			if (Input.GetKeyDown (KeyCode.Mouse0) && !horn.isPlaying) {
@@ -96,99 +93,25 @@ public class Vehicle : DamageableObject
 			if (Input.GetKeyUp (KeyCode.Mouse0)) {
 				horn.Stop ();
 			}
-			if (Input.GetKey (KeyCode.F)) {
-				Player p = gameObject.GetComponentInChildren<Player> ();
-				if (p.eligibleToExitVehicle) {
-					ExitVehicle (p);
+			if (vehicleOccupied) {
+				if (Input.GetKeyDown (KeyCode.F)) {
+					Player p = gameObject.GetComponentInChildren<Player> ();
+					if (p != null && p.eligibleToExitVehicle) {
+						ExitVehicle (p);
+					}
 				}
 			}
 		}
-
 		CheckCondition ();
 	}
-
-
-	//Advance month function to check fire state, pay taxes, pay upkeep
-	public void advanceMonth ()
-	{
-		if (!validOwner ()) { 
-			notForSale = false;
-		}
-	}
-
-	 
+		
 
 	/*Look at togglevisualize damage false for networking
 	//Can server handle all toggling of damage on and off*/
 
-	/// <summary>
-	/// Checks the condition of the vehicle to toggle damage visualization and ruin state
-	/// </summary>
-	/* 
-
-	 */
-	protected virtual void CheckCondition ()
-	{
-		if (condition <= 25 && !ruin) { //Toggles visualization of damage if less than 25% condition
-			ToggleVisualizeDamage (true);
-		} else if (condition > 25) {
-			ToggleVisualizeDamage (false);
-		}
-		if (condition <= 0) { //Triggers ruin state if vehicle reaches 0
-			if (!ruin) {
-				ToggleRuinedState (false);
-			}
-			ruin = true;
-		} else {
-			if (ruin) {
-				ToggleRuinedState (true);
-			}
-			ruin = false;
-		}
-	}
 
 
-	/// <summary>
-	/// Toggles the ruined state of the vehicle.
-	/// No audio. No ability to drive it.
-	/// </summary>
-	/// <param name="notRuined">If set to <c>true</c> not ruined.</param>
-	protected virtual void ToggleRuinedState (bool notRuined)
-	{
-		AudioSource[] vehicleSounds = GetComponents<AudioSource> ();
-		foreach (AudioSource aSources in vehicleSounds) {
-			aSources.enabled = false;
-		}
-		CarController carC = GetComponent<CarController> ();
-		carC.enabled = false;
-	}
-
-
-	/// <summary>
-	/// Visualizes condition damage below 25 with black smoke from the
-	/// vehicle prefab's hood
-	/// </summary>
-	protected virtual void ToggleVisualizeDamage (bool damaged)
-	{
-		if (isServer) {
-			RpcToggleVisualizeDamage (damaged);
-		}
-//		else {
-//				CmdToggleVisualizeDamage (damaged);
-//			}
-	}
-
-	/// <summary>
-	/// RPC the toggle visualize damage.
-	/// </summary>
-	/// <param name="damaged">If set to <c>true</c> damaged.</param>
-	[ClientRpc]
-	protected void RpcToggleVisualizeDamage (bool damaged)
-	{
-		//	vehicleDamageParticleSystem.SetActive (damaged);
-	}
-
-
+	/* MAIN METHODS */
 
 	/// <summary>
 	/// Starts the vehicle.
@@ -196,70 +119,22 @@ public class Vehicle : DamageableObject
 	/// <param name="p">P.</param>
 	public void StartVehicle (Player p)
 	{
-		Debug.LogError ("startVehicle triggered");
 		NetworkInstanceId netId = p.netId;
 		if (vehicleAmbientLoop != null) {
 			ToggleVehicleAmbientLoop (true);
 		}
 		if (isServer) {
-			//Debug.LogError ("IsServer block triggered");
+			EnableVehicle (netId, true); //Enables vehicle sounds and controls
 			p.playerNotVisible = true; //Hides player model
-			EnableVehicle (netId, true); //Enables vehicle sounds and controls
 		} else {
-			//Debug.LogError ("else block triggered");
-			p.CmdSetPlayerVisibility (netId, true);
 			EnableVehicle (netId, true); //Enables vehicle sounds and controls
+			p.CmdSetPlayerVisibility (netId, true);
 		}
 		if (p.isLocalPlayer) {
-			//Debug.LogError ("islocalplayer block triggered");
 			StartCoroutine (DelayToExit (netId)); //Coroutine to prevent immediate exit with "F"
 		}
 	}
-
-
-
-	/// <summary>
-	/// Toggles the vehicle's ambient audio loop (like stereo system), if it has one.
-	/// This is NOT used for food truck audio, which is toggled when they're doing business.
-	/// </summary>
-	/// <param name="enabled">If set to <c>true</c> enabled.</param>
-	protected void ToggleVehicleAmbientLoop (bool enabled)
-	{
-		if (enabled) {
-			if (isServer) {
-			//	RpcToggleVehicleAmbientLoop (true);
-			} else {
-				//CmdToggleVehicleAmbientLoop (true);
-			}
-		} else {
-			if (isServer) {
-			//	RpcToggleVehicleAmbientLoop (false);
-			} else {
-			//	CmdToggleVehicleAmbientLoop (false);
-			}
-		}
-	}
-
-	[ClientRpc]
-	protected void RpcToggleVehicleAmbientLoop (bool enabled)
-	{
-		if (enabled) {
-//			vehicleAmbientLoop.enabled = true;
-		} else {
-//			vehicleAmbientLoop.enabled = false;
-		}
-	}
-
-	[Command]
-	protected void CmdToggleVehicleAmbientLoop (bool enabled)
-	{
-		if (enabled) {
-			//	vehicleAmbientLoop.enabled = true;
-		} else {
-			//	vehicleAmbientLoop.enabled = false;
-		}
-	}
-
+		
 	/// <summary>
 	/// Exits the vehicle.
 	/// </summary>
@@ -299,12 +174,12 @@ public class Vehicle : DamageableObject
 				CarController carC = GetComponent<CarController> ();
 				carC.enabled = active;
 				ToggleVehicleCam (play, active);
-				Debug.LogError ("CarC and CarUActivated for local player");
 			}
-			vehicleOccupied = active;
+				vehicleOccupied = active;
 		} else {
 			ToggleCoreVehicleSounds (false);
 			ToggleVehicleCam (play, active);
+			vehicleOccupied = active;
 		}
 	}
 
@@ -320,117 +195,20 @@ public class Vehicle : DamageableObject
 			Transform parent = this.gameObject.transform;
 			if (isServer) {
 				p.gameObject.transform.SetParent (parent);
-				p.RpcSetNewParent (netId);
+				p.RpcSetNewParent (netId, true);
 			} else {
-				Debug.Log ("calling COMMAND for set new parent");
-				p.CmdSetNewParent (netId);
+				p.CmdSetNewParent (netId, true);
 			}
 		} else {
-			Transform parent = null;
 			if (isServer) {
-				p.gameObject.transform.SetParent (parent);
-				p.RpcSetNewParent (netId);
+				p.gameObject.transform.SetParent (null);
+				p.RpcSetNewParent (netId, false);
 			} else {
-				p.CmdSetNewParent (netId);
+				p.CmdSetNewParent (netId, false);
 			}
 		}
-		p.ToggleVehicleControls (active);
+		p.ToggleVehicleControls (active, GetComponent<NetworkIdentity>().netId);
 	}
-
-
-	/// <summary>
-	/// Enables core vehicles sounds, like engine and tires.
-	/// </summary>
-	/// <param name="active">If set to <c>true</c> active.</param>
-	protected virtual void ToggleCoreVehicleSounds (bool active)
-	{
-		if (isServer) {
-			//RpcToggleCoreVehicleSounds (active);
-		} else {
-			//CmdToggleCoreVehicleSounds (active);
-		}	
-	}
-
-	[ClientRpc]
-	protected void RpcToggleCoreVehicleSounds (bool active)
-	{
-		AudioSource[] vehicleSounds = GetComponents<AudioSource> ();
-		foreach (AudioSource aSources in vehicleSounds) {
-			aSources.enabled = active;
-		}
-		CarAudio carA = GetComponent<CarAudio> ();
-		carA.enabled = active;
-		if (active) {
-			vehicleSounds [2].Play ();
-			vehicleSounds [0].Play ();
-			
-		}
-	}
-
-	[Command]
-	protected void CmdToggleCoreVehicleSounds (bool active)
-	{
-		RpcToggleCoreVehicleSounds (active);
-//		AudioSource[] vehicleSounds = GetComponents<AudioSource> ();
-//		foreach (AudioSource aSources in vehicleSounds) {
-//			aSources.enabled = active;
-//		}
-//		UnityStandardAssets.Vehicles.Car.CarAudio carA = GetComponent<UnityStandardAssets.Vehicles.Car.CarAudio> ();
-//		carA.enabled = active;
-//		if (active) {
-//			vehicleSounds [2].Play ();
-//			vehicleSounds [0].Play ();
-//		}
-
-	}
-
-
-
-	/// <summary>
-	/// Generates a name for the vehicle
-	/// TODO: move vehicle names to file I/O
-	/// </summary>
-	/// <returns>The gen.</returns>
-	private string nameGen ()
-	{
-		string name;
-
-		name = rSmallFirst [(int)Random.Range (0, rSmallFirst.Length)] + " " + rSmallLast [(int)Random.Range (0, rSmallLast.Length)];
-		return name;
-	}
-
-
-
-	/// <summary>
-	/// Delay to prevent immediate enter/exit from vehicle on pressing F
-	/// </summary>
-	/// <returns>The to exit.</returns>
-	private IEnumerator DelayToExit (NetworkInstanceId netId)
-	{
-		Player p = getPlayer (netId);
-		yield return new WaitForSeconds (2f);
-		if (isServer) {
-			p.eligibleToExitVehicle = true;
-		} else {
-			p.CmdSetPlayerEligibilityToExit (netId, true);
-		}
-	}
-
-
-	/// <summary>
-	/// Delay to prevent immediate enter/exit from vehicle on pressing F
-	/// </summary>
-	/// <returns>The to enter.</returns>
-	private IEnumerator DelayToEnter (Player p)
-	{
-		yield return new WaitForSeconds (2f);
-		if (isServer) {
-			p.eligibleToExitVehicle = false;
-		} else {
-			p.CmdSetPlayerEligibilityToExit (netId, false);
-		}
-	}
-
 
 	/// <summary>
 	/// Returns the data associated with the vehicle
@@ -439,7 +217,7 @@ public class Vehicle : DamageableObject
 	public virtual string getReadout ()
 	{
 		string s;
-//		modManager.clearButtons ();
+		//		modManager.clearButtons ();
 		string ownerName = "";
 		if (!validOwner ()) {
 			ownerName = "None";
@@ -477,6 +255,75 @@ public class Vehicle : DamageableObject
 			s += "\n<color=#00ff00ff>For Sale</color>";
 		}
 		return s;
+	}
+
+
+
+
+	/* CONDITION AND DAMAGE METHODS */
+
+	/// <summary>
+	/// Checks the condition of the vehicle to toggle damage visualization and ruin state
+	/// </summary>
+	protected virtual void CheckCondition ()
+	{
+		if (condition <= 25 && !ruin) { //Toggles visualization of damage if less than 25% condition
+			ToggleVisualizeDamage (true);
+		} else if (condition > 25) {
+			ToggleVisualizeDamage (false);
+		}
+		if (condition <= 0) { //Triggers ruin state if vehicle reaches 0
+			if (!ruin) {
+				ToggleRuinedState (true); //toggles unusable car if becoming ruin from unruined state
+			}
+			ruin = true;
+		} else {
+			if (ruin) {
+				ToggleRuinedState (false); //toggles usable car if previous ruin and becoming non-ruin
+			}
+			ruin = false;
+		}
+	}
+
+
+	/// <summary>
+	/// Toggles the ruined state of the vehicle.
+	/// No audio. No ability to drive it.
+	/// </summary>
+	/// <param name="notRuined">If set to <c>true</c> not ruined.</param>
+	protected virtual void ToggleRuinedState (bool isRuined)
+	{
+		AudioSource[] vehicleSounds = GetComponents<AudioSource> ();
+		foreach (AudioSource aSources in vehicleSounds) {
+			aSources.enabled = !isRuined;
+		}
+		CarController carC = GetComponent<CarController> ();
+		carC.enabled = !isRuined;
+	}
+
+
+	/// <summary>
+	/// Visualizes condition damage below 25 with black smoke from the
+	/// vehicle prefab's hood
+	/// </summary>
+	protected virtual void ToggleVisualizeDamage (bool damaged)
+	{
+		if (isServer) {
+			RpcToggleVisualizeDamage (damaged);
+		}
+		//		else {
+		//				CmdToggleVisualizeDamage (damaged);
+		//			}
+	}
+
+	/// <summary>
+	/// RPC the toggle visualize damage.
+	/// </summary>
+	/// <param name="damaged">If set to <c>true</c> damaged.</param>
+	[ClientRpc]
+	protected void RpcToggleVisualizeDamage (bool damaged)
+	{
+		//	vehicleDamageParticleSystem.SetActive (damaged);
 	}
 
 
@@ -540,31 +387,6 @@ public class Vehicle : DamageableObject
 		}
 	}
 
-
-	/// <summary>
-	/// Adds a color overlay to the building
-	/// </summary>
-	/// <param name="newColor">New color.</param>
-	public virtual void setColor (Color newColor)
-	{
-		if (c != null) {
-			c.gameObject.GetComponent<MeshRenderer> ().materials.ElementAt (0).color = newColor;
-		}
-	}
-
-	/// <summary>
-	/// Returns the building to its original color, or black if its a ruin
-	/// </summary>
-	public void resetColor ()
-	{
-		if (ruin) {
-			setColor (Color.black);
-		} else {
-			setColor (color);
-		}
-	}
-
-
 	/// <summary>
 	/// Repair the vehicle to 100 condition.
 	/// </summary>
@@ -623,48 +445,176 @@ public class Vehicle : DamageableObject
 		}
 	}
 
+
+
+
+
+
+	/* SOUND METHODS */
+
+
+	/// <summary>
+	/// Toggles the vehicle's ambient audio loop (like stereo system), if it has one.
+	/// This is NOT used for food truck audio, which is toggled when they're doing business.
+	/// </summary>
+	/// <param name="enabled">If set to <c>true</c> enabled.</param>
+	protected void ToggleVehicleAmbientLoop (bool enabled)
+	{
+		if (enabled) {
+			if (isServer) {
+				//	RpcToggleVehicleAmbientLoop (true);
+			} else {
+				//CmdToggleVehicleAmbientLoop (true);
+			}
+		} else {
+			if (isServer) {
+				//	RpcToggleVehicleAmbientLoop (false);
+			} else {
+				//	CmdToggleVehicleAmbientLoop (false);
+			}
+		}
+	}
+
+	[ClientRpc]
+	protected void RpcToggleVehicleAmbientLoop (bool enabled)
+	{
+		if (enabled) {
+			//			vehicleAmbientLoop.enabled = true;
+		} else {
+			//			vehicleAmbientLoop.enabled = false;
+		}
+	}
+
+	[Command]
+	protected void CmdToggleVehicleAmbientLoop (bool enabled)
+	{
+		if (enabled) {
+			//	vehicleAmbientLoop.enabled = true;
+		} else {
+			//	vehicleAmbientLoop.enabled = false;
+		}
+	}
+
+
+	/// <summary>
+	/// Enables core vehicles sounds, like engine and tires.
+	/// </summary>
+	/// <param name="active">If set to <c>true</c> active.</param>
+	protected virtual void ToggleCoreVehicleSounds (bool active)
+	{
+		if (isServer) {
+			//RpcToggleCoreVehicleSounds (active);
+		} else {
+			//CmdToggleCoreVehicleSounds (active);
+		}	
+	}
+
+	[ClientRpc]
+	protected void RpcToggleCoreVehicleSounds (bool active)
+	{
+		AudioSource[] vehicleSounds = GetComponents<AudioSource> ();
+		foreach (AudioSource aSources in vehicleSounds) {
+			aSources.enabled = active;
+		}
+		CarAudio carA = GetComponent<CarAudio> ();
+		carA.enabled = active;
+		if (active) {
+			vehicleSounds [2].Play ();
+			vehicleSounds [0].Play ();
+			
+		}
+	}
+
+	[Command]
+	protected void CmdToggleCoreVehicleSounds (bool active)
+	{
+		RpcToggleCoreVehicleSounds (active);
+//		AudioSource[] vehicleSounds = GetComponents<AudioSource> ();
+//		foreach (AudioSource aSources in vehicleSounds) {
+//			aSources.enabled = active;
+//		}
+//		UnityStandardAssets.Vehicles.Car.CarAudio carA = GetComponent<UnityStandardAssets.Vehicles.Car.CarAudio> ();
+//		carA.enabled = active;
+//		if (active) {
+//			vehicleSounds [2].Play ();
+//			vehicleSounds [0].Play ();
+//		}
+
+	}
+
+
+
+	/* UTILITY */
+
+	/// <summary>
+	/// Generates a name for the vehicle
+	/// TODO: move vehicle names to file I/O
+	/// </summary>
+	/// <returns>The gen.</returns>
+	private string nameGen ()
+	{
+		string name;
+
+		name = rSmallFirst [(int)Random.Range (0, rSmallFirst.Length)] + " " + rSmallLast [(int)Random.Range (0, rSmallLast.Length)];
+		return name;
+	}
+
+
+
+	/// <summary>
+	/// Delay to prevent immediate enter/exit from vehicle on pressing F
+	/// </summary>
+	/// <returns>The to exit.</returns>
+	private IEnumerator DelayToExit (NetworkInstanceId netId)
+	{
+		Player p = getPlayer (netId);
+		yield return new WaitForSeconds (2f);
+		p.eligibleToExitVehicle = true;
+
+	}
+
+
+	/// <summary>
+	/// Delay to prevent immediate enter/exit from vehicle on pressing F
+	/// </summary>
+	/// <returns>The to enter.</returns>
+	private IEnumerator DelayToEnter (Player p)
+	{
+		yield return new WaitForSeconds (2f);
+		p.eligibleToExitVehicle = false;
+	}
+
+
+	/// <summary>
+	/// Adds a color overlay to the building
+	/// </summary>
+	/// <param name="newColor">New color.</param>
+	public virtual void setColor (Color newColor)
+	{
+		if (c != null) {
+			c.gameObject.GetComponent<MeshRenderer> ().materials.ElementAt (0).color = newColor;
+		}
+	}
+
+	/// <summary>
+	/// Returns the building to its original color, or black if its a ruin
+	/// </summary>
+	public void resetColor ()
+	{
+		if (ruin) {
+			setColor (Color.black);
+		} else {
+			setColor (color);
+		}
+	}
+		
+	/// <summary>
+	/// Gets the vehicle's toughness (damage tolerance)
+	/// </summary>
+	/// <returns>The vehicle toughness.</returns>
 	public int getVehicleToughness ()
 	{
 		return vehicleToughness;
 	}
-		
-
-
-	//	/// <summary>
-	//	/// Hides the player and removes collision for the player object when player
-	//	/// enters the vehicle. Player is attached to the vehicle's transform on
-	//	/// the "EnterVehicle" class/transforms on vehicle prefab
-	//	/// </summary>
-	//	/// <param name="play">Play.</param>
-	//	/// <param name="active">If set to <c>true</c> active.</param>
-	//	private void HidePlayer (Player play, bool active)
-	//	{
-	//		if (play.isLocalPlayer) {
-	//			Renderer[] rends = play.GetComponentsInChildren<Renderer> ();
-	//			if (active) {
-	//				play.GetComponent<Rigidbody> ().isKinematic = true;
-	//				play.GetComponent<CapsuleCollider> ().enabled = false;
-	//				foreach (Renderer r in rends) {
-	//					r.enabled = false;
-	//				}
-	//				play.gameObject.transform.Find ("MainCamera").GetComponent<Camera> ().enabled = false;
-	//				play.gameObject.transform.SetParent (this.gameObject.transform);
-	//				vehicleOccupied = true;
-	//				play.message = "Press F to leave vehicle.";
-	//			} else {
-	//				play.GetComponent<Rigidbody> ().isKinematic = false;
-	//				play.GetComponent<Collider> ().enabled = true;
-	//				foreach (Renderer r in rends) {
-	//					r.enabled = true;
-	//				}
-	//				play.gameObject.transform.Find ("MainCamera").GetComponent<Camera> ().enabled = true;
-	//				play.gameObject.transform.SetParent (null);
-	//				vehicleOccupied = false;
-	//			}
-	//		}
-	//	}
-
-
-
 
 }

@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using UnityStandardAssets.Vehicles.Car;
 
 public class IceCreamFoodTruck : FoodTruck {
 	private static string[] rSmallFirst = {
@@ -40,34 +41,8 @@ public class IceCreamFoodTruck : FoodTruck {
 			aSources.enabled = false;
 		}
 			
-		carController = GetComponent<UnityStandardAssets.Vehicles.Car.CarController> ();
+		carController = GetComponent<CarController> ();
 		//Used to get currentspeed for food truck mobile business collider
-	}
-	
-	void Update ()
-	{
-		if (vehicleOccupied) {
-			//if (isLocalPlayer) {
-			if (Input.GetKeyDown (KeyCode.Mouse0) && !horn.isPlaying) {
-				horn.Play ();
-			}
-			if (Input.GetKeyUp (KeyCode.Mouse0)) {
-				horn.Stop ();
-			}
-			if (Input.GetKey (KeyCode.F)) {
-				Player p = gameObject.GetComponentInChildren<Player> ();
-				if (p.eligibleToExitVehicle) {
-					ExitVehicle (p);
-				}
-			}
-			if (carController.CurrentSpeed <= 15f && getOwner () != -1 && !ruin) {
-				mega.ToggleFoodTruck (true);
-			} else {
-				mega.ToggleFoodTruck (false);
-			}
-			//}
-		}
-		CheckCondition ();
 	}
 
 
