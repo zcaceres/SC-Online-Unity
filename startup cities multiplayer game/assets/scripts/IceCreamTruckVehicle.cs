@@ -2,24 +2,37 @@
 using System.Collections;
 using System.Linq;
 using UnityEngine.Networking;
-using UnityStandardAssets.Vehicles.Car;
 
-public class FoodTruck : Vehicle
+public class IceCreamTruckVehicle : Vehicle
 {
-	protected CarController carController;
-	protected AudioSource megaPhoneLoop; // audio for loop
-	protected Megaphone mega; //used for mobile collection of $$ from customers
+	private UnityStandardAssets.Vehicles.Car.CarController carController;
+	private AudioSource megaPhoneLoop; // audio for loop
+	private Megaphone mega; //used for mobile collection of $$ from customers
 
 	//Names for Vehicles
 	private static string[] rSmallFirst = {
-		"Food",
+		"Yumsters",
+		"Frozen",
+		"Cold",
+		"Dairy",
+		"Icey"
 	};
 		
-	private static string[] rSmallLast = { "Truck", };
+	private static string[] rSmallLast = { "Ice Cream", "Delights", "Pops" };
 
 
 	void Start ()
 	{
+		AudioSource[] vehicleSounds = GetComponents<AudioSource> ();
+		horn = vehicleSounds [1];
+		vehicleOccupied = false;
+		eligibleToExit = false;
+		mega = GetComponentInChildren<Megaphone> ();
+
+		foreach (AudioSource aSources in vehicleSounds) {
+			aSources.enabled = false;
+		}
+
 		if (isServer) {
 			cost = 10000;
 			fire = false;
@@ -31,27 +44,12 @@ public class FoodTruck : Vehicle
 			type = TYPENUM;
 			typeName = "Food Truck";
 			vehicleName = nameGen ();
-			vehicleOccupied = false;
-			vehicleToughness = 2;
-			passengerLimit = 2;
 		}
-
-		AudioSource[] vehicleSounds = GetComponents<AudioSource> ();
-		horn = vehicleSounds [1];
-		vehicleDamageParticleSystem = gameObject.transform.Find ("VehicleDamageParticles").gameObject;
-		vehicleOccupied = false;
-		mega = GetComponentInChildren<Megaphone> ();
-
-		foreach (AudioSource aSources in vehicleSounds) {
-			aSources.enabled = false;
-		}
-			
-		carController = GetComponent<CarController> ();
-		//Used to get currentspeed for food truck mobile business collider
+		carController = GetComponent<UnityStandardAssets.Vehicles.Car.CarController> ();
 	}
 
 
-	protected override void Update ()
+	void Update ()
 	{
 		if (vehicleOccupied) {
 			if (Input.GetKeyDown (KeyCode.Mouse0) && !horn.isPlaying) {
@@ -60,20 +58,19 @@ public class FoodTruck : Vehicle
 			if (Input.GetKeyUp (KeyCode.Mouse0)) {
 				horn.Stop ();
 			}
-			if (Input.GetKey (KeyCode.F)) {
+			if (Input.GetKey (KeyCode.F) && eligibleToExit) {
 				Player p = gameObject.GetComponentInChildren<Player> ();
-				if (p.eligibleToExitVehicle) {
-					ExitVehicle (p);
-				}
+				ExitVehicle (p);
 			}
 
-			if (carController.CurrentSpeed <= 15f && getOwner () != -1 && !ruin) {
+			if (carController.CurrentSpeed <= 15f && getOwner() != -1 && !ruin) {
 				mega.ToggleFoodTruck (true);
 			} else {
 				mega.ToggleFoodTruck (false);
 			}
 		}
 		CheckCondition ();
+		ToggleVisualizeDamage ();
 	}
 
 	/// <summary>
