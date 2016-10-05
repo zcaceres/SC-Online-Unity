@@ -368,19 +368,21 @@ public class Player : NetworkBehaviour {
 				ui.updateReadout (targetObject.getReadout (gameObject.GetComponent<NetworkIdentity> ().netId));
 				if (targetObject is Building) {
 					Building tmpBuilding = targetObject.GetComponent<Building> ();
-					ui.updateWorkers (targetObject.GetComponent<Building>().getWorkerText ());
+					ui.updateWorkers (targetObject.GetComponent<Building> ().getWorkerText ());
 					soundPlayer.PlayRaycastSound (tmpBuilding.type);
-					if ((tmpBuilding.getOwner() == id) && !ignoredTypes.Contains(tmpBuilding.type) && !(tmpBuilding is Business)) {
+					if ((tmpBuilding.getOwner () == id) && !ignoredTypes.Contains (tmpBuilding.type) && !(tmpBuilding is Business)) {
 						ui.setPriceToggle (true);
 						button.setRentPrice (netId, tmpBuilding.netId, tmpBuilding.rent);
 					} else {
 						ui.setPriceToggle (false);
 					}
-					if (tmpBuilding.ownedBy(this) && !tmpBuilding.occupied) {
+					if (tmpBuilding.ownedBy (this) && !tmpBuilding.occupied) {
 						tmpBuilding.tenant.setButtons ();
-					} else if (tmpBuilding.ownedBy(this) && tmpBuilding.occupied && !tmpBuilding.tenant.isNone ()) {
+					} else if (tmpBuilding.ownedBy (this) && tmpBuilding.occupied && !tmpBuilding.tenant.isNone ()) {
 						tmpBuilding.tenant.showActive ();
 					}
+				} else {
+					ui.updateWorkers ("");
 				}
 
 				Neighborhood n = targetObject.getNeighborhood ();
@@ -469,19 +471,27 @@ public class Player : NetworkBehaviour {
 	/// </summary>
 	public void payTaxes() {
 		if (isServer) {
-			CityHall c = FindObjectOfType<CityHall> ();
 			int tax = 0;
 			foreach (NetId buildingId in owned) {
 				Building b = getBuilding (buildingId.id);
+				CityHall c = null;
+
 				if (b != null) { //used to avoid null refs on vehicles
+					if (b.validRegion ()) {
+						c = b.GetRegion ().cityHall; // if the building is part of a region, it will send taxes to the city hall governing that region
+					}
 					if (b is Lot) {
 						int amount = (int)(b.baseRent * .1f);
 						tax += amount;
-						c.receiveTaxes (amount);
+						if (c != null) {
+							c.receiveTaxes (amount);
+						}
 					} else if (!(b is Neighborhood)) {
 						int amount = (int)(b.appraise () * .1f);
 						tax += amount;
-						c.receiveTaxes (amount);
+						if (c != null) {
+							c.receiveTaxes (amount);
+						}
 					}
 				}
 			}
