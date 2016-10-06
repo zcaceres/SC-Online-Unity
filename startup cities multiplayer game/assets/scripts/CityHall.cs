@@ -13,12 +13,14 @@ public class CityHall : Business {
 
 	[SyncVar]
 	private int budget;
+	private Region governedRegion;
 	void Start() {
 		c = GetComponent<Collider> ();
 		modManager = GetComponent<BuildingModifier> ();
 		tenant = GetComponent<Tenant> ();
 		color = c.gameObject.GetComponent<MeshRenderer> ().materials.ElementAt (0).color;
 		type = TYPENUM;
+		governedRegion = GetComponent<Region> ();
 		if (isServer) {
 			budget = 0;
 			skillLevel = 0;
@@ -48,6 +50,13 @@ public class CityHall : Business {
 			} else if (localLot != null) {
 				lot = localLot.netId; // the lot was set in the inspector, assign the netid
 				localLot.addObject(this.netId);
+			}
+			GameObject tmpRegion = getLocalInstance (region);
+			if (tmpRegion != null) {
+				localRegion = tmpRegion.GetComponent<Region> ();
+			} else if (localRegion != null) {
+				region = localRegion.netId;
+				localRegion.AddItem (this.netId);
 			}
 			updateRent ();
 		}
@@ -123,6 +132,28 @@ public class CityHall : Business {
 
 	public override bool isDestructable() {
 		return false;
+	}
+
+	/// <summary>
+	/// Sets the owner and removes the object from the owned list of its previous owner.
+	/// </summary>
+	/// <param name="newOwner">New owner's id.</param>
+	public override void setOwner(NetworkInstanceId newOwner) {
+		if (newOwner == owner)
+			return;
+		Player oldOwner = getPlayerOwner ();
+		if (oldOwner != null) {
+			oldOwner.owned.removeId (this.netId);
+		}
+		Player p = getLocalInstance (newOwner).GetComponent<Player> ();
+		p.owned.addId (this.netId);
+		owner = newOwner;
+		governedRegion.SetOwner (p);
+	}
+
+	public override void unsetOwner() {
+		owner = NetworkInstanceId.Invalid;
+		governedRegion.UnsetOwner ();
 	}
 
 	/// <summary>

@@ -70,6 +70,13 @@ public class Lot : Building {
 			} else {
 				cost = calcPrice ();
 			}
+			GameObject tmpRegion = getLocalInstance (region);
+			if (tmpRegion != null) {
+				localRegion = tmpRegion.GetComponent<Region> ();
+			} else if (localRegion != null) {
+				region = localRegion.netId;
+				localRegion.AddItem (this.netId);
+			}
 			updateRent ();
 		}
 	}

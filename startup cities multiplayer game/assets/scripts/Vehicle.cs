@@ -130,6 +130,25 @@ public class Vehicle : DamageableObject
 		}
 	}
 
+
+	/// <summary>
+	/// Passenger enters vehicle
+	/// </summary>
+	/// <param name="p">P.</param>
+	public void PassengerEnterVehicle (Player p) {
+		NetworkInstanceId netId = p.netId;
+		if (isServer) {
+			p.playerNotVisible = true;
+		} else {
+			p.CmdSetPlayerVisibility (netId, true);
+		}
+		if (p.isLocalPlayer) {
+			StartCoroutine (DelayToExit (netId));
+		}
+		EnableVehicle (netId, true);
+	}
+
+
 	/// <summary>
 	/// Exits the vehicle.
 	/// </summary>
@@ -142,12 +161,15 @@ public class Vehicle : DamageableObject
 		} else {
 			p.CmdSetPlayerVisibility (netId, false);
 		}
-		EnableVehicle (netId, false); //Enables vehicle sounds and controls
+		if (owner == p.netId) {
+			EnableVehicle (netId, false); //Enables vehicle sounds and controls
+		}
 		if (p.isLocalPlayer) {
 			StartCoroutine (DelayToEnter (p)); //Coroutine to prevent immediate exit
 		}
 	}
 
+	//TODO use Passengers to trigger vehicle occupied
 
 	/// <summary>
 	/// Enables the vehicle for player's use
@@ -158,7 +180,7 @@ public class Vehicle : DamageableObject
 	{
 		Player play = getPlayer (netId);
 		if (!ruin) {;
-			if (play.isLocalPlayer) {
+			if (play.isLocalPlayer && owner == play.netId) {
 				CarController carC = GetComponent<CarController> ();
 				carC.enabled = active;
 				ToggleVehicleCam (play, active);
@@ -194,7 +216,9 @@ public class Vehicle : DamageableObject
 				p.CmdSetNewParent (netId, false);
 			}
 		}
-		p.ToggleVehicleControls (active, GetComponent<NetworkIdentity>().netId);
+		if (owner == p.id) {
+			p.ToggleVehicleControls (active, GetComponent<NetworkIdentity> ().netId);
+		}
 	}
 
 	/// <summary>

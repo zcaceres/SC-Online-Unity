@@ -42,7 +42,7 @@ public class EnterVehicle : MonoBehaviour {
 				if (vehicle.getOwner () == p.id && !p.eligibleToExitVehicle) {
 					vehicle.StartVehicle (p);
 				} else {
-					//TODO : vehicle.StartPassenger(p);
+					vehicle.PassengerEnterVehicle(p);
 					//check for passenger's elibigility here
 				}
 			}
@@ -51,3 +51,4 @@ public class EnterVehicle : MonoBehaviour {
 
 
 }
+

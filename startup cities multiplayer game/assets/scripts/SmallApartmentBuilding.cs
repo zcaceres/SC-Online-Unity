@@ -64,6 +64,13 @@ public class SmallApartmentBuilding : Building {
 				lot = localLot.netId; // the lot was set in the inspector, assign the netid
 				localLot.addObject(this.netId);
 			}
+			GameObject tmpRegion = getLocalInstance (region);
+			if (tmpRegion != null) {
+				localRegion = tmpRegion.GetComponent<Region> ();
+			} else if (localRegion != null) {
+				region = localRegion.netId;
+				localRegion.AddItem (this.netId);
+			}
 			updateRent ();
 			//updateNeighborhoodValue ();
 		}

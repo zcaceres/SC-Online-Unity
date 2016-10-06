@@ -15,11 +15,14 @@ public class OwnableObject : NetworkBehaviour {
 	[SyncVar]
 	public NetworkInstanceId lot;
 	[SyncVar]
+	public NetworkInstanceId region;
+	[SyncVar]
 	public bool notForSale;
 	[SyncVar]
 	public int id;              // Unique id
 
 	public Lot localLot;
+	public Region localRegion;
 	// Use this for initialization
 	void Start () {
 		if (isServer) {
@@ -30,6 +33,14 @@ public class OwnableObject : NetworkBehaviour {
 				localLot = tmp.GetComponent<Lot> ();
 			} else if (localLot != null) {
 				lot = localLot.netId; // the lot was set in the inspector, assign the netid
+				localLot.addObject(this.netId);
+			}
+			GameObject tmpRegion = getLocalInstance (region);
+			if (tmpRegion != null) {
+				localRegion = tmpRegion.GetComponent<Region> ();
+			} else if (localRegion != null) {
+				region = localRegion.netId;
+				localRegion.AddItem (this.netId);
 			}
 		}
 	}
@@ -185,6 +196,16 @@ public class OwnableObject : NetworkBehaviour {
 		return isValid;
 	}
 
+	public virtual bool validRegion() {
+		bool isValid = false;
+		if (!region.IsEmpty () && (region != NetworkInstanceId.Invalid) && (getLocalInstance (region) != null)) {
+			isValid = true;
+		} else if (validLot () && getLocalInstance (lot).GetComponent<Lot> ().validRegion ()) {
+			isValid = true;
+		}
+		return isValid;
+	}
+
 	protected GameObject getLocalInstance(NetworkInstanceId id) {
 		GameObject g;
 		if (isClient) {
@@ -248,6 +269,19 @@ public class OwnableObject : NetworkBehaviour {
 			n = getLot ().getNeighborhood ();
 		}
 		return n;
+	}
+
+	public virtual Region GetRegion() {
+		Region r = null;
+		if (validLot ()) { // try and get the lot's region
+			Lot l = getLot ();
+			if (l.validRegion ()) {
+				r = getLocalInstance (l.region).GetComponent<Region> ();
+			}
+		} else if (validRegion ()) {
+			r = getLocalInstance (region).GetComponent<Region> ();
+		} 
+		return r;
 	}
 
 	public virtual bool inNeighborhood() {
