@@ -216,7 +216,7 @@ public class Vehicle : DamageableObject
 				p.CmdSetNewParent (netId, false);
 			}
 		}
-		if (owner == p.id) {
+		if (owner == p.netId) {
 			p.ToggleVehicleControls (active, GetComponent<NetworkIdentity> ().netId);
 		}
 	}

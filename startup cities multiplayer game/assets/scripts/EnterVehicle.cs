@@ -39,7 +39,7 @@ public class EnterVehicle : MonoBehaviour {
 		if (coll.CompareTag ("Player")) { // check player ownership
 			Player p = coll.gameObject.GetComponent<Player> ();
 			if (Input.GetKeyDown (KeyCode.F)) {
-				if (vehicle.getOwnerNetId == p.id && !p.eligibleToExitVehicle) {
+				if (vehicle.getOwnerNetId() == p.netId && !p.eligibleToExitVehicle) {
 					vehicle.StartVehicle (p);
 				} else {
 					vehicle.PassengerEnterVehicle(p);
