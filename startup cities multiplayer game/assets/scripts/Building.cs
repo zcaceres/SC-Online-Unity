@@ -259,7 +259,7 @@ public class Building : DamageableObject {
 		} else {
 			ownerName = getPlayer(owner).getName();
 		}
-		s = "Type: " + buildingTypes[type] + "\nName : " + buildingName + "\nOwner: " + ownerName + "\nPrice: " + cost + "\nCondition: " + conditionToString() + "\nSafety: " + safetyToString() +  "\nRent: " + rent + "\n" + officeName;
+		s = "Type: " + buildingTypes[type] + "\nName : " + buildingName + "\nOwner: " + ownerName + "\nPrice: " + cost + "\nCondition: " + conditionToString() + "\nSafety: " + safetyToString() +  "\nRent: " + rent;
 
 		if (occupied) {
 			if (!tenant.isNone()) {
@@ -297,7 +297,7 @@ public class Building : DamageableObject {
 		} else  {
 			ownerName = getPlayer(owner).getName();
 		}
-		s = "Type: " + buildingTypes [type] + "\nName : " + buildingName + "\nOwner: " + ownerName + "\nPrice: " + cost + "\nCondition: " + conditionToString () + "\nSafety: " + safetyToString () +  "\nRent: " + rent + "\n" + officeName;
+		s = "Type: " + buildingTypes [type] + "\nName : " + buildingName + "\nOwner: " + ownerName + "\nPrice: " + cost + "\nCondition: " + conditionToString () + "\nSafety: " + safetyToString () +  "\nRent: " + rent;
 
 		if (occupied) {
 			if (!tenant.isNone()) {
