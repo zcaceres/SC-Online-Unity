@@ -27,8 +27,9 @@ public class Vehicle : DamageableObject
 	public bool ruin;
 	[SyncVar(hook="ToggleVehicleSounds")]
 	public bool vehicleOccupied; //toggled based on whether vehicle has a driver
-	//[SyncVar]
-	public int passengerLimit; //limits the number of passengers for the vehicle
+	[SyncVar]
+	public int passengers; //limits the number of passengers for the vehicle
+	public const int PASSENGER_LIMIT = 2; //set in each child class for proper number of seats
 
 	//TODO is this necessary??
 	protected const int TYPENUM = 27;
@@ -67,7 +68,7 @@ public class Vehicle : DamageableObject
 			vehicleName = nameGen ();
 			vehicleOccupied = false;
 			vehicleToughness = 3;
-			passengerLimit = 2;
+			passengers = 0;
 		}
 
 		AudioSource[] vehicleSounds = GetComponents<AudioSource> ();
@@ -94,7 +95,7 @@ public class Vehicle : DamageableObject
 				horn.Stop ();
 			}
 			if (Input.GetKeyDown (KeyCode.F)) {
-				Player p = gameObject.GetComponentInChildren<Player> ();
+				Player p = getLocalPlayerInVehicle ();
 				if (p != null && p.eligibleToExitVehicle) {
 					ExitVehicle (p);
 				}
@@ -106,6 +107,20 @@ public class Vehicle : DamageableObject
 	}
 
 
+	/// <summary>
+	/// Returns the local player in the vehicle
+	/// </summary>
+	protected Player getLocalPlayerInVehicle ()
+	{
+		Player[] players = gameObject.GetComponentsInChildren<Player> ();
+			foreach (Player p in players) {
+				if (p.isLocalPlayer) {
+					Player play = p;
+					return play;
+				}
+			}
+			return null;
+	}
 
 
 
@@ -121,9 +136,11 @@ public class Vehicle : DamageableObject
 		if (isServer) {
 			EnableVehicle (netId, true); //Enables vehicle sounds and controls
 			p.playerNotVisible = true; //Hides player model
+			p.CheckPassengers (this.netId);
 		} else {
 			EnableVehicle (netId, true); //Enables vehicle sounds and controls
 			p.CmdSetPlayerVisibility (netId, true);
+			p.CmdCheckPassengers (this.netId);
 		}
 		if (p.isLocalPlayer) {
 			StartCoroutine (DelayToExit (netId)); //Coroutine to prevent immediate exit with "F"
@@ -137,15 +154,24 @@ public class Vehicle : DamageableObject
 	/// <param name="p">P.</param>
 	public void PassengerEnterVehicle (Player p) {
 		NetworkInstanceId netId = p.netId;
-		if (isServer) {
-			p.playerNotVisible = true;
+		if (passengers < PASSENGER_LIMIT) {
+			if (isServer) {
+				p.playerNotVisible = true;
+			} else {
+				p.CmdSetPlayerVisibility (netId, true);
+			}
+			if (p.isLocalPlayer) {
+				StartCoroutine (DelayToExit (netId));
+			}
+			EnableVehicle (netId, true);
+			if (isServer) {
+				p.CheckPassengers (this.netId);
+			} else {
+				p.CmdCheckPassengers (this.netId);
+			}
 		} else {
-			p.CmdSetPlayerVisibility (netId, true);
+			p.message = "This vehicle is full!";
 		}
-		if (p.isLocalPlayer) {
-			StartCoroutine (DelayToExit (netId));
-		}
-		EnableVehicle (netId, true);
 	}
 
 
@@ -161,11 +187,18 @@ public class Vehicle : DamageableObject
 		} else {
 			p.CmdSetPlayerVisibility (netId, false);
 		}
-		if (owner == p.netId) {
-			EnableVehicle (netId, false); //Enables vehicle sounds and controls
-		}
 		if (p.isLocalPlayer) {
 			StartCoroutine (DelayToEnter (p)); //Coroutine to prevent immediate exit
+		}
+		if (owner == p.netId) {
+			EnableVehicle (netId, false); //Enables vehicle sounds and controls
+		} else {
+			ToggleVehicleCam (p, false);
+		}
+		if (isServer) {
+			p.CheckPassengers (this.netId);
+		} else {
+			p.CmdCheckPassengers (this.netId);
 		}
 	}
 
@@ -179,12 +212,12 @@ public class Vehicle : DamageableObject
 	protected virtual void EnableVehicle (NetworkInstanceId netId, bool active)
 	{
 		Player play = getPlayer (netId);
-		if (!ruin) {;
+		if (!ruin) {
 			if (play.isLocalPlayer && owner == play.netId) {
 				CarController carC = GetComponent<CarController> ();
 				carC.enabled = active;
-				ToggleVehicleCam (play, active);
 			}
+			ToggleVehicleCam (play, active);
 			play.CmdSetVehicleOccupied (this.netId, active);
 		} else {
 			ToggleVehicleCam (play, active);
@@ -203,14 +236,12 @@ public class Vehicle : DamageableObject
 		if (active) {
 			Transform parent = this.gameObject.transform;
 			if (isServer) {
-				p.gameObject.transform.SetParent (parent);
 				p.RpcSetNewParent (netId, true);
 			} else {
 				p.CmdSetNewParent (netId, true);
 			}
 		} else {
 			if (isServer) {
-				p.gameObject.transform.SetParent (null);
 				p.RpcSetNewParent (netId, false);
 			} else {
 				p.CmdSetNewParent (netId, false);
@@ -267,15 +298,10 @@ public class Vehicle : DamageableObject
 		}
 		return s;
 	}
-
-
-
+		
 
 	/* CONDITION AND DAMAGE METHODS */
 
-
-	//TODO: Look at togglevisualize damage false for networking
-	//TODO: Can server handle all toggling of damage on and off*/
 
 	/// <summary>
 	/// Checks the condition of the vehicle to toggle damage visualization and ruin state
@@ -383,7 +409,6 @@ public class Vehicle : DamageableObject
 		setColor (Color.black);
 		if (isServer) {
 			ruin = true;
-			//occupied = false;
 			endFire ();
 		}
 	}
@@ -548,7 +573,6 @@ public class Vehicle : DamageableObject
 		Player p = getPlayer (netId);
 		yield return new WaitForSeconds (2f);
 		p.eligibleToExitVehicle = true;
-
 	}
 
 

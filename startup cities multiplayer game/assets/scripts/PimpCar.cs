@@ -12,6 +12,7 @@ public class PimpCar : Vehicle {
 
 	//Names for Vehicles
 	private static string[] rSmallLast = { "Wagon", "Mobile", "Car" };
+	public const int PASSENGER_LIMIT = 2; //set in each child class for proper number of seats
 
 
 	void Start () {
@@ -36,7 +37,7 @@ public class PimpCar : Vehicle {
 			vehicleName = nameGen ();
 			vehicleOccupied = false;
 			vehicleToughness = 1;
-			passengerLimit = 2;
+			passengers = 0;
 		}
 	}
 

@@ -9,6 +9,7 @@ public class FoodTruck : Vehicle
 	protected CarController carController;
 	protected AudioSource megaPhoneLoop; // audio for loop
 	protected Megaphone mega; //used for mobile collection of $$ from customers
+	public const int PASSENGER_LIMIT = 2; //set in each child class for proper number of seats
 
 	//Names for Vehicles
 	private static string[] rSmallFirst = {
@@ -33,7 +34,7 @@ public class FoodTruck : Vehicle
 			vehicleName = nameGen ();
 			vehicleOccupied = false;
 			vehicleToughness = 2;
-			passengerLimit = 2;
+			passengers = 0;
 		}
 
 		AudioSource[] vehicleSounds = GetComponents<AudioSource> ();

@@ -42,8 +42,9 @@ public class EnterVehicle : MonoBehaviour {
 				if (vehicle.getOwnerNetId() == p.netId && !p.eligibleToExitVehicle) {
 					vehicle.StartVehicle (p);
 				} else {
-					vehicle.PassengerEnterVehicle(p);
-					//check for passenger's elibigility here
+					if (!p.eligibleToExitVehicle) {
+						vehicle.PassengerEnterVehicle (p);
+					}
 				}
 			}
 		}

@@ -28,7 +28,7 @@ public class IceCreamFoodTruck : FoodTruck {
 			vehicleName = nameGen ();
 			vehicleOccupied = false;
 			vehicleToughness = 3;
-			passengerLimit = 2;
+			passengers = 0;
 		}
 
 		AudioSource[] vehicleSounds = GetComponents<AudioSource> ();

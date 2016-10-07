@@ -1684,7 +1684,6 @@ public class Player : NetworkBehaviour {
 	public void ToggleVehicleControls (bool enabled, NetworkInstanceId netId) {
 		VehicleControls vc = GetComponent<VehicleControls> ();
 		Vehicle v = getLocalInstance (netId).GetComponent<Vehicle> ();
-		//vc.m_Car = v.GetComponent<CarController> ();
 		if (isServer) {
 			currentVehicle = v.GetComponent<CarController> ();
 		} else {
@@ -1805,6 +1804,28 @@ public class Player : NetworkBehaviour {
 		} else {
 			gameObject.transform.SetParent (null);
 		}
+	}
+
+
+
+	/// <summary>
+	/// Cmds to check the number of passengers in the car
+	/// </summary>
+	/// <param name="netId">Net identifier.</param>
+	[Command]
+	public void CmdCheckPassengers (NetworkInstanceId netId) {
+		CheckPassengers (netId);
+	}
+
+	/// <summary>
+	/// Checks the number of passengers parented to the car
+	/// </summary>
+	/// <param name="netId">Net identifier.</param>
+	public void CheckPassengers(NetworkInstanceId netId) {
+		GameObject veh = getLocalInstance (netId);
+		Player[] ps = veh.GetComponentsInChildren<Player> ();
+		veh.GetComponent<Vehicle> ().passengers = ps.Length;
+		Debug.LogError("There are " + veh.GetComponent<Vehicle>().passengers);
 	}
 
 
