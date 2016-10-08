@@ -28,7 +28,7 @@ public class Vehicle : DamageableObject
 	public bool vehicleOccupied; //toggled based on whether vehicle has a driver
 	[SyncVar]
 	public int passengers; //limits the number of passengers for the vehicle
-	public int passengerLimit = 2; //set in each child class for proper number of seats
+	public int passengerLimit; //set in each child class for proper number of seats
 
 	//TODO is this necessary??
 	protected const int TYPENUM = 27;
@@ -55,6 +55,7 @@ public class Vehicle : DamageableObject
 
 	void Start ()
 	{
+		passengerLimit = 2;
 		if (isServer) {
 			cost = 5000;
 			fire = false;
@@ -96,6 +97,7 @@ public class Vehicle : DamageableObject
 			if (Input.GetKeyDown (KeyCode.F)) {
 				Player p = getLocalPlayerInVehicle ();
 				if (p != null && p.eligibleToExitVehicle) {
+					p.eligibleToExitVehicle = false;
 					ExitVehicle (p);
 				}
 			}
@@ -179,6 +181,7 @@ public class Vehicle : DamageableObject
 	/// <param name="p">P.</param>
 	public void ExitVehicle (Player p)
 	{
+
 		NetworkInstanceId netId = p.netId;
 		if (isServer) {
 			p.playerNotVisible = false; //Unhides player model
@@ -193,6 +196,7 @@ public class Vehicle : DamageableObject
 		} else {
 			ToggleVehicleCam (p, false);
 		}
+
 	}
 
 	//TODO use Passengers to trigger vehicle occupied
@@ -233,21 +237,11 @@ public class Vehicle : DamageableObject
 //		}
 		if (active) {
 			Transform parent = this.gameObject.transform;
-			if (isServer) {
-				p.RpcSetNewParent (netId, true);
-				p.AddPassenger (netId);
-			} else {
-				p.CmdSetNewParent (netId, true);
-				p.CmdAddPassenger (netId);
-			}
+			p.CmdSetNewParent (netId, true);
+			p.CmdAddPassenger (netId);
 		} else {
-			if (isServer) {
-				p.RpcSetNewParent (netId, false);
-				p.RemovePassenger (netId);
-			} else {
-				p.CmdSetNewParent (netId, false);
-				p.CmdRemovePassenger (netId);
-			}
+			p.CmdSetNewParent (netId, false);
+			p.CmdRemovePassenger (netId);
 		}
 		if (owner == p.netId) {
 			p.ToggleVehicleControls (active, GetComponent<NetworkIdentity> ().netId);
