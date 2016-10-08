@@ -13,7 +13,8 @@ public class CityHall : Business {
 
 	[SyncVar]
 	private int budget;
-	private Region governedRegion;
+	public Region governedRegion;
+	static MonthManager mm;
 	void Start() {
 		c = GetComponent<Collider> ();
 		modManager = GetComponent<BuildingModifier> ();
@@ -21,6 +22,9 @@ public class CityHall : Business {
 		color = c.gameObject.GetComponent<MeshRenderer> ().materials.ElementAt (0).color;
 		type = TYPENUM;
 		governedRegion = GetComponent<Region> ();
+		if (mm == null) {
+			mm = FindObjectOfType<MonthManager> ();
+		}
 		if (isServer) {
 			budget = 0;
 			skillLevel = 0;
@@ -181,5 +185,103 @@ public class CityHall : Business {
 	/// <param name="amount">Amount.</param>
 	public void pay(int amount) {
 		budget -= amount;
+	}
+
+	/// <summary>
+	/// Returns the data associated with the building
+	/// </summary>
+	/// <returns>The readout.</returns>
+	public override string getReadout(NetworkInstanceId pid) {
+		string s;
+		updateRent ();
+		modManager.clearButtons ();
+		string ownerName = "";
+		GameObject l = getLocalInstance (lot);
+		if (!validOwner()) {
+			ownerName = "None";
+		} else {
+			ownerName = getPlayer(owner).getName();
+		}
+		s = "City Hall of " + governedRegion.regionName + "\nOwner: " + ownerName + "\nPrice: " + cost + "\nCondition: " + conditionToString() + "\nSafety: " + safetyToString() +  "\nRent: " + rent;
+
+		if (occupied) {
+			if (!tenant.isNone()) {
+				s += "\nOccupant: " + tenant.resident.residentName;
+			}
+		} else {
+			s += "\nNot Occupied";
+		}
+
+		if (notForSale) {
+			s += "\nNot for sale";
+		} else {
+			s += "\n<color=#00ff00ff>For Sale</color>";
+		}
+
+		if (l != null) {
+			Lot tmp = l.GetComponent<Lot> ();
+			s += "\nAttractiveness: " + tmp.getAttractiveness ();
+		}
+		if (mm.isElectionSeason) {
+			s += "\nPress C for election details";
+		}
+		if (modManager != null) {
+			s += modManager.readout (pid);
+		}
+		return s;
+	}
+
+	/// <summary>
+	/// Returns the data associated with the building, does not do anything with buttons
+	/// </summary>
+	/// <returns>The readout.</returns>
+	public override string getReadoutText(NetworkInstanceId pid) {
+		string s;
+		string ownerName = "";
+		if (!validOwner()) {
+			ownerName = "None";
+		} else  {
+			ownerName = getPlayer(owner).getName();
+		}
+		s = "Type: " + buildingTypes [type] + "\nName : " + buildingName + "\nOwner: " + ownerName + "\nPrice: " + cost + "\nCondition: " + conditionToString () + "\nSafety: " + safetyToString () +  "\nRent: " + rent;
+
+		if (occupied) {
+			if (!tenant.isNone()) {
+				s += "\nOccupant: " + tenant.resident.residentName;
+			}
+		} else {
+			s += "\nNot Occupied";
+		}
+
+		if (notForSale) {
+			s += "\nNot for sale";
+		} else {
+			s += "\n<color=#00ff00ff>For Sale</color>";
+		}
+
+		GameObject l = getLocalInstance (lot);
+		if (l != null) {
+			Lot tmp = l.GetComponent<Lot> ();
+			s += "\nAttractiveness: " + tmp.getAttractiveness ();
+		}
+		if (mm.isElectionSeason) {
+			s += "\nPress C for election details";
+		}
+		if (modManager.mods.Count > 0) {
+			s += "\nModifiers: ";
+		}
+		return s;
+	}
+
+	public void SetMayor(Politician p) {
+		if (tenant.resident != null) {
+			tenant.evict ();
+		}
+		tenant.setActive (p.netId);
+		Player pl = FindObjectOfType<Player>();
+		if (pl!=null) {
+			pl.RpcMessageAll(governedRegion.regionName + " has elected " + p.residentName + "!");
+		}
+		governedRegion.candidates.Clear ();
 	}
 }

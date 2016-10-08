@@ -171,6 +171,7 @@ public class Resident : NetworkBehaviour {
 		s += "\nSpending Money: $" + spendingMoney;
 		return s;
 	}
+
 	/// <summary>
 	/// Returns the data associated with a person as a string.
 	/// </summary>
@@ -332,14 +333,6 @@ public class Resident : NetworkBehaviour {
 				//criminalChance += residentTraits.ElementAt (t).crimeChance;
 			}
 
-			//if (criminal) {
-			//	lowerSafety (2);
-			//}
-			//if ((Random.value < criminalChance) && !criminal) {
-			//	criminal = true;
-			//	lowerSafety (30);
-			//	residenceBuilding.RpcMessageOwner ("A crime has been commited in the vicinity of " + residenceBuilding.buildingName + "!");
-			//}
 			if (Random.value < damChance) {
 				if (fireRisk) {
 					residenceBuilding.setFire ();
@@ -821,7 +814,7 @@ public class Resident : NetworkBehaviour {
 		return b;
 	}
 
-	private int[] scrambleArray(int[] array) {
+	protected int[] scrambleArray(int[] array) {
 		int n;
 		n = array.Length;
 		while (n > 1) { // scrambles the manager trait array
@@ -833,7 +826,7 @@ public class Resident : NetworkBehaviour {
 		return array;
 	}
 
-	private GameObject getLocalInstance(NetworkInstanceId id) {
+	protected GameObject getLocalInstance(NetworkInstanceId id) {
 		GameObject g;
 		if (isClient) {
 			g = ClientScene.FindLocalObject (id);
@@ -848,7 +841,7 @@ public class Resident : NetworkBehaviour {
 	/// </summary>
 	/// <returns>The building.</returns>
 	/// <param name="id">net id.</param>
-	private Building getBuilding(NetworkInstanceId id) {
+	protected Building getBuilding(NetworkInstanceId id) {
 		if (isValidNetId (id)) {
 			GameObject tmp = getLocalInstance (id);
 			Building b = tmp.GetComponent<Building> ();
@@ -862,7 +855,7 @@ public class Resident : NetworkBehaviour {
 	/// hook used when the job is set
 	/// </summary>
 	/// <param name="netId">Net identifier.</param>
-	private void setJob(NetworkInstanceId netId) {
+	protected void setJob(NetworkInstanceId netId) {
 		job = netId;
 		if (netId.IsEmpty () || netId == NetworkInstanceId.Invalid) {
 			jobBuilding = null;
@@ -890,7 +883,7 @@ public class Resident : NetworkBehaviour {
 		residenceBuilding = null;
 	}
 
-	private bool isValidNetId(NetworkInstanceId netId) {
+	protected bool isValidNetId(NetworkInstanceId netId) {
 		bool b = false;
 		if (!netId.IsEmpty () && netId != NetworkInstanceId.Invalid) {
 			b = true;
@@ -898,7 +891,7 @@ public class Resident : NetworkBehaviour {
 		return b;
 	}
 
-	private void leaveCity() {
+	protected void leaveCity() {
 		if (isValidNetId (job)) {
 			getLocalInstance (job).GetComponent<Business> ().removeWorker (this.netId);
 		}

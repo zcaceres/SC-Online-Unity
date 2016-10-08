@@ -28,14 +28,19 @@ public class Region : NetworkBehaviour {
 	}
 
 	private SyncListNetId regionalObjects = new SyncListNetId();
+	private static MonthManager mm;
 	public CityHall cityHall; // city hall which governs this area
 	[SyncVar]
 	public string regionName;
+	public SyncListNetId candidates = new SyncListNetId();
 	// Use this for initialization
 	void Start () {
 		cityHall = GetComponent<CityHall> ();
 		if (string.IsNullOrEmpty (regionName)) {
 			regionName = NameGen ();
+		}
+		if (mm == null) {
+			mm = FindObjectOfType<MonthManager> ();
 		}
 	}
 
@@ -101,6 +106,26 @@ public class Region : NetworkBehaviour {
 				}
 			}
 		}
+	}
+
+	public void ChooseMayor() {
+		List<Politician> mayors = new List<Politician> ();
+
+		foreach (NetId n in candidates) {
+			mayors.Add(GetLocalInstance (n.id).GetComponent<Politician> ());
+		}
+
+		mayors = mayors.OrderByDescending (p => (p.funds)).ToList();
+		cityHall.SetMayor (mayors [0]);
+	}
+
+	public Politician GetCandidateAt(int i) {
+		Politician p = null;
+		if (candidates.Count >2) {
+			GameObject g = GetLocalInstance (candidates [i].id);
+			p = g.GetComponent<Politician> ();
+		}
+		return p;
 	}
 
 	protected string NameGen() {

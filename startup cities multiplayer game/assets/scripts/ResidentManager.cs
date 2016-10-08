@@ -19,6 +19,7 @@ public class ResidentManager : NetworkBehaviour
 	private float time;
 	private bool noJobs;
 	private bool noHomes;
+	public bool isElectionSeason;
 	public GameObject[] loiterPoints;
 
 	void Start () {
@@ -104,7 +105,7 @@ public class ResidentManager : NetworkBehaviour
 			foreach (Resident r in toRemove) {
 				residents.Remove (r);
 			}
-			
+
 			if (noJobs) {
 				messageAll ("Residents are leaving the city since they can't find jobs.");
 				noJobs = false;
@@ -132,6 +133,15 @@ public class ResidentManager : NetworkBehaviour
 		residents.Add (tmp);
 	}
 
+	public void SpawnPolitician(int p, Region r) {
+		GameObject spawnPoint = bus [Random.Range (0, bus.Length - 1)];
+		GameObject newResident = (GameObject)Instantiate (Resources.Load("Politician"), spawnPoint.transform.position, Quaternion.identity);
+		Politician tmp = newResident.GetComponent<Politician> ();
+		tmp.party = p;
+		tmp.runningFor = r;
+		NetworkServer.Spawn (newResident);
+		residents.Add (tmp);
+	}
 
 	/// <summary>
 	/// If it's night, spawns the crime event from the Month Manager.
@@ -185,6 +195,14 @@ public class ResidentManager : NetworkBehaviour
 		noJobs = true;
 	}
 
+	public void StartElectionSeason() {
+		Region[] regions = FindObjectsOfType<Region> ();
+		foreach (Region r in regions) { // spawn 3 candidates, one for each party, in every region
+			SpawnPolitician (1, r);
+			SpawnPolitician (2, r);
+			SpawnPolitician (3, r);
+		}
+	}
 	private void messageAll(string s) {
 		Player player = FindObjectOfType<Player>();
 		player.RpcMessageAll (s);

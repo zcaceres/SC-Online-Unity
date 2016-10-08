@@ -14,6 +14,8 @@ public class MonthManager : NetworkBehaviour {
 	// Month length in seconds
 	const int MONTH_LENGTH = 10;
 	const int TURNS_UNTIL_NIGHT = 24;
+	const int MAYOR_TERM_LENGTH = 12;
+
 	//access for SetSunLight and AutoIntensity class other classes to MONTH_LENGTH
 	public float turnTime;
 	//access for other classes to TURNS_UNTIL_NIGHT
@@ -38,6 +40,8 @@ public class MonthManager : NetworkBehaviour {
 
 	[SyncVar(hook="SendWeather")]
 	public int weatherType;
+	[SyncVar]
+	public bool isElectionSeason;
 	public SimpleWeatherManager weatherManager;
 	public bool isDay;
 	private SunController sunController;
@@ -232,8 +236,28 @@ public class MonthManager : NetworkBehaviour {
 				Building[] buildings = FindObjectsOfType<Building> ();
 				Earthquake (buildings);
 			}
+			CheckElections ();
 			rm.advanceMonth (); // RESIDENTS
 		}
+	}
+
+	private void CheckElections() {
+		if ((monthsPassed + 6) % MAYOR_TERM_LENGTH == 0) {
+			isElectionSeason = true;
+			rm.StartElectionSeason ();
+			Player p = FindObjectOfType<Player> ();
+			if (p != null) {
+				p.RpcMessageAll ("Election season has begun!");
+			}
+		}
+		if (isElectionSeason && (monthsPassed % MAYOR_TERM_LENGTH == 0)) {
+			isElectionSeason = false;
+			Region[] regions = FindObjectsOfType<Region> ();
+			foreach (Region r in regions) {
+				r.ChooseMayor ();
+			}
+		}
+		rm.isElectionSeason = isElectionSeason;
 	}
 
 	public void Earthquake (Building[] buildings)
