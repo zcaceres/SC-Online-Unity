@@ -107,6 +107,8 @@ public class Player : NetworkBehaviour {
 	private GameObject activePanel;
 	private StartupRigidbodyFirstPersonController characterController;
 	public GameObject bankruptChoice;
+	public Vehicle passengerEnter;
+	public Vehicle driverEnter;
 
 	// Use this for initialization
 	void Start () {
@@ -235,8 +237,16 @@ public class Player : NetworkBehaviour {
 			addToNeighborhood (targetObject);
 		}
 		if (Input.GetKeyDown (KeyCode.F)) {
-			spawnGiveMoneyPanel ();
+			//spawnGiveMoneyPanel ();
+			if (passengerEnter != null) {
+				passengerEnter.PassengerEnterVehicle (this);
+			} else if (driverEnter != null) {
+				driverEnter.StartVehicle (this);
+			}
+			passengerEnter = null;
+			driverEnter = null;
 		}
+
 		if (Input.GetKeyDown(KeyCode.Alpha1)) {
 			toggleManager();
 		}

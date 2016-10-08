@@ -13,14 +13,16 @@ public class EnterVehicle : MonoBehaviour {
 		vehicle = GetComponentInParent<Vehicle> ();
 	}
 
-	void Update() {
-		if (Input.GetKeyDown (KeyCode.F)) {
-			if (canEnter && p != null) {
-				vehicle.StartVehicle (p);
-				canEnter = false;
-			}
-		}
-	}
+//	void Update() {
+//		if (p != null && p.isLocalPlayer) {
+//			if (Input.GetKeyDown (KeyCode.F)) {
+//				if (canEnter) {
+//					canEnter = false;
+//					vehicle.StartVehicle (p);
+//				}
+//			}
+//		}
+//	}
 
 	/// <summary>
 	/// Notifies player that they can get into a vehicle that they own
@@ -32,6 +34,7 @@ public class EnterVehicle : MonoBehaviour {
 			if (vehicle.getOwner () == p.id) {
 				p.message = "Press F to drive.";
 				canEnter = true;
+				p.driverEnter = vehicle;
 			}
 		}
 	}
@@ -39,6 +42,7 @@ public class EnterVehicle : MonoBehaviour {
 	protected void OnTriggerExit(Collider coll) {
 		if (coll.CompareTag ("Player")) {
 			canEnter = false;
+			p.driverEnter = null;
 			p = null;
 		}
 	}
