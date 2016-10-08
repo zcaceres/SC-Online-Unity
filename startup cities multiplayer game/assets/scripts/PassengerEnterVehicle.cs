@@ -34,7 +34,7 @@ public class PassengerEnterVehicle : EnterVehicle {
 			if (vehicle.getOwner () != -1) {
 				if (vehicle.getOwner () != p.id) {
 					if (!p.eligibleToExitVehicle) {
-							Debug.LogError ("inner bock ONTRIGGERSTAY");
+						Debug.LogError ("inner bock ONTRIGGERSTAY");
 						vehicle.PassengerEnterVehicle (p);
 					}
 				}

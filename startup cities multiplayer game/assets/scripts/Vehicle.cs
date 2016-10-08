@@ -4,11 +4,10 @@ using System.Linq;
 using UnityEngine.Networking;
 using UnityStandardAssets.Vehicles.Car;
 
-// TODO: Write design schematic for vehicle prefabs
-// TODO: Passengers in vehicles with class PassengerEnterVehicle
-// TODO: ^ better to just expand EnterVehicle class to accommodate passengers
 
-
+/// <summary>
+/// Class to handle vehicles
+/// </summary>
 public class Vehicle : DamageableObject
 {
 	public AudioSource vehicleAmbientLoop;
