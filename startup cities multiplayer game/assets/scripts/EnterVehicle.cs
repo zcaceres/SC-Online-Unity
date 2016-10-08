@@ -7,11 +7,20 @@ using System.Collections;
 /// </summary>
 public class EnterVehicle : MonoBehaviour {
 	private Vehicle vehicle;
-
+	protected bool canEnter;
+	protected Player p;
 	void Start() {
 		vehicle = GetComponentInParent<Vehicle> ();
 	}
 
+	void Update() {
+		if (Input.GetKeyDown (KeyCode.F)) {
+			if (canEnter && p != null) {
+				vehicle.StartVehicle (p);
+				canEnter = false;
+			}
+		}
+	}
 
 	/// <summary>
 	/// Notifies player that they can get into a vehicle that they own
@@ -19,26 +28,18 @@ public class EnterVehicle : MonoBehaviour {
 	/// <param name="coll">Coll.</param>
 	protected virtual void OnTriggerEnter (Collider coll) {
 		if (coll.CompareTag("Player")) { //Check player ownership here
-			Player p = coll.gameObject.GetComponent<Player> ();
+			p = coll.gameObject.GetComponent<Player> ();
 			if (vehicle.getOwner () == p.id) {
 				p.message = "Press F to drive.";
+				canEnter = true;
 			}
 		}
 	}
 
-	/// <summary>
-	/// Permits player to enter vehicle while in EnterVehicle collider area.
-	/// </summary>
-	/// <param name="coll">Coll.</param>
-	protected virtual void OnTriggerStay (Collider coll)
-	{
-		if (coll.CompareTag ("Player")) { // check player ownership
-			Player p = coll.gameObject.GetComponent<Player> ();
-			if (Input.GetKeyDown (KeyCode.F)) {
-				if (vehicle.getOwnerNetId () == p.netId && !p.eligibleToExitVehicle) {
-					vehicle.StartVehicle (p);
-				}
-			}
+	protected void OnTriggerExit(Collider coll) {
+		if (coll.CompareTag ("Player")) {
+			canEnter = false;
+			p = null;
 		}
 	}
 }

@@ -9,7 +9,6 @@ public class FoodTruck : Vehicle
 	protected CarController carController;
 	protected AudioSource megaPhoneLoop; // audio for loop
 	protected Megaphone mega; //used for mobile collection of $$ from customers
-	public int passengerLimit = 2; //set in each child class for proper number of seats
 
 	//Names for Vehicles
 	private static string[] rSmallFirst = {
@@ -37,6 +36,7 @@ public class FoodTruck : Vehicle
 			passengers = 0;
 		}
 
+
 		AudioSource[] vehicleSounds = GetComponents<AudioSource> ();
 		horn = vehicleSounds [1];
 		vehicleDamageParticleSystem = gameObject.transform.Find ("VehicleDamageParticles").gameObject;
@@ -61,9 +61,10 @@ public class FoodTruck : Vehicle
 			if (Input.GetKeyUp (KeyCode.Mouse0)) {
 				horn.Stop ();
 			}
-			if (Input.GetKey (KeyCode.F)) {
-				Player p = gameObject.GetComponentInChildren<Player> ();
-				if (p.eligibleToExitVehicle) {
+			if (Input.GetKeyDown (KeyCode.F)) {
+				Player p = getLocalPlayerInVehicle ();
+				if (p != null && p.eligibleToExitVehicle) {
+					p.eligibleToExitVehicle = false;
 					ExitVehicle (p);
 				}
 			}

@@ -4,47 +4,42 @@ using System.Collections;
 /// <summary>
 /// Class to handle passenger entering vehicle from passenger doors
 /// </summary>
-public class PassengerEnterVehicle : EnterVehicle {
-	private Vehicle vehicle;
+public class PassengerEnterVehicle : MonoBehaviour {
 	private bool entering;
-
+	protected Vehicle vehicle;
+	protected bool canEnter;
+	protected Player p;
 	void Start () {
 		vehicle = GetComponentInParent<Vehicle> ();
 	}
 
-	protected override void OnTriggerEnter (Collider coll) {
+	void Update() {
+		if (Input.GetKeyDown (KeyCode.F)) {
+			if (canEnter && p != null) {
+				vehicle.PassengerEnterVehicle (p);
+				canEnter = false;
+			}
+		}
+	}
+
+	protected void OnTriggerEnter (Collider coll) {
 		if (coll.CompareTag ("Player")) { //Check if player here
-			Player p = coll.gameObject.GetComponent<Player> ();
+			p = coll.gameObject.GetComponent<Player> ();
 			int owner = vehicle.getOwner ();
 			if (vehicle.getOwner () != -1) {
 				if (vehicle.getOwner () != p.id) {
 					p.message = "Press F to ask " + vehicle.getPlayerOwner ().playerName + " for a ride.";
+					canEnter = true;
 				}
 			}
 		}
 
 	}
-		
 
-	protected override void OnTriggerStay (Collider coll) {
+	protected void OnTriggerExit(Collider coll) {
 		if (coll.CompareTag ("Player")) {
-			Player p = coll.gameObject.GetComponent<Player> ();
-			int owner = vehicle.getOwner ();
-			if(Input.GetKeyDown(KeyCode.F)) {
-			if (vehicle.getOwner () != -1) {
-				if (vehicle.getOwner () != p.id) {
-					if (!p.eligibleToExitVehicle) {
-							Debug.LogError ("inner bock ONTRIGGERSTAY");
-						vehicle.PassengerEnterVehicle (p);
-					}
-				}
-			}
-			}
+			canEnter = false;
+			p = null;
 		}
-
 	}
-
-
-
-
 }

@@ -17,7 +17,7 @@ public class SchoolBus : Vehicle {
 			AudioSource[] vehicleSounds = GetComponents<AudioSource> ();
 			horn = vehicleSounds [1];
 			vehicleDamageParticleSystem = gameObject.transform.Find ("Helpers").Find ("VehicleDamageParticles").gameObject;
-
+			passengerLimit = 12;
 			foreach (AudioSource aSources in vehicleSounds) {
 				aSources.enabled = false;
 			}
@@ -36,7 +36,6 @@ public class SchoolBus : Vehicle {
 				vehicleOccupied = false;
 				vehicleToughness = 3;
 				passengers = 0;
-				passengerLimit = 12;
 			}
 		}
 

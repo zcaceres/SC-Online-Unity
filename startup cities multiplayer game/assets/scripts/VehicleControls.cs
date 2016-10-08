@@ -21,19 +21,14 @@ public class VehicleControls : NetworkBehaviour
 		}
 			
 		if (gameObject.transform.parent != null) { //means that player has entered a vehicle
-			float h = CrossPlatformInputManager.GetAxis("Horizontal");
-			float v = CrossPlatformInputManager.GetAxis("Vertical");
+			float h = CrossPlatformInputManager.GetAxis ("Horizontal");
+			float v = CrossPlatformInputManager.GetAxis ("Vertical");
 			float handbrake = CrossPlatformInputManager.GetAxis ("Jump");
 			if (isServer) {
 				driver.currentVehicle.Move (h, v, v, handbrake); //Server driving
 			} else {
 				driver.CmdDrive (h, v, v, handbrake); //Client driving
-				}
 			}
 		}
-
-
-
-
-
+	}
 }

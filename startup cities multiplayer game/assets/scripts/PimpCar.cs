@@ -15,6 +15,7 @@ public class PimpCar : Vehicle {
 
 
 	void Start () {
+		passengerLimit = 4;
 		AudioSource[] vehicleSounds = GetComponents<AudioSource> ();
 		horn = vehicleSounds [1];
 		vehicleDamageParticleSystem = gameObject.transform.Find ("Helpers").Find ("VehicleDamageParticles").gameObject;
