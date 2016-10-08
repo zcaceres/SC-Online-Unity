@@ -29,7 +29,7 @@ public class Vehicle : DamageableObject
 	public bool vehicleOccupied; //toggled based on whether vehicle has a driver
 	[SyncVar]
 	public int passengers; //limits the number of passengers for the vehicle
-	public const int PASSENGER_LIMIT = 2; //set in each child class for proper number of seats
+	public int passengerLimit = 2; //set in each child class for proper number of seats
 
 	//TODO is this necessary??
 	protected const int TYPENUM = 27;
@@ -136,11 +136,11 @@ public class Vehicle : DamageableObject
 		if (isServer) {
 			EnableVehicle (netId, true); //Enables vehicle sounds and controls
 			p.playerNotVisible = true; //Hides player model
-			p.CheckPassengers (this.netId);
+			//p.CheckPassengers (this.netId);
 		} else {
 			EnableVehicle (netId, true); //Enables vehicle sounds and controls
 			p.CmdSetPlayerVisibility (netId, true);
-			p.CmdCheckPassengers (this.netId);
+			//p.CmdCheckPassengers (this.netId);
 		}
 		if (p.isLocalPlayer) {
 			StartCoroutine (DelayToExit (netId)); //Coroutine to prevent immediate exit with "F"
@@ -153,8 +153,9 @@ public class Vehicle : DamageableObject
 	/// </summary>
 	/// <param name="p">P.</param>
 	public void PassengerEnterVehicle (Player p) {
+		Debug.LogError ("Called PassengerEnterVehicle");
 		NetworkInstanceId netId = p.netId;
-		if (passengers < PASSENGER_LIMIT) {
+		if (passengers < passengerLimit) {
 			if (isServer) {
 				p.playerNotVisible = true;
 			} else {
@@ -164,19 +165,17 @@ public class Vehicle : DamageableObject
 				StartCoroutine (DelayToExit (netId));
 			}
 			EnableVehicle (netId, true);
-			if (isServer) {
-				p.CheckPassengers (this.netId);
-			} else {
-				p.CmdCheckPassengers (this.netId);
-			}
-		} else {
-			p.message = "This vehicle is full!";
+//			if (isServer) {
+//				p.CheckPassengers (this.netId);
+//			} else {
+//				p.CmdCheckPassengers (this.netId);
+//			}
 		}
 	}
 
 
 	/// <summary>
-	/// Exits the vehicle.
+	/// -s the vehicle.
 	/// </summary>
 	/// <param name="p">P.</param>
 	public void ExitVehicle (Player p)
@@ -194,11 +193,6 @@ public class Vehicle : DamageableObject
 			EnableVehicle (netId, false); //Enables vehicle sounds and controls
 		} else {
 			ToggleVehicleCam (p, false);
-		}
-		if (isServer) {
-			p.CheckPassengers (this.netId);
-		} else {
-			p.CmdCheckPassengers (this.netId);
 		}
 	}
 
@@ -233,18 +227,27 @@ public class Vehicle : DamageableObject
 	{
 		Camera vehicleCam = GetComponentInChildren<Camera> ();
 		vehicleCam.enabled = active;
+//		if (isServer) {
+//			p.CheckPassengers (this.netId);
+//		} else {
+//			p.CmdCheckPassengers (this.netId);
+//		}
 		if (active) {
 			Transform parent = this.gameObject.transform;
 			if (isServer) {
 				p.RpcSetNewParent (netId, true);
+				p.AddPassenger (netId);
 			} else {
 				p.CmdSetNewParent (netId, true);
+				p.CmdAddPassenger (netId);
 			}
 		} else {
 			if (isServer) {
 				p.RpcSetNewParent (netId, false);
+				p.RemovePassenger (netId);
 			} else {
 				p.CmdSetNewParent (netId, false);
+				p.CmdRemovePassenger (netId);
 			}
 		}
 		if (owner == p.netId) {
@@ -266,7 +269,7 @@ public class Vehicle : DamageableObject
 		} else {
 			ownerName = getPlayer (owner).getName ();
 		}
-		s = "Type: " + typeName + "\nName : " + vehicleName + "\nOwner: " + ownerName + "\nPrice: " + cost + "\nCondition: " + condition.ToString ();
+		s = "Type: " + typeName + "\nName : " + vehicleName + "\nOwner: " + ownerName + "\nPrice: " + cost + "\nCondition: " + condition.ToString () + "\nPassengers: " + passengers + "/" + passengerLimit;
 
 		if (notForSale) {
 			s += "\nNot for sale";

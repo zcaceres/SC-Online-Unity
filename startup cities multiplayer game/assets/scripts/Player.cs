@@ -1801,13 +1801,46 @@ public class Player : NetworkBehaviour {
 		if (parenting) {
 			Transform t = getLocalInstance (netId).transform;
 			gameObject.transform.SetParent (t);
+			Debug.LogError ("Called RPCSEtNewParent: " + t);
 		} else {
 			gameObject.transform.SetParent (null);
+			Debug.LogError ("Called RPCSEtNewParent: null");
 		}
 	}
 
 
+	/* NEW PASSENGER FUNCTIONS */
 
+	[Command]
+	public void CmdRemovePassenger (NetworkInstanceId netId) {
+		RemovePassenger (netId);
+	}
+
+	public void RemovePassenger (NetworkInstanceId netId) {
+		Debug.LogError ("Called REMOVE passengers");
+		GameObject veh = getLocalInstance (netId);
+		veh.GetComponent<Vehicle> ().passengers -= 1;
+		Debug.LogError (veh.GetComponent<Vehicle> ().name + " has passengers: " + veh.GetComponent<Vehicle> ().passengers);
+	}
+
+	public void AddPassenger (NetworkInstanceId netId) {
+		Debug.LogError ("Called ADD passengers");
+		GameObject veh = getLocalInstance (netId);
+		veh.GetComponent<Vehicle> ().passengers += 1;
+		Debug.LogError (veh.GetComponent<Vehicle> ().name + " has passengers: " + veh.GetComponent<Vehicle> ().passengers);
+	}
+
+	[Command]
+	public void CmdAddPassenger (NetworkInstanceId netId) {
+		AddPassenger (netId);
+	}
+
+	/* End NEW PASSENGER FUNCTIONS */
+
+
+	/* OLD PASSENGER FUNCTIONS */
+
+	///DEPRECATED
 	/// <summary>
 	/// Cmds to check the number of passengers in the car
 	/// </summary>
@@ -1816,17 +1849,20 @@ public class Player : NetworkBehaviour {
 	public void CmdCheckPassengers (NetworkInstanceId netId) {
 		CheckPassengers (netId);
 	}
-
+	///DEPRECATED
 	/// <summary>
 	/// Checks the number of passengers parented to the car
 	/// </summary>
 	/// <param name="netId">Net identifier.</param>
 	public void CheckPassengers(NetworkInstanceId netId) {
+		Debug.LogError ("Called cmd check passengers");
 		GameObject veh = getLocalInstance (netId);
 		Player[] ps = veh.GetComponentsInChildren<Player> ();
 		veh.GetComponent<Vehicle> ().passengers = ps.Length;
-		Debug.LogError("There are " + veh.GetComponent<Vehicle>().passengers);
+		Debug.LogError (veh.GetComponent<Vehicle> ().name + " has passengers: " + veh.GetComponent<Vehicle> ().passengers);
 	}
+
+	/* End OLD PASSENGER FUNCTIONS */
 
 
 	/// <summary>

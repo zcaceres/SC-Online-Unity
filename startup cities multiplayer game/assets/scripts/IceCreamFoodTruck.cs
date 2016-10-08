@@ -13,7 +13,6 @@ public class IceCreamFoodTruck : FoodTruck {
 
 	private static string[] rSmallLast = { "Ice Cream", "Delights", "Pops" };
 
-
 	void Start () {
 		if (isServer) {
 			cost = 10000;

@@ -19,8 +19,7 @@ public class VehicleControls : NetworkBehaviour
 		if (!isLocalPlayer) {
 			return;
 		}
-
-		//TODO: make this a less ugly call
+			
 		if (gameObject.transform.parent != null) { //means that player has entered a vehicle
 			float h = CrossPlatformInputManager.GetAxis("Horizontal");
 			float v = CrossPlatformInputManager.GetAxis("Vertical");

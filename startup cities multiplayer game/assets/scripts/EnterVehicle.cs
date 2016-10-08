@@ -17,15 +17,11 @@ public class EnterVehicle : MonoBehaviour {
 	/// Notifies player that they can get into a vehicle that they own
 	/// </summary>
 	/// <param name="coll">Coll.</param>
-	void OnTriggerEnter (Collider coll) {
+	protected virtual void OnTriggerEnter (Collider coll) {
 		if (coll.CompareTag("Player")) { //Check player ownership here
 			Player p = coll.gameObject.GetComponent<Player> ();
 			if (vehicle.getOwner () == p.id) {
 				p.message = "Press F to drive.";
-			} else { //Player is not owner
-				if (vehicle.getOwner () != -1) {
-					p.message = "Press F to ask for a ride.";
-				}
 			}
 		}
 	}
@@ -34,22 +30,16 @@ public class EnterVehicle : MonoBehaviour {
 	/// Permits player to enter vehicle while in EnterVehicle collider area.
 	/// </summary>
 	/// <param name="coll">Coll.</param>
-	void OnTriggerStay (Collider coll)
+	protected virtual void OnTriggerStay (Collider coll)
 	{
 		if (coll.CompareTag ("Player")) { // check player ownership
 			Player p = coll.gameObject.GetComponent<Player> ();
 			if (Input.GetKeyDown (KeyCode.F)) {
-				if (vehicle.getOwnerNetId() == p.netId && !p.eligibleToExitVehicle) {
+				if (vehicle.getOwnerNetId () == p.netId && !p.eligibleToExitVehicle) {
 					vehicle.StartVehicle (p);
-				} else {
-					if (!p.eligibleToExitVehicle) {
-						vehicle.PassengerEnterVehicle (p);
-					}
 				}
 			}
 		}
 	}
-
-
 }
 

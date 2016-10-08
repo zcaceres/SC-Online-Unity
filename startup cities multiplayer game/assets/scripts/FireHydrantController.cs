@@ -23,7 +23,6 @@ public class FireHydrantController : MonoBehaviour
 			GameObject hose = p.gameObject.transform.Find ("MainCamera").gameObject.transform.Find ("Hose").gameObject;
 			playerCollider.GetComponent<Hose> ().activated = false;
 			hose.SetActive (false);
-			p.message = "Fire hydrant deactivated.";
 		}
 	}
 		
