@@ -120,6 +120,7 @@ public class Region : NetworkBehaviour {
 
 		mayors = mayors.OrderByDescending (p => (p.Rate())).ToList();
 		cityHall.SetMayor (mayors [0]);
+		//Debug.Log (mayors [0].Rate () + " " + mayors [1].Rate () + " " + mayors [2].Rate ());
 	}
 
 	public Politician GetCandidateAt(int i) {
