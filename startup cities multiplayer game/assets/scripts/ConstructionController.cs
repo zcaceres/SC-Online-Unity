@@ -6,6 +6,7 @@ using UnityEngine.Networking;
 
 public class ConstructionController : NetworkBehaviour {
 	const int CHANNEL = 1;
+	const int MAYOR_CATEGORY = 6;
 
 	private struct Spawnable {
 		public Object dummy;
@@ -60,13 +61,14 @@ public class ConstructionController : NetworkBehaviour {
 	void Start () {
 		nm = FindObjectOfType<NetworkManager> ();
 		layerMask = ~(1 << LayerMask.NameToLayer ("player") | 1 << LayerMask.NameToLayer ("node") | 1 << LayerMask.NameToLayer ("Ignore Raycast") | 1 << LayerMask.NameToLayer("trail"));
-		spawnables = new List<Spawnable>[6];
+		spawnables = new List<Spawnable>[7];
 		spawnables[0] = new List<Spawnable> ();
 		spawnables[1] = new List<Spawnable> ();
 		spawnables[2] = new List<Spawnable> ();
 		spawnables[3] = new List<Spawnable> ();
 		spawnables[4] = new List<Spawnable> ();
 		spawnables[5] = new List<Spawnable> ();
+		spawnables [6] = new List<Spawnable> ();
 		Spawnable tmp;
 		currentCategory = 5;
 		categorySelected = false;
@@ -134,7 +136,9 @@ public class ConstructionController : NetworkBehaviour {
 
 	private void setCategoryTooltip() {
 		string s;
-		if (currentCategory == 5) {
+		if (currentCategory == 6) {
+			s = "City Utilities";	
+		} else if (currentCategory == 5) {
 			s = "Utilities";
 		} else if (currentCategory == 4) {
 			s = "Decorations";
@@ -182,6 +186,36 @@ public class ConstructionController : NetworkBehaviour {
 			}
 			b.lot = lotId;
 			lot.addObject (b.netId);
+
+			if (player != null) {
+				player.budget -= spawnables[category] [index].price;
+				player.message = "Spent $" + spawnables [category][index].price + " to build " + spawnables [category][index].name + "!";
+				b.setOwner(player.netId);
+				b.notForSale = true;
+			} 
+		}
+	}
+		
+	[Command (channel = CHANNEL)]
+	public void CmdCityBuild (int index, int category, Vector3 pos, Quaternion q, NetworkInstanceId pid) {
+		Player player = getLocalInstance (pid).GetComponent<Player> ();
+		GameObject constructionParticles;
+		constructionParticles = (GameObject)Resources.Load ("ConstructionParticles");
+		GameObject tmp = (GameObject)Instantiate (spawnables[category][index].spawnable, pos, q);
+		NetworkServer.Spawn (tmp);
+
+		//Spawns construction particle indicator and plays construction sound
+		GameObject particles = (GameObject)Instantiate (constructionParticles, pos, q);
+		NetworkServer.Spawn (particles);
+
+
+		// deduct some amount from the player's budget
+		OwnableObject b = tmp.GetComponent<OwnableObject> ();
+
+		if (b != null) {
+			if (b is Building) {
+				b.GetComponent<Building>().upgrade = true;     // it should not spawn with bad modifiers
+			}
 
 			if (player != null) {
 				player.budget -= spawnables[category] [index].price;
@@ -258,6 +292,12 @@ public class ConstructionController : NetworkBehaviour {
 	public void buildMode () {
 		ConstructionBoundary lotBoundary;
 		int index = currentSpawnable % spawnables[currentCategory].Count;
+
+		// Player is currently selecting the mayor category, use its function
+		if (currentCategory == MAYOR_CATEGORY) {
+			CityBuildMode ();
+			return;
+		}
 
 		if (confirm != null) { // don't move the object around while the player is dealing with the confirmation box
 			if (Input.GetKeyDown (KeyCode.E) || Input.GetKeyDown (KeyCode.Return)) {
@@ -362,43 +402,7 @@ public class ConstructionController : NetworkBehaviour {
 				constructionRotation = toBuild.transform.rotation;
 			}
 		}
-		if (Input.GetKeyDown (KeyCode.RightArrow)) {
-			if (categorySelected) {
-				Destroy (toBuild);
-				toBuild = null;
-				currentSpawnable++;
-				setTooltip ();
-			} else {
-				currentCategory++;
-				currentCategory = currentCategory % spawnables.Length;
-				setCategoryTooltip ();
-			}
-		} else if (Input.GetKeyDown (KeyCode.LeftArrow)) {
-			if (categorySelected) {
-				Destroy (toBuild);
-				toBuild = null;
-				currentSpawnable--;
-				if (currentSpawnable < 0) {
-					currentSpawnable = (spawnables [currentCategory].Count - 1);
-				}
-				setTooltip ();
-			} else {
-				currentCategory--;
-				currentCategory = currentCategory % spawnables.Length;
-				if (currentCategory < 0) {
-					currentCategory = (spawnables.Count () - 1);
-				}
-				setCategoryTooltip ();
-			}
-		} else if (Input.GetKeyDown (KeyCode.UpArrow)) {
-			categorySelected = true;
-			setTooltip ();
-		} else if (Input.GetKeyDown (KeyCode.DownArrow)) {
-			categorySelected = false;
-			Destroy (toBuild);
-			toBuild = null;
-			setCategoryTooltip ();
-		}
+		ItemSelect ();
 	}
 
 	public void moveMode (GameObject target) {
@@ -500,6 +504,110 @@ public class ConstructionController : NetworkBehaviour {
 		}
 	}
 
+	/// <summary>
+	/// Build mode for city objects, doesn't look at lots and stuff
+	/// </summary>
+	public void CityBuildMode() {
+		ConstructionBoundary lotBoundary;
+		int index = currentSpawnable % spawnables[currentCategory].Count;
+
+		if (confirm != null) { // don't move the object around while the player is dealing with the confirmation box
+			if (Input.GetKeyDown (KeyCode.E) || Input.GetKeyDown (KeyCode.Return)) {
+				confirm.transform.Find ("Ok").GetComponent<Button> ().onClick.Invoke (); // hit the button if they player hits E or Enter
+			} else if (Input.GetKeyDown (KeyCode.Escape)) {
+				confirm.transform.Find ("Cancel").GetComponent<Button> ().onClick.Invoke (); // hit escape to cancel
+			}
+			return;
+		}
+		if (tooltip == null) {
+			tooltip = (GameObject)Instantiate (Resources.Load ("BuildTooltip"));
+			tooltip.transform.SetParent (GameObject.Find ("Canvas").transform, false);
+			setTooltip ();
+		}
+		if (Input.GetKeyDown (KeyCode.Tab)) {
+			if (toBuild != null || !categorySelected) {
+				Destroy (toBuild);
+				Destroy (tooltip);
+			}
+			player.construction = false;
+		}
+		if (!categorySelected) {
+			setCategoryTooltip ();
+		} else if (toBuild == null) {
+			Vector3 fwd = playerCamera.transform.TransformDirection (Vector3.forward); // ray shooting from camera
+			RaycastHit hit;
+			if (Physics.Raycast (playerCamera.transform.position, fwd, out hit, 100f, layerMask)) {
+				toBuild = (GameObject)Instantiate (spawnables [currentCategory][index].dummy, hit.point, constructionRotation);
+				if (toBuild.CompareTag ("floor")) {
+					toBuild.transform.rotation = Quaternion.identity;
+				}
+			}
+		} else {
+			Vector3 fwd = playerCamera.transform.TransformDirection (Vector3.forward); // ray shooting from camera
+			RaycastHit hit;
+
+			if (Physics.Raycast (playerCamera.transform.position, fwd, out hit, 100, layerMask)) {
+				bool snapped = false;
+				// TODO: Do logic for checking if a road is currently snapped to another road here
+				//snapped = toBuild.GetComponent<RoadSnap>().isSnapped; check some component on the dummy which determines when the road is snapped
+				if (snapped) {
+					// unreachable, would prevent moving the dummy if the object is snapped, maybe still allow movement if the hit point is a 
+					// certain distance away from current snap position
+				} else if (hit.collider.gameObject.name != toBuild.name && !toBuild.CompareTag("floor")) {
+					toBuild.transform.position = hit.point;
+				} else {
+					toBuild.transform.position = GetSharedSnapPosition(hit.point, .5f);
+				}
+			}
+
+			if (hit.collider != null) {
+				//Grabs construction boundary from toBuild object to check for proper placement in the lot
+				lotBoundary = toBuild.GetComponent<ConstructionBoundary> ();
+				if (lotBoundary.scaffold.colliding) { // city stuff only needs to make sure its not colliding with anything, since it will not be on lots
+					readyToConstruct = false;
+					lotBoundary.turnRed ();
+				} else {
+					readyToConstruct = true;
+					lotBoundary.turnGreen ();
+				}
+
+				if (Input.GetKeyDown (KeyCode.E)) {
+					if (canBuild (spawnables [currentCategory][index].price)) {
+						if (readyToConstruct) {
+							confirm = (GameObject)Instantiate (Resources.Load ("Confirm"));
+							confirm.transform.SetParent (GameObject.Find ("Canvas").transform, false);
+							confirm.transform.Find ("ConfirmMessage").GetComponent<Text> ().text = "Build " + spawnables[currentCategory] [index].name + " for $" + spawnables[currentCategory] [index].price + "?";
+							confirm.transform.Find ("Ok").GetComponent<Button> ().onClick.AddListener (delegate {
+								lotBoundary.resetColor ();
+								CmdCityBuild (index,currentCategory, toBuild.transform.position, toBuild.transform.rotation, this.netId);
+								constructionRotation = toBuild.transform.rotation;
+								Destroy (toBuild);
+								Destroy (tooltip);
+								toBuild = null;
+								player.construction = false;
+								Destroy (confirm);
+							});
+							confirm.transform.Find ("Cancel").GetComponent<Button> ().onClick.AddListener (delegate {
+								Destroy (confirm);
+							});
+						} else {
+							player.showMessage ("You can't build there.");
+						}
+					}
+				}
+
+				if (Input.GetKey (KeyCode.Mouse1)) {
+					toBuild.transform.Rotate (new Vector3 (0, 2, 0));
+					constructionRotation = toBuild.transform.rotation;
+				} else if (Input.GetKey (KeyCode.Mouse0)) {
+					toBuild.transform.Rotate (new Vector3 (0, -2, 0));
+					constructionRotation = toBuild.transform.rotation;
+				}
+			}
+		}
+		ItemSelect ();	
+	}
+
 	public GameObject confirmDestroy(GameObject target) {
 		confirm = (GameObject)Instantiate (Resources.Load ("Confirm"));
 		confirm.transform.SetParent (GameObject.Find ("Canvas").transform, false);
@@ -565,6 +673,49 @@ public class ConstructionController : NetworkBehaviour {
 	public static Vector3 GetSharedSnapPosition(Vector3 originalPosition, float snap/*float snap = 0.01f*/)
 	{
 		return new Vector3(GetSnapValue(originalPosition.x, snap), GetSnapValue(originalPosition.y, snap), GetSnapValue(originalPosition.z, snap));
+	}
+
+	/// <summary>
+	/// Function used by the build modes to check the input used to select the current spawnable or spawnable category
+	/// </summary>
+	private void ItemSelect() {
+		if (Input.GetKeyDown (KeyCode.RightArrow)) {
+			if (categorySelected) {
+				Destroy (toBuild);
+				toBuild = null;
+				currentSpawnable++;
+				setTooltip ();
+			} else {
+				currentCategory++;
+				currentCategory = currentCategory % spawnables.Length;
+				setCategoryTooltip ();
+			}
+		} else if (Input.GetKeyDown (KeyCode.LeftArrow)) {
+			if (categorySelected) {
+				Destroy (toBuild);
+				toBuild = null;
+				currentSpawnable--;
+				if (currentSpawnable < 0) {
+					currentSpawnable = (spawnables [currentCategory].Count - 1);
+				}
+				setTooltip ();
+			} else {
+				currentCategory--;
+				currentCategory = currentCategory % spawnables.Length;
+				if (currentCategory < 0) {
+					currentCategory = (spawnables.Count () - 1);
+				}
+				setCategoryTooltip ();
+			}
+		} else if (Input.GetKeyDown (KeyCode.UpArrow)) {
+			categorySelected = true;
+			setTooltip ();
+		} else if (Input.GetKeyDown (KeyCode.DownArrow)) {
+			categorySelected = false;
+			Destroy (toBuild);
+			toBuild = null;
+			setCategoryTooltip ();
+		}
 	}
 
 	private int getDestroyCost(OwnableObject b) {

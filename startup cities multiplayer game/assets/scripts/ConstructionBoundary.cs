@@ -10,7 +10,7 @@ public class ConstructionBoundary : MonoBehaviour {
 	//Array that can flexibly adapt to as many 'boundary' vertices/edges as we wish for a building
 	protected BoxCollider[] boundaries;
 	//Scaffolding is child game object on dummy which includes box colliders to prevent buildings from being too close to each other
-	protected Scaffolding scaffold;
+	public Scaffolding scaffold;
 
 	//This is the bool checked by the Player class to see whether the building can be constructed
 	public bool isConstructable;
