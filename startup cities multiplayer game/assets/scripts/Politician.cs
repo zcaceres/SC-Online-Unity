@@ -51,19 +51,24 @@ public class Politician : Resident {
 	}
 
 	protected static List<PoliticalTrait> politicalTraits = new List<PoliticalTrait>();
-
 	[SyncVar]
-	private int partyTrait;
+	protected float electability;
 	[SyncVar]
-	private int genericTraitOne;
+	protected int partyTrait;
 	[SyncVar]
-	private int genericTraitTwo;
+	protected int genericTraitOne;
+	[SyncVar]
+	protected int genericTraitTwo;
 	[SyncVar]
 	public int party;
-	[SyncVar]
+	[SyncVar(hook = "SetFunds")]
 	public int funds;
+	public Player loyalty;
 	public Region runningFor;
 	static MonthManager mm;
+
+	// dictionary of the donations the candidate has gotten from players
+	protected Dictionary<int, int> playerFunds = new Dictionary<int, int> ();
 	// Use this for initialization
 	void Start () {
 		if (managerTraits.Count == 0) {
@@ -127,10 +132,76 @@ public class Politician : Resident {
 		return s;
 	}
 
+	/// <summary>
+	/// Returns name and description of trait
+	/// </summary>
+	/// <returns>The string.</returns>
+	/// <param name="p">trait.</param>
 	public string TraitToString(PoliticalTrait p) {
 		string s = "";
 		s += "\n\n" + p.name + "\nDescription: " + p.description;
 		return s;
+	}
+
+	/// <summary>
+	/// Rate this candidate's chance at being elected. Considers their election funds, electability from traits, and
+	/// also factors in a random multiplier
+	/// </summary>
+	public int Rate() {
+		return (int)(funds * electability * Random.Range (.8f, 1.2f));
+	}
+
+	/// <summary>
+	/// Adds a donation from a player to the politicians funds.
+	/// </summary>
+	/// <param name="amount">Amount to give.</param>
+	/// <param name="giver">Player providing the donation.</param>
+	public void AddFunds(int amount, Player giver) {
+		funds += amount;
+		if (playerFunds.ContainsKey (giver.id)) {
+			playerFunds [giver.id] += amount;
+		} else {
+			playerFunds.Add (giver.id, amount);
+		}
+		giver.budget -= amount;
+	}
+
+	/// <summary>
+	/// Chooses the mayor's loyalty. Finds the player who donated the most to the politician's campaign 
+	/// or ignores the player if the politician has a trait which causes disloyalty
+	/// </summary>
+	public void ChooseLoyalty() {
+		if (Random.value > GetDisloyalChance ()) {
+			KeyValuePair<int, int> p = new KeyValuePair<int, int> ();
+			foreach (KeyValuePair<int, int> pair in playerFunds) {
+				if (p.Key == null) {
+					p = pair;
+				} else if (pair.Value > p.Value) {
+					p = pair;
+				}
+			}
+			Player[] players = FindObjectsOfType<Player> ();
+			foreach (Player pl in players) {
+				if (pl.id == p.Key) {
+					loyalty = pl;
+					break;
+				}
+			}
+		}
+
+	}
+
+	protected float GetDisloyalChance() {
+		return (politicalTraits[partyTrait].noLoyaltyChance + politicalTraits[genericTraitOne].noLoyaltyChance + politicalTraits[genericTraitTwo].noLoyaltyChance);
+	}
+
+	/// <summary>
+	/// hook that sets the funds and recalculates the candidate's current loyalty.
+	/// </summary>
+	/// <param name="f">F.</param>
+	protected void SetFunds(int f) {
+		funds = f;
+		//ChooseLoyalty ();
 	}
 
 	protected void InitializePoliticalTraits() {
@@ -228,5 +299,7 @@ public class Politician : Resident {
 		int[] p = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 };
 		portrait = p[(int)Random.Range (0, p.Length)];
 
+		// set the politician's electability modifier based on their traits
+		electability = 1 * politicalTraits[partyTrait].winChance * politicalTraits[genericTraitOne].winChance * politicalTraits[genericTraitTwo].winChance;
 	}
 }

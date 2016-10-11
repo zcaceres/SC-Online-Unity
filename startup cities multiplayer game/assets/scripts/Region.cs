@@ -108,6 +108,9 @@ public class Region : NetworkBehaviour {
 		}
 	}
 
+	/// <summary>
+	/// Chooses the mayor by their electability rating.
+	/// </summary>
 	public void ChooseMayor() {
 		List<Politician> mayors = new List<Politician> ();
 
@@ -115,7 +118,7 @@ public class Region : NetworkBehaviour {
 			mayors.Add(GetLocalInstance (n.id).GetComponent<Politician> ());
 		}
 
-		mayors = mayors.OrderByDescending (p => (p.funds)).ToList();
+		mayors = mayors.OrderByDescending (p => (p.Rate())).ToList();
 		cityHall.SetMayor (mayors [0]);
 	}
 

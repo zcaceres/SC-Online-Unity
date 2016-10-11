@@ -274,13 +274,19 @@ public class CityHall : Business {
 	}
 
 	public void SetMayor(Politician p) {
+		string message = governedRegion.regionName + " has elected " + p.residentName + "!";
+		p.ChooseLoyalty ();
 		if (tenant.resident != null) {
 			tenant.evict ();
 		}
 		tenant.setActive (p.netId);
 		Player pl = FindObjectOfType<Player>();
+		if (p.loyalty != null) { // politicians player loyalty
+			message += " They are loyal to " + p.loyalty.playerName + ".";
+			this.setOwner (p.loyalty.netId); // city hall and region stuff goes to loyalty player
+		}
 		if (pl!=null) {
-			pl.RpcMessageAll(governedRegion.regionName + " has elected " + p.residentName + "!");
+			pl.RpcMessageAll(message);
 		}
 		governedRegion.candidates.Clear ();
 	}

@@ -76,8 +76,7 @@ public class ElectionManager : NetworkBehaviour {
 
 		if (c.governedRegion.candidates.Count == 3) {
 			Politician mayor = c.governedRegion.GetCandidateAt (index);
-			mayor.funds += 1000;
-			p.budget -= 1000;
+			mayor.AddFunds (1000, p);
 			p.RpcMessage ("Donated $1000 to " + mayor.residentName + "'s mayoral campaign!");
 		}
 	}
