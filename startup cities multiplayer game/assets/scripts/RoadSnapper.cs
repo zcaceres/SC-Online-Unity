@@ -18,12 +18,13 @@ public class RoadSnapper : MonoBehaviour {
 
 
 	public void SnapToRoad(RaycastHit roadHit) {
-		if (roadHit.collider.GetComponentInChildren<RoadConnector> ().transform != null) {
-			Transform roadLink = roadHit.collider.GetComponentInChildren<RoadConnector> ().transform;
-			if (roadLink != null) {
-				transform.position = roadLink.position;
-			}
-		}
+		Debug.Log ("called snap to road");
+//		if (roadHit.collider.GetComponentInChildren<RoadConnector> ().transform != null) {
+//			Transform roadLink = roadHit.collider.GetComponentInChildren<RoadConnector> ().transform;
+//			if (roadLink != null) {
+//				transform.position = roadLink.position;
+//			}
+//		}
 	}
 
 
