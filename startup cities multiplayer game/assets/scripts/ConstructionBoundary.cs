@@ -10,7 +10,7 @@ public class ConstructionBoundary : MonoBehaviour {
 	//Array that can flexibly adapt to as many 'boundary' vertices/edges as we wish for a building
 	protected BoxCollider[] boundaries;
 	//Scaffolding is child game object on dummy which includes box colliders to prevent buildings from being too close to each other
-	protected Scaffolding scaffold;
+	public Scaffolding scaffold;
 
 	//This is the bool checked by the Player class to see whether the building can be constructed
 	public bool isConstructable;
@@ -19,6 +19,7 @@ public class ConstructionBoundary : MonoBehaviour {
 	protected Color color;
 	protected Player owner;
 	protected MeshRenderer mr;
+	protected bool isCityHallObject;
 
 	// Use this for initialization
 	void Start () {
@@ -27,24 +28,57 @@ public class ConstructionBoundary : MonoBehaviour {
 		constructionChecker = 0;
 		mr = gameObject.GetComponent<MeshRenderer> ();
 		scaffold = gameObject.GetComponentInChildren<Scaffolding> ();
+		if (gameObject.GetComponentInChildren<RoadSnapper> () != null) {
+			isCityHallObject = true;
+		} else {
+			isCityHallObject = false;
+		}
 	}
 
 
 	/// <summary>
 	/// Raises the trigger enter event and checks if rigidbody colliding has a lot attached so that it can send
-	/// isConstrucable bool to player class
+	/// isConstructable bool to player class
 	/// </summary>
 	/// <param name="other">Kinematic rigidbody on the lot</param>
-	private void OnTriggerEnter (Collider other) {
-		if (other.GetComponent<Lot> () != null) {
-			constructionChecker += 1;
+	void OnTriggerEnter (Collider other) {
+		if (!isCityHallObject) {
+			if (other.GetComponent<Lot> () != null) {
+				constructionChecker += 1;
+			}
+		} else {
+			if (other.GetComponent<Terrain> () != null) {
+				constructionChecker += 1;
+				Debug.Log (constructionChecker);
+			}
 		}
 	}
 
 	//This is called so that the constructionboundary checker is constantly updated while a dummy object is in play
 	void Update() {
+		if (isCityHallObject) {
+			CheckCityHallObjectConstruction ();
+		} else {
 			CheckConstructionStatus ();
+		}
 	}
+
+
+	/// <summary>
+	/// Checks the construction status for objects owned by City Hall
+	/// </summary>
+	protected virtual void CheckCityHallObjectConstruction() {
+		if (constructionChecker == boundaries.Length) { //All vertices on lot
+			if (!scaffold.colliding) { //Not colliding with anything
+				isConstructable = true;
+			} else {
+				isConstructable = false;
+			}
+		} else {
+			isConstructable = false;
+		}
+	}
+
 
 	/// <summary>
 	/// Checks the construction status of the dummy building. Compares corner colliders with quantity of total colliders on the building.
@@ -62,6 +96,8 @@ public class ConstructionBoundary : MonoBehaviour {
 			isConstructable = false;
 		}
 	}
+
+
 
 	/// <summary>
 	/// Decrements the constructionChecker int when a constructionboundary leaves the limits of the lot

@@ -134,6 +134,7 @@ public class ConstructionController : NetworkBehaviour {
 
 	private void setCategoryTooltip() {
 		string s;
+		//Add new category for city hall here
 		if (currentCategory == 5) {
 			s = "Utilities";
 		} else if (currentCategory == 4) {
@@ -295,9 +296,12 @@ public class ConstructionController : NetworkBehaviour {
 			RaycastHit hit;
 
 			if (Physics.Raycast (playerCamera.transform.position, fwd, out hit, 100, layerMask)) {
-				if (hit.collider.gameObject.name != toBuild.name && !toBuild.CompareTag("floor")) {
+				if (hit.collider.gameObject.name != toBuild.name && !toBuild.CompareTag ("floor")) {
 					toBuild.transform.position = hit.point;
-				} else {
+			//	} else if (toBuild.CompareTag ("floor") && toBuild.GetComponentInChildren<RoadSnapper> () != null) {
+					//toBuild.GetComponentInChildren<RoadSnapper> ().SnapToRoad (hit);
+				}
+				else { //toBuild is 'floor'
 					toBuild.transform.position = GetSharedSnapPosition(hit.point, .5f);
 				}
 			}
