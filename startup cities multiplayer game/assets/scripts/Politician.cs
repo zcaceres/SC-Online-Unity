@@ -174,16 +174,18 @@ public class Politician : Resident {
 		if (Random.value > GetDisloyalChance ()) {
 			KeyValuePair<int, int> p = new KeyValuePair<int, int> ();
 			foreach (KeyValuePair<int, int> pair in playerFunds) {
-				if (p.Key == null) {
-					p = pair;
-				} else if (pair.Value > p.Value) {
+				if (pair.Value > p.Value && p.Value > 0) {
 					p = pair;
 				}
 			}
 			Player[] players = FindObjectsOfType<Player> ();
 			foreach (Player pl in players) {
 				if (pl.id == p.Key) {
-					loyalty = pl;
+					if (p.Value > 0) {
+						loyalty = pl;
+					} else {
+						loyalty = null;
+					}
 					break;
 				}
 			}

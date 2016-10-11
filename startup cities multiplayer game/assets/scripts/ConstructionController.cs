@@ -566,9 +566,12 @@ public class ConstructionController : NetworkBehaviour {
 				if (lotBoundary.scaffold.colliding) { // city stuff only needs to make sure its not colliding with anything, since it will not be on lots
 					readyToConstruct = false;
 					lotBoundary.turnRed ();
-				} else {
+				} else if (hit.collider.gameObject.CompareTag("terrain")) {
 					readyToConstruct = true;
 					lotBoundary.turnGreen ();
+				} else {
+					readyToConstruct = false;
+					lotBoundary.turnRed ();
 				}
 
 				if (Input.GetKeyDown (KeyCode.E)) {
