@@ -46,6 +46,8 @@ public class Politician : Resident {
 			noLoyaltyChance = nol;
 			embezzleChance = emb;
 			copCostModifier = cop;
+			roadCostModifier = road;
+			winChance = win;
 			party = p;
 		}
 	}
@@ -179,15 +181,15 @@ public class Politician : Resident {
 				}
 			}
 			Player[] players = FindObjectsOfType<Player> ();
-			foreach (Player pl in players) {
-				if (pl.id == p.Key) {
-					if (p.Value > 0) {
+			if (p.Value > 0) {
+				foreach (Player pl in players) {
+					if (pl.id == p.Key) {
 						loyalty = pl;
-					} else {
-						loyalty = null;
+						break;
 					}
-					break;
 				}
+			} else {
+				loyalty = null;
 			}
 		}
 
