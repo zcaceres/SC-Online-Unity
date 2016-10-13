@@ -295,12 +295,12 @@ public class ConstructionController : NetworkBehaviour {
 
 		// Player is currently selecting the mayor category, use its function
 		if (currentCategory == MAYOR_CATEGORY) {
-			if (player.activeCityHall != null && player.activeCityHall.ownedBy(player)) {
+			//if (player.activeCityHall != null && player.activeCityHall.ownedBy(player)) {
 				CityBuildMode ();
 				return;
-			} else { // skip over the city utilities category if the player isnt acting as a city
-				currentCategory = 0;
-			}
+		//	} else { // skip over the city utilities category if the player isnt acting as a city
+		//		currentCategory = 0;
+		//	}
 		}
 
 		if (confirm != null) { // don't move the object around while the player is dealing with the confirmation box
