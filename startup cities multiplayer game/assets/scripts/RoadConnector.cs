@@ -1,26 +1,39 @@
 ﻿using UnityEngine;
-using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 
+/// <summary>
+/// Base class for road connections. Put on ROAD prefabs.
+/// </summary>
 public class RoadConnector : MonoBehaviour {
-	private BoxCollider boxCo;
-	// Use this for initialization
+	private Transform[] roadConnectorTransforms; 
+
+	//Find all RoadConnectors on start of server
 	void Start () {
-		boxCo = GetComponent<BoxCollider> ();
+		roadConnectorTransforms = FindAllConnectorTransforms ();
 	}
 
-	void OnTriggerEnter (Collider coll) {
-//		if (coll.GetComponent<Player> () != null) {
-//			Debug.LogError ("I collided with this road");
-//		}
-		//Check that thing is a road piece
-		//snap transform of dummy piece to the connector
+	/// <summary>
+	/// Finds all connector transforms. Used to allow roads with different number of intersections to snap
+	/// </summary>
+	/// <returns>The all connector transforms.</returns>
+	private Transform[] FindAllConnectorTransforms() {
+		List<Transform> transList = new List<Transform> ();
+		Transform connectors = transform.Find ("RoadConnectors");
+		foreach (Transform t in connectors) {
+				transList.Add (t);
+			}
+		return transList.ToArray();
 	}
 
 
-	void OnTriggerStay (Collider coll) {
-		//snap transform of dummy piece to the connector
-		//set constructable bool to yes
-		//make green
+	/// <summary>
+	/// Getter function to return array of all the roadconnector transforms on the object in an array
+	/// </summary>
+	/// <returns>The road connector transforms.</returns>
+	public Transform[] GetRoadConnectorTransforms () {
+		return roadConnectorTransforms;
 	}
+		
 
 }
