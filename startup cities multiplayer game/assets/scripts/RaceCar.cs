@@ -1,21 +1,20 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class PimpCar : Vehicle {
+public class RaceCar : Vehicle {
 	private static string[] rSmallFirst = {
-		"Swag",
-		"Pimp",
-		"Cherry",
-		"Sweet Ass",
-		"Stylish"
+		"Fast",
+		"Sporty",
+		"Striped",
+		"Damn Quick",
 	};
 
 	//Names for Vehicles
-	private static string[] rSmallLast = { "Wagon", "Mobile", "Car" };
+	private static string[] rSmallLast = { "Race Car" };
 
-
+	// Use this for initialization
 	void Start () {
-		passengerLimit = 4;
+		passengerLimit = 2;
 		AudioSource[] vehicleSounds = GetComponents<AudioSource> ();
 		horn = vehicleSounds [1];
 		vehicleDamageParticleSystem = gameObject.transform.Find ("Helpers").Find ("VehicleDamageParticles").gameObject;
@@ -25,7 +24,7 @@ public class PimpCar : Vehicle {
 		}
 
 		if (isServer) {
-			cost = 7000;
+			cost = 15000;
 			fire = false;
 			baseCost = cost;
 			baseCondition = 100;
@@ -36,12 +35,11 @@ public class PimpCar : Vehicle {
 			typeName = "Car";
 			vehicleName = nameGen ();
 			vehicleOccupied = false;
-			vehicleToughness = 2;
+			vehicleToughness = 1;
 			passengers = 0;
 		}
 	}
-
-
+	
 	/// <summary>
 	/// Generates a name for the vehicle
 	/// TODO: move vehicle names to file I/O
@@ -54,4 +52,5 @@ public class PimpCar : Vehicle {
 		name = rSmallFirst [(int)Random.Range (0, rSmallFirst.Length)] + " " + rSmallLast [(int)Random.Range (0, rSmallLast.Length)];
 		return name;
 	}
+
 }
