@@ -176,7 +176,7 @@ public class Politician : Resident {
 		if (Random.value > GetDisloyalChance ()) {
 			KeyValuePair<int, int> p = new KeyValuePair<int, int> ();
 			foreach (KeyValuePair<int, int> pair in playerFunds) {
-				if (pair.Value > p.Value && p.Value > 0) {
+				if (pair.Value > p.Value && pair.Value > 0) {
 					p = pair;
 				}
 			}

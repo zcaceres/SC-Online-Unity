@@ -109,6 +109,7 @@ public class Player : NetworkBehaviour {
 	public GameObject bankruptChoice;
 	public Vehicle passengerEnter;
 	public Vehicle driverEnter;
+	public CityHall activeCityHall;
 
 	// Use this for initialization
 	void Start () {
