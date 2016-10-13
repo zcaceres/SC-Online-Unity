@@ -339,9 +339,10 @@ public class ConstructionController : NetworkBehaviour {
 			RaycastHit hit;
 
 			if (Physics.Raycast (playerCamera.transform.position, fwd, out hit, 100, layerMask)) {
-				if (hit.collider.gameObject.name != toBuild.name && !toBuild.CompareTag("floor")) {
+				if (hit.collider.gameObject.name != toBuild.name && !toBuild.CompareTag ("floor")) {
 					toBuild.transform.position = hit.point;
-				} else {
+				}
+				else {
 					toBuild.transform.position = GetSharedSnapPosition(hit.point, .5f);
 				}
 			}
@@ -512,6 +513,8 @@ public class ConstructionController : NetworkBehaviour {
 	/// Build mode for city objects, doesn't look at lots and stuff
 	/// </summary>
 	public void CityBuildMode() {
+		bool snapped = false;
+		//road should not be snapped at start of buildmode
 		ConstructionBoundary lotBoundary;
 		int index = currentSpawnable % spawnables[currentCategory].Count;
 
@@ -551,16 +554,27 @@ public class ConstructionController : NetworkBehaviour {
 			RaycastHit hit;
 
 			if (Physics.Raycast (playerCamera.transform.position, fwd, out hit, 100, layerMask)) {
-				bool snapped = false;
-				// TODO: Do logic for checking if a road is currently snapped to another road here
-				//snapped = toBuild.GetComponent<RoadSnap>().isSnapped; check some component on the dummy which determines when the road is snapped
-				if (snapped) {
-					// unreachable, would prevent moving the dummy if the object is snapped, maybe still allow movement if the hit point is a 
-					// certain distance away from current snap position
-				} else if (hit.collider.gameObject.name != toBuild.name && !toBuild.CompareTag("floor")) {
-					toBuild.transform.position = hit.point;
+				if (hit.collider.gameObject.GetComponent<RoadConnector> () != null) { //if i raycast a road
+					Transform[] roadSnapTransforms = hit.collider.gameObject.GetComponent<RoadConnector> ().GetRoadConnectorTransforms (); //Get roadconnector component on the road and all its connectors
+					int numOfConnectors = roadSnapTransforms.Length; //get the number of connectorS
+					Vector3[] positionOfTransform = new Vector3[numOfConnectors];
+					Transform snapPosition; //used to select snap position
+					float shortestDistanceToTransform = Vector3.Distance (hit.point, positionOfTransform [0]);
+					for (int i = 0; i < numOfConnectors; i++) { //looks through all possible snap transforms to find their world position Vector3
+						positionOfTransform [i] = roadSnapTransforms [i].position;
+					}
+					for (int i = 0; i < numOfConnectors; i++) {
+						if (Vector3.Distance (hit.point, positionOfTransform [i]) < shortestDistanceToTransform) { //compares position of snaptransform and the raycast point
+							shortestDistanceToTransform = Vector3.Distance (hit.point, positionOfTransform [i]); //if it's the shortest position in the array
+							snapPosition = roadSnapTransforms [i]; //sets the snap position to that transform's Vector3
+							toBuild.transform.position = positionOfTransform [i]; //snaps position to snaptransform
+							toBuild.transform.rotation = roadSnapTransforms [i].rotation; //snaps rotation to snaptransform
+							snapped = true; //toggles snap to allow for construction (road can only be constructed if snapped
+						}
+					}
 				} else {
-					toBuild.transform.position = GetSharedSnapPosition(hit.point, .5f);
+					toBuild.transform.position = GetSharedSnapPosition (hit.point, .5f); //normal gentle 'helper' snap on raycast movement
+					snapped = false;
 				}
 			}
 
@@ -570,7 +584,7 @@ public class ConstructionController : NetworkBehaviour {
 				if (lotBoundary.scaffold.colliding) { // city stuff only needs to make sure its not colliding with anything, since it will not be on lots
 					readyToConstruct = false;
 					lotBoundary.turnRed ();
-				} else if (hit.collider.gameObject.CompareTag("terrain")) {
+				} else if (!lotBoundary.scaffold.colliding && snapped) { //ensures road is not colliding with anything and that it's also SNAPPED to a snaptransform
 					readyToConstruct = true;
 					lotBoundary.turnGreen ();
 				} else {

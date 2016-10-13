@@ -33,14 +33,18 @@ public class RegionPanelToggle : MonoBehaviour {
 				tmp.transform.Find ("Text").GetComponent<Text> ().text = r.regionName;
 				if (localPlayer != null && r.cityHall.ownedBy (localPlayer)) {
 					Button tmpButton = tmp.transform.Find ("Activate").GetComponent<Button> ();
-					if (r.cityHall.id == localPlayer.activeCityHall.id) {
+					if (localPlayer.activeCityHall != null && r.cityHall.id == localPlayer.activeCityHall.id) {
 						selected = tmpButton.GetComponent<Image> ();
 						selected.color = Color.red;
 					}
 
 					tmpButton.onClick.AddListener (delegate {
-						if (r.cityHall.id == localPlayer.activeCityHall.id) {
-							
+						if (localPlayer.activeCityHall != null && r.cityHall.id == localPlayer.activeCityHall.id) {
+							localPlayer.activeCityHall = null;
+							localPlayer.showMessage(r.regionName + " is no longer your active region.");
+							selected = tmpButton.GetComponent<Image>();
+							selected.color = Color.black;
+							selected = null;
 						} else {
 							if (selected != null) {
 								selected.color = Color.black;

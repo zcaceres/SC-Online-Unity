@@ -4,8 +4,9 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine.Networking;
 
-[RequireComponent(typeof(BoxCollider))]
-public class ConstructionBoundary : MonoBehaviour {
+[RequireComponent (typeof(BoxCollider))]
+public class ConstructionBoundary : MonoBehaviour
+{
 
 	//Array that can flexibly adapt to as many 'boundary' vertices/edges as we wish for a building
 	protected BoxCollider[] boundaries;
@@ -21,8 +22,9 @@ public class ConstructionBoundary : MonoBehaviour {
 	protected MeshRenderer mr;
 
 	// Use this for initialization
-	void Start () {
-		color = gameObject.GetComponent<MeshRenderer> ().materials[0].color;
+	void Start ()
+	{
+		color = gameObject.GetComponent<MeshRenderer> ().materials [0].color;
 		boundaries = GetComponents<BoxCollider> ();
 		constructionChecker = 0;
 		mr = gameObject.GetComponent<MeshRenderer> ();
@@ -32,19 +34,23 @@ public class ConstructionBoundary : MonoBehaviour {
 
 	/// <summary>
 	/// Raises the trigger enter event and checks if rigidbody colliding has a lot attached so that it can send
-	/// isConstrucable bool to player class
+	/// isConstructable bool to player class
 	/// </summary>
 	/// <param name="other">Kinematic rigidbody on the lot</param>
-	private void OnTriggerEnter (Collider other) {
+	void OnTriggerEnter (Collider other)
+	{
 		if (other.GetComponent<Lot> () != null) {
 			constructionChecker += 1;
 		}
 	}
 
 	//This is called so that the constructionboundary checker is constantly updated while a dummy object is in play
-	void Update() {
-			CheckConstructionStatus ();
+	void Update ()
+	{
+		CheckConstructionStatus ();
 	}
+
+
 
 	/// <summary>
 	/// Checks the construction status of the dummy building. Compares corner colliders with quantity of total colliders on the building.
@@ -63,10 +69,13 @@ public class ConstructionBoundary : MonoBehaviour {
 		}
 	}
 
+
+
 	/// <summary>
 	/// Decrements the constructionChecker int when a constructionboundary leaves the limits of the lot
 	/// </summary>
-	protected virtual void OnTriggerExit (Collider other) {
+	protected virtual void OnTriggerExit (Collider other)
+	{
 		if (other.GetComponent<Lot> () != null) {
 			constructionChecker -= 1;
 		}
@@ -76,28 +85,34 @@ public class ConstructionBoundary : MonoBehaviour {
 		isConstructable = false;
 	}
 
+
 	/// <summary>
 	/// Turns the dummy green.
 	/// </summary>
-	public void turnGreen() {
+	public void turnGreen ()
+	{
 		if (mr.materials [0].color != Color.green) {
 			mr.materials [0].color = Color.green;
 		}
 	}
 
+
 	/// <summary>
 	/// Turns the dummy red.
 	/// </summary>
-	public void turnRed() {
+	public void turnRed ()
+	{
 		if (mr.materials [0].color != Color.red) {
 			mr.materials [0].color = Color.red;
 		}
 	}
 
+
 	/// <summary>
 	/// Resets the dummy's color.
 	/// </summary>
-	public void resetColor() {
+	public void resetColor ()
+	{
 		mr.materials [0].color = color;
 	}
 }

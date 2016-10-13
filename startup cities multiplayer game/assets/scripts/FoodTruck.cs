@@ -40,7 +40,7 @@ public class FoodTruck : Vehicle
 		AudioSource[] vehicleSounds = GetComponents<AudioSource> ();
 		horn = vehicleSounds [1];
 		vehicleDamageParticleSystem = gameObject.transform.Find ("VehicleDamageParticles").gameObject;
-		vehicleOccupied = false;
+		//vehicleOccupied = false;
 		mega = GetComponentInChildren<Megaphone> ();
 
 		foreach (AudioSource aSources in vehicleSounds) {
