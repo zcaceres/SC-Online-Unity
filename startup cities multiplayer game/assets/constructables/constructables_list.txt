@@ -39,5 +39,7 @@ DummyBuildings/Dummy_FireHydrant, ConstructableBuildings/FireHydrant, 500, 0, 24
 DummyBuildings/Dummy_Office, ConstructableBuildings/Office, 70000, 2, 26, -20, Office Building, Attracts high-skill workers to the city., 3
 DummyBuildings/Roads/Dummy_Road_Straight_Short, ConstructableBuildings/Roads/Road_Straight_Short, 5000, 3, 23, 0, Straight Road, For connecting., 6
 DummyBuildings/Roads/Dummy_Road_Cross, ConstructableBuildings/Roads/Road_Cross, 7000, 3, 23, 0, Four-Way Intersection, Look both ways before you cross, 6
-DummyBuildings/Roads/Dummy_Road_L, ConstructableBuildings/Roads/Road_L, 5000, 3, 23, 0, L-Curve, A sharp turn, 6
-DummyBuildings/Dummy_DirtPath, ConstructableBuildings/DirtPath, 5, 0, 23, -3, Test City Path, this is a temporary thing., 6
+DummyBuildings/Roads/Dummy_Road_L_Left, ConstructableBuildings/Roads/Road_L_Left, 5000, 3, 23, 0, L-Curve (Left), A sharp turn, 6
+DummyBuildings/Roads/Dummy_Road_L_Right, ConstructableBuildings/Roads/Road_L_Right, 5000, 3, 23, 0, L-Curve (Right), A sharp turn, 6
+//DummyBuildings/Dummy_DirtPath, ConstructableBuildings/DirtPath, 5, 0, 23, -3, Test City Path, this is a temporary thing., 6
+//Z asks: Does this ^ need to be in here?

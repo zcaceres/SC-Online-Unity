@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 /// <summary>
-/// Base class for road connections. Put on ROAD prefabs.
+/// Base class for road connections. Put on ROAD prefabs. Handles snapping for road building
 /// </summary>
 public class RoadConnector : MonoBehaviour {
 	private Transform[] roadConnectorTransforms; 
