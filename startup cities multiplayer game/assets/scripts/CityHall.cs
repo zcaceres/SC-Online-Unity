@@ -187,6 +187,10 @@ public class CityHall : Business {
 		budget -= amount;
 	}
 
+	public int GetBudget() {
+		return budget;
+	}
+
 	/// <summary>
 	/// Returns the data associated with the building
 	/// </summary>

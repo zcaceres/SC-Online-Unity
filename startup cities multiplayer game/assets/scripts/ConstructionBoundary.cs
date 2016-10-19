@@ -12,7 +12,7 @@ public class ConstructionBoundary : MonoBehaviour
 	protected BoxCollider[] boundaries;
 	//Scaffolding is child game object on dummy which includes box colliders to prevent buildings from being too close to each other
 	public Scaffolding scaffold;
-
+	public Lot triggerLot;
 	//This is the bool checked by the Player class to see whether the building can be constructed
 	public bool isConstructable;
 	//This int compares the number of collisions that have occurred on the boundary vertices against all possible boundaries for the building
@@ -41,6 +41,7 @@ public class ConstructionBoundary : MonoBehaviour
 	{
 		if (other.GetComponent<Lot> () != null) {
 			constructionChecker += 1;
+			triggerLot = other.GetComponent<Lot> ();
 		}
 	}
 
@@ -78,6 +79,7 @@ public class ConstructionBoundary : MonoBehaviour
 	{
 		if (other.GetComponent<Lot> () != null) {
 			constructionChecker -= 1;
+			triggerLot = null;
 		}
 		if (constructionChecker < 0) {
 			constructionChecker = 0;
