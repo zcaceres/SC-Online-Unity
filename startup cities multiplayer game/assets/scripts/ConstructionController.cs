@@ -563,13 +563,18 @@ public class ConstructionController : NetworkBehaviour {
 						if (Vector3.Distance (hit.point, positionOfTransform [i]) < shortestDistanceToTransform) { //compares position of snaptransform and the raycast point
 							shortestDistanceToTransform = Vector3.Distance (hit.point, positionOfTransform [i]); //if it's the shortest position in the array
 							snapPosition = roadSnapTransforms [i]; //sets the snap position to that transform's Vector3
-							toBuild.transform.position = positionOfTransform [i]; //snaps position to snaptransform
-							toBuild.transform.rotation = roadSnapTransforms [i].rotation; //snaps rotation to snaptransform
+							foreach (Renderer r in toBuild.GetComponents<Renderer>()) {
+								r.enabled = true; //toggles visibility of the road dummy prefab ON
+							}
+							toBuild.transform.position = snapPosition.position; //snaps dummy prefab to raycast road position
+							toBuild.transform.rotation = snapPosition.rotation; //snaps dummy prefab to raycast road rotation
 							snapped = true; //toggles snap to allow for construction (road can only be constructed if snapped
 						}
 					}
 				} else {
-					toBuild.transform.position = GetSharedSnapPosition (hit.point, .5f); //normal gentle 'helper' snap on raycast movement
+					foreach (Renderer r in toBuild.GetComponents<Renderer>()) {
+						r.enabled = false; //toggles visibility of the road dummy prefab OFF if you aren't raycasting aroad
+					}
 					snapped = false;
 				}
 			}
@@ -613,11 +618,16 @@ public class ConstructionController : NetworkBehaviour {
 					}
 				}
 
+				//TODO: Decide how to handle rotation for NON-Road/Lot Prefabs while preventing rotation for ROAD/LOT prefabs
 				if (Input.GetKey (KeyCode.Mouse1)) {
-					toBuild.transform.Rotate (new Vector3 (0, 2, 0));
+					if (snapped) {
+				//		toBuild.transform.Rotate (new Vector3 (0, 2, 0));
+					}
 					constructionRotation = toBuild.transform.rotation;
 				} else if (Input.GetKey (KeyCode.Mouse0)) {
-					toBuild.transform.Rotate (new Vector3 (0, -2, 0));
+					if (snapped) {
+				//		toBuild.transform.Rotate (new Vector3 (0, -2, 0));
+					}
 					constructionRotation = toBuild.transform.rotation;
 				}
 			}
