@@ -276,6 +276,16 @@ public class ConstructionController : NetworkBehaviour {
 		return b;
 	}
 
+	public bool CityCanBuild (int amount) {
+		bool b = false;
+		if (player.activeCityHall != null && player.activeCityHall.ownedBy (player)) {
+			if (player.activeCityHall.GetBudget() >= amount) {
+				b = true;
+			}
+		}
+		return b;
+	}
+
 	/// <summary>
 	/// Checks if a player can move a building
 	/// </summary>
@@ -352,7 +362,10 @@ public class ConstructionController : NetworkBehaviour {
 				lotBoundary = toBuild.GetComponent<ConstructionBoundary> ();
 				Lot l = hit.collider.gameObject.GetComponent<Lot> ();
 				if (lotBoundary.isConstructable) {
-					if ((l != null)) {
+					if ((l != null) || lotBoundary.triggerLot != null) {
+						if (lotBoundary.triggerLot != null) {
+							l = lotBoundary.triggerLot;
+						}
 						if (l.ownedBy (this.netId) && l.canBuild (spawnables [currentCategory] [index].buildingType)) {
 							readyToConstruct = true;
 							lotBoundary.turnGreen ();
