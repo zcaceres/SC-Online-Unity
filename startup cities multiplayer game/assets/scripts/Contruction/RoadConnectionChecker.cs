@@ -10,14 +10,12 @@ public class RoadConnectionChecker : MonoBehaviour {
 
 	void OnTriggerEnter(Collider c) {
 		if (c.gameObject.CompareTag ("floor")) {
-			Debug.Log ("ENTER: " + connected);
 			connected++;
 		}
 	}
 
 	void OnTriggerExit(Collider c) {
 		if (c.gameObject.CompareTag ("floor")) {
-			Debug.Log ("EXIT: " + connected);
 			connected--;
 		}
 	}
