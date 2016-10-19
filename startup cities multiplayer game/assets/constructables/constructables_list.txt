@@ -41,5 +41,5 @@ DummyBuildings/Roads/Dummy_Road_Straight_Short, ConstructableBuildings/Roads/Roa
 DummyBuildings/Roads/Dummy_Road_Cross, ConstructableBuildings/Roads/Road_Cross, 7000, 3, 23, 0, Four-Way Intersection, Look both ways before you cross, 6
 DummyBuildings/Roads/Dummy_Road_L_Left, ConstructableBuildings/Roads/Road_L_Left, 5000, 3, 23, 0, L-Curve (Left), A sharp turn, 6
 DummyBuildings/Roads/Dummy_Road_L_Right, ConstructableBuildings/Roads/Road_L_Right, 5000, 3, 23, 0, L-Curve (Right), A sharp turn, 6
-//DummyBuildings/Dummy_DirtPath, ConstructableBuildings/DirtPath, 5, 0, 23, -3, Test City Path, this is a temporary thing., 6
-//Z asks: Does this ^ need to be in here?
+DummyBuildings/Dummy_LargeConstructableLot, ConstructableBuildings/LargeConstructableLot, 2000, 0, 17, 0, Large Lot, A large buyable lot, 6
+DummyBuildings/Dummy_SmallConstructableLot, ConstructableBuildings/SmallConstructableLot, 1000, 0, 17, 0, Small Lot, A small buyable lot, 6

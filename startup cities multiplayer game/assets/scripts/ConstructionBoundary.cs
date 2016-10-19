@@ -16,6 +16,7 @@ public class ConstructionBoundary : MonoBehaviour
 	//This is the bool checked by the Player class to see whether the building can be constructed
 	public bool isConstructable;
 	//This int compares the number of collisions that have occurred on the boundary vertices against all possible boundaries for the building
+	protected bool isLot;
 	protected int constructionChecker;
 	protected Color color;
 	protected Player owner;

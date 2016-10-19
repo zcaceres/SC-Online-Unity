@@ -60,7 +60,7 @@ public class ConstructionController : NetworkBehaviour {
 	// Use this for initialization
 	void Start () {
 		nm = FindObjectOfType<NetworkManager> ();
-		layerMask = ~(1 << LayerMask.NameToLayer ("player") | 1 << LayerMask.NameToLayer ("node") | 1 << LayerMask.NameToLayer ("Ignore Raycast") | 1 << LayerMask.NameToLayer("trail"));
+		layerMask = ~(1 << LayerMask.NameToLayer ("player") | 1 << LayerMask.NameToLayer ("node") | 1 << LayerMask.NameToLayer ("Ignore Raycast") | 1 << LayerMask.NameToLayer("trail") | 1 << LayerMask.NameToLayer("lot"));
 		spawnables = new List<Spawnable>[7];
 		spawnables[0] = new List<Spawnable> ();
 		spawnables[1] = new List<Spawnable> ();
@@ -197,11 +197,12 @@ public class ConstructionController : NetworkBehaviour {
 	}
 		
 	[Command (channel = CHANNEL)]
-	public void CmdCityBuild (int index, int category, Vector3 pos, Quaternion q, NetworkInstanceId pid) {
+	public void CmdCityBuild (int index, int category, Vector3 pos, Quaternion q, Vector3 scale, NetworkInstanceId pid) {
 		Player player = getLocalInstance (pid).GetComponent<Player> ();
 		GameObject constructionParticles;
 		constructionParticles = (GameObject)Resources.Load ("ConstructionParticles");
 		GameObject tmp = (GameObject)Instantiate (spawnables[category][index].spawnable, pos, q);
+		tmp.transform.localScale = scale;
 		NetworkServer.Spawn (tmp);
 
 		//Spawns construction particle indicator and plays construction sound
@@ -563,48 +564,64 @@ public class ConstructionController : NetworkBehaviour {
 				}
 			}
 		} else {
+			bool isRoad = toBuild.name.Contains ("Road");
 			Vector3 fwd = playerCamera.transform.TransformDirection (Vector3.forward); // ray shooting from camera
 			RaycastHit hit;
 
 			if (Physics.Raycast (playerCamera.transform.position, fwd, out hit, 100, layerMask)) {
-				if (hit.collider.gameObject.GetComponent<RoadConnector> () != null) { //if i raycast a road
-					Transform[] roadSnapTransforms = hit.collider.gameObject.GetComponent<RoadConnector> ().GetRoadConnectorTransforms (); //Get roadconnector component on the road and all its connectors
-					int numOfConnectors = roadSnapTransforms.Length; //get the number of connectorS
-					Vector3[] positionOfTransform = new Vector3[numOfConnectors];
-					Transform snapPosition; //used to select snap position
-					float shortestDistanceToTransform = Vector3.Distance (hit.point, positionOfTransform [0]);
-					for (int i = 0; i < numOfConnectors; i++) { //looks through all possible snap transforms to find their world position Vector3
-						positionOfTransform [i] = roadSnapTransforms [i].position;
-					}
-					for (int i = 0; i < numOfConnectors; i++) {
-						if (Vector3.Distance (hit.point, positionOfTransform [i]) < shortestDistanceToTransform) { //compares position of snaptransform and the raycast point
-							shortestDistanceToTransform = Vector3.Distance (hit.point, positionOfTransform [i]); //if it's the shortest position in the array
-							snapPosition = roadSnapTransforms [i]; //sets the snap position to that transform's Vector3
-							foreach (Renderer r in toBuild.GetComponents<Renderer>()) {
-								r.enabled = true; //toggles visibility of the road dummy prefab ON
-							}
-							toBuild.transform.position = snapPosition.position; //snaps dummy prefab to raycast road position
-							toBuild.transform.rotation = snapPosition.rotation; //snaps dummy prefab to raycast road rotation
-							snapped = true; //toggles snap to allow for construction (road can only be constructed if snapped
+				if (isRoad) { // this handles the placement of road items, ignore it for cops/lots/others
+					if (hit.collider.gameObject.GetComponent<RoadConnector> () != null) { //if i raycast a road
+						Transform[] roadSnapTransforms = hit.collider.gameObject.GetComponent<RoadConnector> ().GetRoadConnectorTransforms (); //Get roadconnector component on the road and all its connectors
+						int numOfConnectors = roadSnapTransforms.Length; //get the number of connectorS
+						Vector3[] positionOfTransform = new Vector3[numOfConnectors];
+						Transform snapPosition; //used to select snap position
+						float shortestDistanceToTransform = Vector3.Distance (hit.point, positionOfTransform [0]);
+						for (int i = 0; i < numOfConnectors; i++) { //looks through all possible snap transforms to find their world position Vector3
+							positionOfTransform [i] = roadSnapTransforms [i].position;
 						}
+						for (int i = 0; i < numOfConnectors; i++) {
+							if (Vector3.Distance (hit.point, positionOfTransform [i]) < shortestDistanceToTransform) { //compares position of snaptransform and the raycast point
+								shortestDistanceToTransform = Vector3.Distance (hit.point, positionOfTransform [i]); //if it's the shortest position in the array
+								snapPosition = roadSnapTransforms [i]; //sets the snap position to that transform's Vector3
+								foreach (Renderer r in toBuild.GetComponents<Renderer>()) {
+									r.enabled = true; //toggles visibility of the road dummy prefab ON
+								}
+								toBuild.transform.position = snapPosition.position; //snaps dummy prefab to raycast road position
+								toBuild.transform.rotation = snapPosition.rotation; //snaps dummy prefab to raycast road rotation
+								snapped = true; //toggles snap to allow for construction (road can only be constructed if snapped
+							}
+						}
+					} else {
+						foreach (Renderer r in toBuild.GetComponents<Renderer>()) {
+							r.enabled = false; //toggles visibility of the road dummy prefab OFF if you aren't raycasting aroad
+						}
+						snapped = false;
 					}
-				} else {
-					foreach (Renderer r in toBuild.GetComponents<Renderer>()) {
-						r.enabled = false; //toggles visibility of the road dummy prefab OFF if you aren't raycasting aroad
-					}
-					snapped = false;
+				} else { // non-road objects
+					toBuild.transform.position = hit.point;
 				}
 			}
 
 			if (hit.collider != null) {
 				//Grabs construction boundary from toBuild object to check for proper placement in the lot
 				lotBoundary = toBuild.GetComponent<ConstructionBoundary> ();
+
 				if (lotBoundary.scaffold.colliding) { // city stuff only needs to make sure its not colliding with anything, since it will not be on lots
 					readyToConstruct = false;
 					lotBoundary.turnRed ();
-				} else if (!lotBoundary.scaffold.colliding && snapped) { //ensures road is not colliding with anything and that it's also SNAPPED to a snaptransform
-					readyToConstruct = true;
-					lotBoundary.turnGreen ();
+				} else if (!lotBoundary.scaffold.colliding && (!isRoad || snapped)) { //ensures road is not colliding with anything and that it's also SNAPPED to a snaptransform
+					if (toBuild.CompareTag ("lot")) {
+						if (toBuild.GetComponent<RoadConnectionChecker> ().IsConnected ()) {
+							readyToConstruct = true;
+							lotBoundary.turnGreen ();
+						} else {
+							readyToConstruct = false;
+							lotBoundary.turnRed ();
+						}
+					} else {
+						readyToConstruct = true;
+						lotBoundary.turnGreen ();
+					}
 				} else {
 					readyToConstruct = false;
 					lotBoundary.turnRed ();
@@ -618,7 +635,7 @@ public class ConstructionController : NetworkBehaviour {
 							confirm.transform.Find ("ConfirmMessage").GetComponent<Text> ().text = "Build " + spawnables[currentCategory] [index].name + " for $" + spawnables[currentCategory] [index].price + "?";
 							confirm.transform.Find ("Ok").GetComponent<Button> ().onClick.AddListener (delegate {
 								lotBoundary.resetColor ();
-								CmdCityBuild (index,currentCategory, toBuild.transform.position, toBuild.transform.rotation, this.netId);
+								CmdCityBuild (index,currentCategory, toBuild.transform.position, toBuild.transform.rotation, toBuild.transform.localScale, this.netId);
 								constructionRotation = toBuild.transform.rotation;
 								Destroy (toBuild);
 								Destroy (tooltip);
@@ -634,16 +651,15 @@ public class ConstructionController : NetworkBehaviour {
 						}
 					}
 				}
-
-				//TODO: Decide how to handle rotation for NON-Road/Lot Prefabs while preventing rotation for ROAD/LOT prefabs
+					
 				if (Input.GetKey (KeyCode.Mouse1)) {
-					if (snapped) {
-				//		toBuild.transform.Rotate (new Vector3 (0, 2, 0));
+					if (!isRoad) {
+						toBuild.transform.Rotate (new Vector3 (0, 2, 0));
 					}
 					constructionRotation = toBuild.transform.rotation;
 				} else if (Input.GetKey (KeyCode.Mouse0)) {
-					if (snapped) {
-				//		toBuild.transform.Rotate (new Vector3 (0, -2, 0));
+					if (!isRoad) {
+						toBuild.transform.Rotate (new Vector3 (0, -2, 0));
 					}
 					constructionRotation = toBuild.transform.rotation;
 				}

@@ -12,19 +12,19 @@ public class Scaffolding : MonoBehaviour {
 	public bool colliding;
 
 	void OnTriggerEnter (Collider coll) {
-		if (coll.gameObject.GetComponent<Lot> () == null && coll.gameObject.GetComponent<SecurityRadius>() == null && coll.gameObject.GetComponent<BusinessVisitNode>() == null) {
+		if ((coll.gameObject.GetComponent<Lot> () == null || this.GetComponentInParent<Lot>() != null) && coll.gameObject.GetComponent<SecurityRadius>() == null && coll.gameObject.GetComponent<BusinessVisitNode>() == null && coll.gameObject.name != "Terrain") {
 			colliding = true;
 		}
 	}
 
 	void OnTriggerStay (Collider coll) {
-		if (coll.gameObject.GetComponent<Lot> () == null && coll.gameObject.GetComponent<SecurityRadius>() == null && coll.gameObject.GetComponent<BusinessVisitNode>() == null) {
+		if ((coll.gameObject.GetComponent<Lot> () == null || this.GetComponentInParent<Lot>() != null)  && coll.gameObject.GetComponent<SecurityRadius>() == null && coll.gameObject.GetComponent<BusinessVisitNode>() == null && coll.gameObject.name != "Terrain") {
 			colliding = true;
 		}
 	}
 
 	void OnTriggerExit (Collider coll) {
-		if (coll.gameObject.GetComponent<Lot> () == null && coll.gameObject.GetComponent<SecurityRadius>() == null && coll.gameObject.GetComponent<BusinessVisitNode>() == null) {
+		if ((coll.gameObject.GetComponent<Lot> () == null || this.GetComponentInParent<Lot>() != null)  && coll.gameObject.GetComponent<SecurityRadius>() == null && coll.gameObject.GetComponent<BusinessVisitNode>() == null && coll.gameObject.name != "Terrain") {
 			colliding = false;
 		}
 	}
