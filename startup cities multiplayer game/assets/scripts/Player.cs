@@ -1812,10 +1812,8 @@ public class Player : NetworkBehaviour {
 		if (parenting) {
 			Transform t = getLocalInstance (netId).transform;
 			gameObject.transform.SetParent (t);
-			Debug.LogError ("Called RPCSEtNewParent: " + t);
 		} else {
 			gameObject.transform.SetParent (null);
-			Debug.LogError ("Called RPCSEtNewParent: null");
 		}
 	}
 
@@ -1828,17 +1826,13 @@ public class Player : NetworkBehaviour {
 	}
 
 	public void RemovePassenger (NetworkInstanceId netId) {
-		Debug.LogError ("Called REMOVE passengers");
 		GameObject veh = getLocalInstance (netId);
 		veh.GetComponent<Vehicle> ().passengers -= 1;
-		Debug.LogError (veh.GetComponent<Vehicle> ().name + " has passengers: " + veh.GetComponent<Vehicle> ().passengers);
 	}
 
 	public void AddPassenger (NetworkInstanceId netId) {
-		Debug.LogError ("Called ADD passengers");
 		GameObject veh = getLocalInstance (netId);
 		veh.GetComponent<Vehicle> ().passengers += 1;
-		Debug.LogError (veh.GetComponent<Vehicle> ().name + " has passengers: " + veh.GetComponent<Vehicle> ().passengers);
 	}
 
 	[Command]
@@ -1868,11 +1862,9 @@ public class Player : NetworkBehaviour {
 	/// </summary>
 	/// <param name="netId">Net identifier.</param>
 	public void CheckPassengers(NetworkInstanceId netId) {
-		Debug.LogError ("Called cmd check passengers");
 		GameObject veh = getLocalInstance (netId);
 		Player[] ps = veh.GetComponentsInChildren<Player> ();
 		veh.GetComponent<Vehicle> ().passengers = ps.Length;
-		Debug.LogError (veh.GetComponent<Vehicle> ().name + " has passengers: " + veh.GetComponent<Vehicle> ().passengers);
 	}
 
 	/* End OLD PASSENGER FUNCTIONS */

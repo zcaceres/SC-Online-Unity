@@ -125,7 +125,7 @@ namespace UnityStandardAssets.Vehicles.Car
             var revsRangeMax = ULerp(m_RevRangeBoundary, 1f, gearNumFactor);
             Revs = ULerp(revsRangeMin, revsRangeMax, m_GearFactor);
         }
-
+			
 
         public void Move(float steering, float accel, float footbrake, float handbrake)
         {
@@ -133,7 +133,7 @@ namespace UnityStandardAssets.Vehicles.Car
 				return;
 			}
 				
-
+			//Debug.Log ("steering: " + steering + "accel: " + accel + "footbrake: " + footbrake + "handbrake: " + handbrake);
             for (int i = 0; i < 4; i++)
             {
                 Quaternion quat;
@@ -163,7 +163,7 @@ namespace UnityStandardAssets.Vehicles.Car
             //Assuming that wheels 2 and 3 are the rear wheels.
             if (handbrake > 0f)
             {
-                var hbTorque = handbrake*m_MaxHandbrakeTorque;
+				var hbTorque = handbrake*m_MaxHandbrakeTorque;
                 m_WheelColliders[2].brakeTorque = hbTorque;
                 m_WheelColliders[3].brakeTorque = hbTorque;
             }

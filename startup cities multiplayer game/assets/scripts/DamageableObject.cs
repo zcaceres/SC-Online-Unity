@@ -71,7 +71,7 @@ public class DamageableObject : OwnableObject {
 	/// Spreads fire to neighbors.
 	/// </summary>
 	protected virtual void spreadFire() {
-		Collider c = GetComponent<Collider> ();
+		Collider c = GetComponent<Collider>();
 		Collider[] colliding = Physics.OverlapSphere(c.transform.position, 5);
 		foreach (Collider hit in colliding) {
 			DamageableObject b = hit.GetComponent<DamageableObject> ();

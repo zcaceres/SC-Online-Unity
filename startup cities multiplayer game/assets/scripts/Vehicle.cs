@@ -29,6 +29,8 @@ public class Vehicle : DamageableObject
 	[SyncVar]
 	public int passengers; //limits the number of passengers for the vehicle
 	public int passengerLimit; //set in each child class for proper number of seats
+	private bool checkForFire; // prevents update function from setting the vehicle on fire over and over
+	private bool hasSpreadFire; // prevents update function from triggering spread fire too often
 
 	//TODO is this necessary??
 	protected const int TYPENUM = 27;
@@ -137,11 +139,9 @@ public class Vehicle : DamageableObject
 		if (isServer) {
 			EnableVehicle (netId, true); //Enables vehicle sounds and controls
 			p.playerNotVisible = true; //Hides player model
-			//p.CheckPassengers (this.netId);
 		} else {
 			EnableVehicle (netId, true); //Enables vehicle sounds and controls
 			p.CmdSetPlayerVisibility (netId, true);
-			//p.CmdCheckPassengers (this.netId);
 		}
 		if (p.isLocalPlayer) {
 			StartCoroutine (DelayToExit (netId)); //Coroutine to prevent immediate exit with "F"
@@ -154,7 +154,6 @@ public class Vehicle : DamageableObject
 	/// </summary>
 	/// <param name="p">P.</param>
 	public void PassengerEnterVehicle (Player p) {
-		Debug.LogError ("Called PassengerEnterVehicle");
 		NetworkInstanceId netId = p.netId;
 		if (passengers < passengerLimit) {
 			if (isServer) {
@@ -166,11 +165,6 @@ public class Vehicle : DamageableObject
 				StartCoroutine (DelayToExit (netId));
 			}
 			EnableVehicle (netId, true);
-//			if (isServer) {
-//				p.CheckPassengers (this.netId);
-//			} else {
-//				p.CmdCheckPassengers (this.netId);
-//			}
 		}
 	}
 
@@ -209,10 +203,21 @@ public class Vehicle : DamageableObject
 	protected virtual void EnableVehicle (NetworkInstanceId netId, bool active)
 	{
 		Player play = getPlayer (netId);
+		CarController carC = GetComponent<CarController> ();
+		if (!active) {
+			if (!fire && !ruin) { //a car that's on fire or a ruin will NOT toggle the handbrake when you get out (can't park on hills)
+				carC.Move (0, 0, 0, 1); //prevents car from 'ghostdriving' forever after becoming a ruin. Also permits parking on hills.
+			}
+		}
 		if (!ruin) {
 			if (play.isLocalPlayer && owner == play.netId) {
-				CarController carC = GetComponent<CarController> ();
 				carC.enabled = active;
+				if (active) {
+					carC.Move (0, -.1f, -.1f, 0);
+					/* When player gets into car this forces the car controller
+					 * to disengage the handbrake. Otherwise the handbrake is 'locked'
+					 * and the player cannot go forward, but must go backwards before going forward.*/
+				}
 			}
 			ToggleVehicleCam (play, active);
 			play.CmdSetVehicleOccupied (this.netId, active);
@@ -230,11 +235,6 @@ public class Vehicle : DamageableObject
 	{
 		Camera vehicleCam = GetComponentInChildren<Camera> ();
 		vehicleCam.enabled = active;
-//		if (isServer) {
-//			p.CheckPassengers (this.netId);
-//		} else {
-//			p.CmdCheckPassengers (this.netId);
-//		}
 		if (active) {
 			Transform parent = this.gameObject.transform;
 			p.CmdSetNewParent (netId, true);
@@ -306,10 +306,8 @@ public class Vehicle : DamageableObject
 	{
 		if (condition <= 25 && !ruin) { //Toggles visualization of damage if less than 25% condition
 			ToggleVisualizeDamage (true);
-			if (!fire) {
-				if (Random.Range (0f, 10f) >= 8f) {
-					setFire ();
-				}
+			if (!checkForFire) { //bool set in ToggleFireEvent, used to prevent multiple fire events at the same time
+				StartCoroutine (ToggleFireEvent ()); //Starts fire event coroutine with slight delay
 			}
 		} else if (condition > 25) {
 			ToggleVisualizeDamage (false);
@@ -325,7 +323,48 @@ public class Vehicle : DamageableObject
 			}
 			ruin = false;
 		}
+		if (fire && !hasSpreadFire) {
+			StartCoroutine (ToggleSpreadFireEvent ());
+		}
 	}
+
+
+	/// <summary>
+	/// Spreads fire
+	/// </summary>
+	/// <returns>The spread fire event.</returns>
+	protected IEnumerator ToggleSpreadFireEvent() {
+		hasSpreadFire = true;
+		yield return new WaitForSeconds (3); //delay for how often the vehicle tries to "spread fire"
+		if (fire) {
+			spreadFire();
+			if (condition > 0) {
+				damageObject (condition);
+			}
+
+		}
+		hasSpreadFire = false;
+	}
+
+	/// <summary>
+	/// Sets the vehicle on fire
+	/// </summary>
+	/// <returns>The fire event.</returns>
+	protected IEnumerator ToggleFireEvent() {
+		checkForFire = true; //prevents multiple fire events from being called in CheckCondition above
+		yield return new WaitForSeconds (Random.Range(3, 10)); //random delay before fire starts
+		if (!fire) {
+			if (Random.Range (0f, 10f) >= 1f) {
+				if (condition <= 25) { //makes sure that fire does not occur if player quickly repairs a wreck!
+					setFire ();
+				}
+			}
+		}
+		checkForFire = false; //prevents multiple fire events from being called in CheckCondition above
+
+	}
+
+
 
 
 	/// <summary>
@@ -340,6 +379,7 @@ public class Vehicle : DamageableObject
 			aSources.enabled = !isRuined;
 		}
 		CarController carC = GetComponent<CarController> ();
+		carC.Move (0, 0, 0, 0); //prevents car from 'ghostdriving' forever after becoming a ruin
 		carC.enabled = !isRuined;
 	}
 
@@ -467,7 +507,7 @@ public class Vehicle : DamageableObject
 			if (fireTrans.Length < 1) {
 				GameObject tmp = (GameObject)Instantiate (fireObj, new Vector3 (gameObject.transform.position.x, getHighest (), gameObject.transform.position.z), fireObj.transform.rotation);
 				NetworkServer.Spawn (tmp);
-				Debug.LogError (vehicleName + " is on fire but has no transforms");
+				Debug.LogWarning (vehicleName + " is on fire but has no transforms");
 			}
 			foreach (FireTransform ft in fireTrans) {
 				GameObject tmp = (GameObject)Instantiate (fireObj, ft.transform.position, fireObj.transform.rotation);
