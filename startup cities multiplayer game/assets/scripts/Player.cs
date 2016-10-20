@@ -1755,6 +1755,12 @@ public class Player : NetworkBehaviour {
 		}
 	}
 
+	[Command]
+	public void CmdToggleVehicleLights(NetworkInstanceId netId) {
+		Vehicle v = getLocalInstance (netId).GetComponent<Vehicle>();
+		v.lightsOn = !v.lightsOn;
+	}
+
 
 	/// <summary>
 	/// Command for toggling the eligibility of the player to exit a vehicle.
@@ -1842,32 +1848,6 @@ public class Player : NetworkBehaviour {
 
 	/* End NEW PASSENGER FUNCTIONS */
 
-
-	/* OLD PASSENGER FUNCTIONS */
-
-	///DEPRECATED
-	/// <summary>
-	/// Cmds to check the number of passengers in the car
-	/// </summary>
-	/// <param name="netId">Net identifier.</param>
-	[Command]
-	public void CmdCheckPassengers (NetworkInstanceId netId) {
-		CheckPassengers (netId);
-	}
-
-
-	///DEPRECATED
-	/// <summary>
-	/// Checks the number of passengers parented to the car
-	/// </summary>
-	/// <param name="netId">Net identifier.</param>
-	public void CheckPassengers(NetworkInstanceId netId) {
-		GameObject veh = getLocalInstance (netId);
-		Player[] ps = veh.GetComponentsInChildren<Player> ();
-		veh.GetComponent<Vehicle> ().passengers = ps.Length;
-	}
-
-	/* End OLD PASSENGER FUNCTIONS */
 
 
 	/// <summary>

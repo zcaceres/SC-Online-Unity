@@ -24,6 +24,8 @@ public class Vehicle : DamageableObject
 	public string typeName; //name of vehicle type
 	[SyncVar]
 	public bool ruin;
+	[SyncVar(hook="ToggleVehicleLights")]
+	public bool lightsOn;
 	[SyncVar(hook="ToggleVehicleSounds")]
 	public bool vehicleOccupied; //toggled based on whether vehicle has a driver
 	[SyncVar]
@@ -31,6 +33,7 @@ public class Vehicle : DamageableObject
 	public int passengerLimit; //set in each child class for proper number of seats
 	private bool checkForFire; // prevents update function from setting the vehicle on fire over and over
 	private bool hasSpreadFire; // prevents update function from triggering spread fire too often
+
 
 	//TODO is this necessary??
 	protected const int TYPENUM = 27;
@@ -84,6 +87,9 @@ public class Vehicle : DamageableObject
 		}
 	}
 
+
+	//TODO: network headlight state
+
 	/// <summary>
 	/// Override as needed in sub-classes for special Update behaviour (such as Food Trucks)
 	/// </summary>
@@ -95,6 +101,10 @@ public class Vehicle : DamageableObject
 			}
 			if (Input.GetKeyUp (KeyCode.Mouse0)) {
 				horn.Stop ();
+			}
+			if (Input.GetKeyDown(KeyCode.Mouse1)) {
+				Player p = getLocalPlayerInVehicle ();
+				p.CmdToggleVehicleLights (this.netId);
 			}
 			if (Input.GetKeyDown (KeyCode.F)) {
 				Player p = getLocalPlayerInVehicle ();
@@ -192,8 +202,7 @@ public class Vehicle : DamageableObject
 		}
 
 	}
-
-	//TODO use Passengers to trigger vehicle occupied
+		
 
 	/// <summary>
 	/// Enables the vehicle for player's use
@@ -578,6 +587,19 @@ public class Vehicle : DamageableObject
 		if (active) {
 			vehicleSounds [2].Play ();
 			vehicleSounds [0].Play ();
+		}
+	}
+
+
+	/// <summary>
+	/// Toggles the vehicle lights. used in syncvar hook above for lightsOn
+	/// Called from player class CmdToggleVehicleLights
+	/// </summary>
+	/// <param name="lightsOn">If set to <c>true</c> lights on.</param>
+	protected virtual void ToggleVehicleLights (bool lightsOn) {
+		Light[] lights = GetComponentsInChildren<Light> ();
+		foreach (Light l in lights) {
+			l.enabled = lightsOn;
 		}
 	}
 

@@ -61,6 +61,10 @@ public class FoodTruck : Vehicle
 			if (Input.GetKeyUp (KeyCode.Mouse0)) {
 				horn.Stop ();
 			}
+			if (Input.GetKeyDown(KeyCode.Mouse1)) {
+				Player p = getLocalPlayerInVehicle ();
+				p.CmdToggleVehicleLights (this.netId);
+			}
 			if (Input.GetKeyDown (KeyCode.F)) {
 				Player p = getLocalPlayerInVehicle ();
 				if (p != null && p.eligibleToExitVehicle) {
