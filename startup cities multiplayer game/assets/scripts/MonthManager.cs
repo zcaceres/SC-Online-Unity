@@ -143,7 +143,7 @@ public class MonthManager : NetworkBehaviour {
 		colorsOn = !colorsOn;
 		if (colorsOn) {
 			foreach (Building b in buildings) {
-				if (b.getOwner () != -1) {
+				if (b.getOwner () != -1 && !(b is Lot)) {
 					b.setColor (b.getPlayerOwner().color);
 				}
 			}
