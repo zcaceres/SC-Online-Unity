@@ -18,7 +18,7 @@ public class ConstructionScalerOneUse : MonoBehaviour {
 	void Update () {
 		if (hitTerrainCount < colliders.Length) {
 			gameObject.transform.localScale = new Vector3 (gameObject.transform.localScale.x, gameObject.transform.localScale.y + 5f, gameObject.transform.localScale.z);
-			gameObject.transform.localPosition = new Vector3 (gameObject.transform.localPosition.x, gameObject.transform.localPosition.y - 2.5f, gameObject.transform.localPosition.z);
+			gameObject.transform.position = new Vector3 (gameObject.transform.position.x, gameObject.transform.position.y - 2.5f, gameObject.transform.position.z);
 		} else {
 			Destroy (this);
 		}
