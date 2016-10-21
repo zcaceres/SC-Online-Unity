@@ -60,7 +60,10 @@ public class ConstructionBoundary : MonoBehaviour
 	/// </summary>
 	protected virtual void CheckConstructionStatus ()
 	{
-		if (constructionChecker == boundaries.Length) { //All vertices on lot
+		RoadTerrainCollisionCheck tmp = gameObject.GetComponent<RoadTerrainCollisionCheck> ();
+		if (tmp != null && tmp.Colliding ()) {
+			isConstructable = false;
+		} else if (constructionChecker == boundaries.Length) { //All vertices on lot
 			if (!scaffold.colliding) { //Not colliding with anything
 				isConstructable = true;
 			} else {
