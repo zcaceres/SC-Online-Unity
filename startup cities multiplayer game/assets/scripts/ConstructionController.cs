@@ -787,11 +787,6 @@ public class ConstructionController : NetworkBehaviour {
 						}
 					}
 					Vector3 angles = toBuild.transform.rotation.eulerAngles;
-					Debug.Log (angles);
-					Debug.Log (xRot);
-//					if (((angles.x + xRot <= ROAD_LENGTH) || ((angles.x + xRot) >= (360 - ROAD_LENGTH)))) {
-//						toBuild.transform.Rotate (xRot, 0, 0);
-//					}
 					if ((angles.x + xRot) >= ROAD_LENGTH && (angles.x + xRot) <= (360 - ROAD_LENGTH)) {
 						xRot = xRot - angles.x;
 					} 

@@ -8,14 +8,17 @@ public class ConstructionScalerOneUse : MonoBehaviour {
 	// Use this for initialization
 	void Start () {
 		colliders = gameObject.GetComponents<BoxCollider> ();
+		foreach (BoxCollider c in colliders) {
+			c.gameObject.transform.Rotate (-c.transform.eulerAngles.x, 0, 0);
+		}
 		hitTerrainCount = 0;
 	}
 
 	// Update is called once per frame
 	void Update () {
 		if (hitTerrainCount < colliders.Length) {
-			gameObject.transform.localScale = new Vector3 (gameObject.transform.localScale.x, gameObject.transform.localScale.y + 5, gameObject.transform.localScale.z);
-			gameObject.transform.position = new Vector3 (gameObject.transform.position.x, gameObject.transform.position.y - 2.5f, gameObject.transform.position.z);
+			gameObject.transform.localScale = new Vector3 (gameObject.transform.localScale.x, gameObject.transform.localScale.y + 5f, gameObject.transform.localScale.z);
+			gameObject.transform.localPosition = new Vector3 (gameObject.transform.localPosition.x, gameObject.transform.localPosition.y - 2.5f, gameObject.transform.localPosition.z);
 		} else {
 			Destroy (this);
 		}
