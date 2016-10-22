@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine.UI;
@@ -56,6 +57,8 @@ public class Player : NetworkBehaviour {
 	public string message;
 	[SyncVar(hook = "togglePlayerVisibility")]
 	public bool playerNotVisible;
+	public bool hasPassengerPending; //used for when a passenger is asking access to the vehicle
+	public NetworkInstanceId netIdOfPassengerPending; //the player that is pending to enter the vehicle
 
 	//Vehicle vars
 	public bool eligibleToExitVehicle;
@@ -240,12 +243,17 @@ public class Player : NetworkBehaviour {
 		if (Input.GetKeyDown (KeyCode.F)) {
 			//spawnGiveMoneyPanel ();
 			if (passengerEnter != null) {
-				passengerEnter.PassengerEnterVehicle (this);
+				CmdAskOwnerToEnterVehicle (passengerEnter.getOwnerNetId());
 			} else if (driverEnter != null) {
 				driverEnter.StartVehicle (this);
 			}
-			passengerEnter = null;
 			driverEnter = null;
+		}
+			
+		if (Input.GetKeyDown (KeyCode.Y)) {
+			if (hasPassengerPending) {//ensures there is a passenger pending to enter
+				CmdAllowPassengerToEnterVehicle (netIdOfPassengerPending);
+			}
 		}
 
 		if (Input.GetKeyDown(KeyCode.Alpha1)) {
@@ -323,6 +331,7 @@ public class Player : NetworkBehaviour {
 			updateBuildingReadout ();
 		}
 	}
+
 
 	public void advanceMonth() {
 		if (isServer) {
@@ -1784,7 +1793,11 @@ public class Player : NetworkBehaviour {
 	[Command]
 	public void CmdSetVehicleOccupied (NetworkInstanceId netId, bool occupied) {
 		Vehicle v = getLocalInstance (netId).GetComponent<Vehicle>();
-		v.vehicleOccupied = occupied;
+		if (v.passengers > 0) {
+			v.vehicleOccupied = true;
+		} else {
+			v.vehicleOccupied = false;
+		}
 	}
 
 
@@ -1824,7 +1837,56 @@ public class Player : NetworkBehaviour {
 	}
 
 
-	/* NEW PASSENGER FUNCTIONS */
+	/* PASSENGER FUNCTIONS */
+
+	/// <summary>
+	/// Command called when passenger tries to enter vehicle
+	/// </summary>
+	/// <param name="netId">Net identifier.</param>
+	[Command]
+	public void CmdAskOwnerToEnterVehicle(NetworkInstanceId netId) {
+		Player owner = getLocalInstance (netId).GetComponent<Player> ();
+		owner.netIdOfPassengerPending = this.netId;
+		//TODO: Make better more obvious message
+		owner.showMessage(playerName + " wants a ride in " + passengerEnter.vehicleName + " press Y to accept.");
+		StartCoroutine (WaitForVehicleOwnerPermission (owner));
+	}
+
+
+	/// <summary>
+	/// Timer for owner to allow pending passenger to enter
+	/// </summary>
+	/// <returns>The for vehicle owner permission.</returns>
+	/// <param name="owner">Owner.</param>
+	private IEnumerator WaitForVehicleOwnerPermission (Player owner) {
+		owner.hasPassengerPending = true;
+		yield return new WaitForSeconds(3);
+		owner.hasPassengerPending = false;
+		netIdOfPassengerPending = NetworkInstanceId.Invalid; //equivalent of null
+	}
+
+
+	/// <summary>
+	/// Command called when owner of vehicle selects "Yes" to permit passenger to enter
+	/// </summary>
+	/// <param name="netId">Net identifier.</param>
+	[Command]
+	private void CmdAllowPassengerToEnterVehicle (NetworkInstanceId netId) {
+		Player p = getLocalInstance (netId).GetComponent<Player> ();
+		p.RpcEnterVehicle ();
+	}
+
+	/// <summary>
+	/// Calls method on vehicle so that passenger enters
+	/// </summary>
+	[ClientRpc]
+	private void RpcEnterVehicle() {
+		if (this.isLocalPlayer) {
+			if (passengerEnter != null) {
+				passengerEnter.PassengerEnterVehicle (this);
+			}
+		}
+	}
 
 	[Command]
 	public void CmdRemovePassenger (NetworkInstanceId netId) {
@@ -1836,17 +1898,17 @@ public class Player : NetworkBehaviour {
 		veh.GetComponent<Vehicle> ().passengers -= 1;
 	}
 
-	public void AddPassenger (NetworkInstanceId netId) {
-		GameObject veh = getLocalInstance (netId);
-		veh.GetComponent<Vehicle> ().passengers += 1;
-	}
-
 	[Command]
 	public void CmdAddPassenger (NetworkInstanceId netId) {
 		AddPassenger (netId);
 	}
 
-	/* End NEW PASSENGER FUNCTIONS */
+	public void AddPassenger (NetworkInstanceId netId) {
+		GameObject veh = getLocalInstance (netId);
+		veh.GetComponent<Vehicle> ().passengers += 1;
+	}
+
+	/* End PASSENGER FUNCTIONS */
 
 
 
