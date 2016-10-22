@@ -27,7 +27,7 @@ public class Vehicle : DamageableObject
 	[SyncVar(hook="ToggleVehicleLights")]
 	public bool lightsOn;
 	[SyncVar(hook="ToggleVehicleSounds")]
-	public bool vehicleOccupied; //toggled based on whether vehicle has a driver
+	public bool vehicleOccupied; //toggled based on whether vehicle has occupants
 	[SyncVar]
 	public int passengers; //limits the number of passengers for the vehicle
 	public int passengerLimit; //set in each child class for proper number of seats
@@ -88,8 +88,6 @@ public class Vehicle : DamageableObject
 	}
 
 
-	//TODO: network headlight state
-
 	/// <summary>
 	/// Override as needed in sub-classes for special Update behaviour (such as Food Trucks)
 	/// </summary>
@@ -116,6 +114,7 @@ public class Vehicle : DamageableObject
 		}
 		if (isServer) {
 			CheckCondition ();
+			//Gas consumption here
 		}
 	}
 
@@ -229,10 +228,8 @@ public class Vehicle : DamageableObject
 				}
 			}
 			ToggleVehicleCam (play, active);
-			play.CmdSetVehicleOccupied (this.netId, active);
 		} else {
 			ToggleVehicleCam (play, active);
-			play.CmdSetVehicleOccupied (this.netId, active);
 		}
 	}
 
@@ -248,9 +245,11 @@ public class Vehicle : DamageableObject
 			Transform parent = this.gameObject.transform;
 			p.CmdSetNewParent (netId, true);
 			p.CmdAddPassenger (netId);
+			p.CmdSetVehicleOccupied (this.netId, active);
 		} else {
 			p.CmdSetNewParent (netId, false);
 			p.CmdRemovePassenger (netId);
+			p.CmdSetVehicleOccupied (this.netId, active);
 		}
 		if (owner == p.netId) {
 			p.ToggleVehicleControls (active, GetComponent<NetworkIdentity> ().netId);

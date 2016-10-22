@@ -27,10 +27,10 @@ public class PassengerEnterVehicle : MonoBehaviour {
 		if (coll.CompareTag ("Player")) { //Check if player here
 			p = coll.gameObject.GetComponent<Player> ();
 			int owner = vehicle.getOwner ();
-			if (vehicle.getOwner () != -1) {
-				if (vehicle.getOwner () != p.id) {
+			if (owner != -1) {
+				if (owner != p.id) {
 					p.message = "Press F to ask " + vehicle.getPlayerOwner ().playerName + " for a ride.";
-					canEnter = true;
+					//canEnter = true;
 					p.passengerEnter = vehicle;
 				}
 			}
@@ -40,7 +40,7 @@ public class PassengerEnterVehicle : MonoBehaviour {
 
 	protected void OnTriggerExit(Collider coll) {
 		if (coll.CompareTag ("Player")) {
-			canEnter = false;
+			//canEnter = false;
 			p.passengerEnter = null;
 			p = null;
 

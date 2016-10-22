@@ -7,6 +7,7 @@ using UnityEngine.Networking;
 public class ConstructionController : NetworkBehaviour {
 	const int CHANNEL = 1;
 	const int MAYOR_CATEGORY = 6;
+	const float ROAD_LENGTH = 20f;
 
 	private struct Spawnable {
 		public Object dummy;
@@ -57,6 +58,8 @@ public class ConstructionController : NetworkBehaviour {
 	private NetworkManager nm;
 	private int currentCategory;
 	private bool categorySelected;
+	private bool snapped;
+
 	// Use this for initialization
 	void Start () {
 		nm = FindObjectOfType<NetworkManager> ();
@@ -527,7 +530,6 @@ public class ConstructionController : NetworkBehaviour {
 	/// Build mode for city objects, doesn't look at lots and stuff
 	/// </summary>
 	public void CityBuildMode() {
-		bool snapped = false;
 		//road should not be snapped at start of buildmode
 		ConstructionBoundary lotBoundary;
 		int index = currentSpawnable % spawnables[currentCategory].Count;
@@ -558,38 +560,49 @@ public class ConstructionController : NetworkBehaviour {
 			Vector3 fwd = playerCamera.transform.TransformDirection (Vector3.forward); // ray shooting from camera
 			RaycastHit hit;
 			if (Physics.Raycast (playerCamera.transform.position, fwd, out hit, 100f, layerMask)) {
-				toBuild = (GameObject)Instantiate (spawnables [currentCategory][index].dummy, hit.point, constructionRotation);
+				toBuild = (GameObject)Instantiate (spawnables [currentCategory][index].dummy, hit.point, Quaternion.identity);
 				if (toBuild.CompareTag ("floor")) {
 					toBuild.transform.rotation = Quaternion.identity;
+					if (hit.collider.gameObject.GetComponent<RoadConnector> () != null) {
+						foreach (Renderer r in toBuild.GetComponents<Renderer>()) {
+							r.enabled = false; //toggles visibility of the road dummy prefab OFF if you aren't raycasting aroad
+						}
+						snapped = false;
+					}
 				}
 			}
 		} else {
-			bool isRoad = toBuild.name.Contains ("Road");
+			bool isRoad = toBuild.CompareTag("floor");
 			Vector3 fwd = playerCamera.transform.TransformDirection (Vector3.forward); // ray shooting from camera
 			RaycastHit hit;
 
 			if (Physics.Raycast (playerCamera.transform.position, fwd, out hit, 100, layerMask)) {
 				if (isRoad) { // this handles the placement of road items, ignore it for cops/lots/others
 					if (hit.collider.gameObject.GetComponent<RoadConnector> () != null) { //if i raycast a road
-						Transform[] roadSnapTransforms = hit.collider.gameObject.GetComponent<RoadConnector> ().GetRoadConnectorTransforms (); //Get roadconnector component on the road and all its connectors
-						int numOfConnectors = roadSnapTransforms.Length; //get the number of connectorS
-						Vector3[] positionOfTransform = new Vector3[numOfConnectors];
-						Transform snapPosition; //used to select snap position
-						float shortestDistanceToTransform = Vector3.Distance (hit.point, positionOfTransform [0]);
-						for (int i = 0; i < numOfConnectors; i++) { //looks through all possible snap transforms to find their world position Vector3
-							positionOfTransform [i] = roadSnapTransforms [i].position;
-						}
-						for (int i = 0; i < numOfConnectors; i++) {
-							if (Vector3.Distance (hit.point, positionOfTransform [i]) < shortestDistanceToTransform) { //compares position of snaptransform and the raycast point
-								shortestDistanceToTransform = Vector3.Distance (hit.point, positionOfTransform [i]); //if it's the shortest position in the array
-								snapPosition = roadSnapTransforms [i]; //sets the snap position to that transform's Vector3
-								foreach (Renderer r in toBuild.GetComponents<Renderer>()) {
-									r.enabled = true; //toggles visibility of the road dummy prefab ON
-								}
-								toBuild.transform.position = snapPosition.position; //snaps dummy prefab to raycast road position
-								toBuild.transform.rotation = snapPosition.rotation; //snaps dummy prefab to raycast road rotation
-								snapped = true; //toggles snap to allow for construction (road can only be constructed if snapped
+						if (!snapped) {
+							Transform[] roadSnapTransforms = hit.collider.gameObject.GetComponent<RoadConnector> ().GetRoadConnectorTransforms (); //Get roadconnector component on the road and all its connectors
+							int numOfConnectors = roadSnapTransforms.Length; //get the number of connectorS
+							Vector3[] positionOfTransform = new Vector3[numOfConnectors];
+							Transform snapPosition; //used to select snap position
+							float shortestDistanceToTransform = Vector3.Distance (hit.point, positionOfTransform [0]);
+							for (int i = 0; i < numOfConnectors; i++) { //looks through all possible snap transforms to find their world position Vector3
+								positionOfTransform [i] = roadSnapTransforms [i].position;
 							}
+							for (int i = 0; i < numOfConnectors; i++) {
+								if (Vector3.Distance (hit.point, positionOfTransform [i]) < shortestDistanceToTransform) { //compares position of snaptransform and the raycast point
+									shortestDistanceToTransform = Vector3.Distance (hit.point, positionOfTransform [i]); //if it's the shortest position in the array
+									snapPosition = roadSnapTransforms [i]; //sets the snap position to that transform's Vector3
+									foreach (Renderer r in toBuild.GetComponents<Renderer>()) {
+										r.enabled = true; //toggles visibility of the road dummy prefab ON
+									}
+									toBuild.transform.position = snapPosition.position; //snaps dummy prefab to raycast road position
+									toBuild.transform.rotation = snapPosition.rotation;
+									snapped = true; //toggles snap to allow for construction (road can only be constructed if snapped
+									RotateToTerrain ();
+								}
+							}
+						} else {
+							RotateUp ();
 						}
 					} else {
 						foreach (Renderer r in toBuild.GetComponents<Renderer>()) {
@@ -612,8 +625,14 @@ public class ConstructionController : NetworkBehaviour {
 				} else if (!lotBoundary.scaffold.colliding && (!isRoad || snapped)) { //ensures road is not colliding with anything and that it's also SNAPPED to a snaptransform
 					if (toBuild.CompareTag ("lot")) {
 						if (toBuild.GetComponent<RoadConnectionChecker> ().IsConnected ()) {
-							readyToConstruct = true;
-							lotBoundary.turnGreen ();
+							RoadTerrainCollisionCheck tmp = toBuild.GetComponent<RoadTerrainCollisionCheck> ();
+							if (tmp == null || !tmp.Colliding ()) {
+								readyToConstruct = true;
+								lotBoundary.turnGreen ();
+							} else {
+								readyToConstruct = false;
+								lotBoundary.turnRed ();
+							}
 						} else {
 							readyToConstruct = false;
 							lotBoundary.turnRed ();
@@ -636,7 +655,7 @@ public class ConstructionController : NetworkBehaviour {
 							confirm.transform.Find ("Ok").GetComponent<Button> ().onClick.AddListener (delegate {
 								lotBoundary.resetColor ();
 								CmdCityBuild (index,currentCategory, toBuild.transform.position, toBuild.transform.rotation, toBuild.transform.localScale, this.netId);
-								constructionRotation = toBuild.transform.rotation;
+								//constructionRotation = toBuild.transform.rotation;
 								Destroy (toBuild);
 								Destroy (tooltip);
 								toBuild = null;
@@ -656,12 +675,12 @@ public class ConstructionController : NetworkBehaviour {
 					if (!isRoad) {
 						toBuild.transform.Rotate (new Vector3 (0, 2, 0));
 					}
-					constructionRotation = toBuild.transform.rotation;
+					//constructionRotation = toBuild.transform.rotation;
 				} else if (Input.GetKey (KeyCode.Mouse0)) {
 					if (!isRoad) {
 						toBuild.transform.Rotate (new Vector3 (0, -2, 0));
 					}
-					constructionRotation = toBuild.transform.rotation;
+					//constructionRotation = toBuild.transform.rotation;
 				}
 			}
 		}
@@ -733,6 +752,61 @@ public class ConstructionController : NetworkBehaviour {
 	public static Vector3 GetSharedSnapPosition(Vector3 originalPosition, float snap/*float snap = 0.01f*/)
 	{
 		return new Vector3(GetSnapValue(originalPosition.x, snap), GetSnapValue(originalPosition.y, snap), GetSnapValue(originalPosition.z, snap));
+	}
+
+	/// <summary>
+	/// Rotates the toBuild gameobject to the terrain's slope. returns false if the rotation is too severe
+	/// </summary>
+	private void RotateToTerrain() {
+
+		MeshRenderer mr = null;
+		toBuild.transform.Rotate (-toBuild.transform.eulerAngles.x, 0, 0); // bring it back to flat x rotation before starting
+		if (toBuild.name.Contains("Road_Straight")) {
+			mr = toBuild.GetComponent<MeshRenderer> ();
+		}
+
+		if (mr != null) {
+			RaycastHit hit;
+			Vector3 ray = Vector3.down;
+			if (Physics.Raycast (mr.bounds.center, ray, out hit)) {
+				if (hit.collider.gameObject.CompareTag ("terrain")) {
+					float GroundDis = hit.distance;
+					float xRot = 0;
+					if (hit.distance > 5) { // terrain is far below the object, so just rotate down as much as possible
+						xRot = ROAD_LENGTH;
+					} else {
+						// terrain is not too far below the object, rotate to terrain's slope
+						Vector3 rotation = Quaternion.FromToRotation (toBuild.transform.up, hit.normal).eulerAngles;
+						//Debug.Log ("Hit terrain: DISTANCE" + hit.distance + "      ROTATION" + rotation.x);
+						if (rotation.x <= -ROAD_LENGTH) {
+							xRot = -ROAD_LENGTH;
+						} else if (rotation.x >= ROAD_LENGTH) {
+							xRot = ROAD_LENGTH;
+						} else {
+							xRot = rotation.x;
+						}
+					}
+					Vector3 angles = toBuild.transform.rotation.eulerAngles;
+					if ((angles.x + xRot) >= ROAD_LENGTH && (angles.x + xRot) <= (360 - ROAD_LENGTH)) {
+						xRot = xRot - angles.x;
+					} 
+
+					toBuild.transform.Rotate (xRot, 0, 0);
+
+				} else {
+					//Debug.Log ("Did not hit terrain: " + hit.collider.gameObject.name);
+				}
+			} else {
+				//Debug.Log ("Hit nothing");
+			}
+		}
+	}
+
+	private void RotateUp() {
+		RoadTerrainCollisionCheck collCheck = toBuild.GetComponent<RoadTerrainCollisionCheck> ();
+		if (collCheck != null && collCheck.Colliding()) {
+			toBuild.transform.Rotate (-1f, 0, 0);
+		}
 	}
 
 	/// <summary>

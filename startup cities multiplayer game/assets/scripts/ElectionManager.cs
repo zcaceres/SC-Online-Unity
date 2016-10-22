@@ -25,23 +25,23 @@ public class ElectionManager : NetworkBehaviour {
 		if (panel != null) {
 			if (Input.GetKeyDown (KeyCode.C) || !mm.isElectionSeason) {
 				Destroy (panel);
-			} else if (p.targetObject == null || !(p.targetObject is CityHall)) {
+			} else if (p.targetObject == null && !(p.targetObject is CityHall)) {
 				Destroy (panel);
 			} else if (Input.GetKeyDown (KeyCode.Alpha1)) {
-				if (p.targetObject != null || (p.targetObject is CityHall)) {
+				if (p.targetObject != null && (p.targetObject is CityHall)) {
 					CmdDonateToCandidate (this.netId, p.targetObject.netId, 0);
 				}
 			} else if (Input.GetKeyDown (KeyCode.Alpha2)) {
-				if (p.targetObject != null || (p.targetObject is CityHall)) {
+				if (p.targetObject != null && (p.targetObject is CityHall)) {
 					CmdDonateToCandidate (this.netId, p.targetObject.netId, 1);
 				}
 			} else if (Input.GetKeyDown (KeyCode.Alpha3)) {
-				if (p.targetObject != null || (p.targetObject is CityHall)) {
+				if (p.targetObject != null && (p.targetObject is CityHall)) {
 					CmdDonateToCandidate (this.netId, p.targetObject.netId, 2);
 				}
 			}
 		} else {
-			if (Input.GetKeyDown (KeyCode.C) && mm.isElectionSeason) {
+			if (Input.GetKeyDown (KeyCode.C) && mm.isElectionSeason && p.targetObject != null && (p.targetObject is CityHall)) {
 				SpawnPanel ();
 			}
 		}
