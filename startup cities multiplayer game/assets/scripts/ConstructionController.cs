@@ -7,7 +7,8 @@ using UnityEngine.Networking;
 public class ConstructionController : NetworkBehaviour {
 	const int CHANNEL = 1;
 	const int MAYOR_CATEGORY = 6;
-	const float ROAD_LENGTH = 20f;
+	const float ROAD_ANGLE_DOWN = 20f;
+	const float ROAD_ANGLE_UP = 30f;
 
 	private struct Spawnable {
 		public Object dummy;
@@ -59,6 +60,9 @@ public class ConstructionController : NetworkBehaviour {
 	private int currentCategory;
 	private bool categorySelected;
 	private bool snapped;
+	private bool lockedX;
+	private bool lockedY;
+	private bool lockedZ;
 
 	// Use this for initialization
 	void Start () {
@@ -354,7 +358,7 @@ public class ConstructionController : NetworkBehaviour {
 
 			if (Physics.Raycast (playerCamera.transform.position, fwd, out hit, 100, layerMask)) {
 				if (hit.collider.gameObject.name != toBuild.name && !toBuild.CompareTag ("floor")) {
-					toBuild.transform.position = hit.point;
+					ConstrainedPosition (hit);
 				}
 				else {
 					toBuild.transform.position = GetSharedSnapPosition(hit.point, .5f);
@@ -393,10 +397,10 @@ public class ConstructionController : NetworkBehaviour {
 								lotBoundary.resetColor ();
 								CmdBuild (index,currentCategory, toBuild.transform.position, toBuild.transform.rotation, this.netId, l.netId);
 								constructionRotation = toBuild.transform.rotation;
-								Destroy (toBuild);
-								Destroy (tooltip);
-								toBuild = null;
-								player.construction = false;
+								//Destroy (toBuild);
+								//Destroy (tooltip);
+								//toBuild = null;
+								//player.construction = false;
 								Destroy (confirm);
 							});
 							confirm.transform.Find ("Cancel").GetComponent<Button> ().onClick.AddListener (delegate {
@@ -408,21 +412,9 @@ public class ConstructionController : NetworkBehaviour {
 					}
 				}
 			}
-
-			if (Input.GetKeyDown (KeyCode.Mouse1) && toBuild.CompareTag ("floor")) { //For paths
-				toBuild.transform.Rotate (new Vector3 (0, 30, 0)); //Snap to 90 degrees
-				constructionRotation = toBuild.transform.rotation;
-			} else if (Input.GetKeyDown (KeyCode.Mouse0) && toBuild.CompareTag ("floor")) { //For paths
-				toBuild.transform.Rotate (new Vector3 (0, -30, 0)); //Snap to 90 degrees
-				constructionRotation = toBuild.transform.rotation;
-			}
-			if (Input.GetKey (KeyCode.Mouse1) && !toBuild.CompareTag ("floor")) {
-				toBuild.transform.Rotate (new Vector3 (0, 2, 0));
-				constructionRotation = toBuild.transform.rotation;
-			} else if (Input.GetKey (KeyCode.Mouse0) && !toBuild.CompareTag ("floor")) {
-				toBuild.transform.Rotate (new Vector3 (0, -2, 0));
-				constructionRotation = toBuild.transform.rotation;
-			}
+				
+			RotationControls ();
+			constructionRotation = toBuild.transform.rotation;
 		}
 		ItemSelect ();
 	}
@@ -473,7 +465,7 @@ public class ConstructionController : NetworkBehaviour {
 
 				if (Physics.Raycast (playerCamera.transform.position, fwd, out hit, 100, layerMask)) {
 					if (hit.collider.gameObject.name != toBuild.name) {
-						toBuild.transform.position = hit.point;
+						ConstrainedPosition (hit);
 					}
 				}
 
@@ -483,7 +475,10 @@ public class ConstructionController : NetworkBehaviour {
 					Lot l;
 					if (lotBoundary.isConstructable) {
 						l = hit.collider.gameObject.GetComponent<Lot> ();
-						if ((l != null)) {
+						if ((l != null) || lotBoundary.triggerLot != null) {
+							if (lotBoundary.triggerLot != null) {
+								l = lotBoundary.triggerLot;
+							}
 							if (l.ownedBy (this.netId) && ((building != null && l.netId == building.lot) || building == null)) {
 								readyToConstruct = true;
 								lotBoundary.turnGreen ();
@@ -513,13 +508,7 @@ public class ConstructionController : NetworkBehaviour {
 					}
 				}
 
-				if (Input.GetKey (KeyCode.Mouse1)) {
-					toBuild.transform.Rotate (new Vector3 (0, 2, 0));
-					constructionRotation = toBuild.transform.rotation;
-				} else if (Input.GetKey (KeyCode.Mouse0)) {
-					toBuild.transform.Rotate (new Vector3 (0, -2, 0));
-					constructionRotation = toBuild.transform.rotation;
-				}
+				RotationControls ();
 			}
 		} else {
 			player.moveMode = false;
@@ -625,21 +614,21 @@ public class ConstructionController : NetworkBehaviour {
 				} else if (!lotBoundary.scaffold.colliding && (!isRoad || snapped)) { //ensures road is not colliding with anything and that it's also SNAPPED to a snaptransform
 					if (toBuild.CompareTag ("lot")) {
 						if (toBuild.GetComponent<RoadConnectionChecker> ().IsConnected ()) {
-							RoadTerrainCollisionCheck tmp = toBuild.GetComponent<RoadTerrainCollisionCheck> ();
-							if (tmp == null || !tmp.Colliding ()) {
-								readyToConstruct = true;
-								lotBoundary.turnGreen ();
-							} else {
-								readyToConstruct = false;
-								lotBoundary.turnRed ();
-							}
+							readyToConstruct = true;
+							lotBoundary.turnGreen ();
 						} else {
 							readyToConstruct = false;
 							lotBoundary.turnRed ();
 						}
 					} else {
-						readyToConstruct = true;
-						lotBoundary.turnGreen ();
+						RoadTerrainCollisionCheck tmp = toBuild.GetComponent<RoadTerrainCollisionCheck> ();
+						if (tmp != null && tmp.Colliding ()) {
+							readyToConstruct = false;
+							lotBoundary.turnRed ();
+						} else {
+							readyToConstruct = true;
+							lotBoundary.turnGreen ();
+						}
 					}
 				} else {
 					readyToConstruct = false;
@@ -773,21 +762,21 @@ public class ConstructionController : NetworkBehaviour {
 					float GroundDis = hit.distance;
 					float xRot = 0;
 					if (hit.distance > 5) { // terrain is far below the object, so just rotate down as much as possible
-						xRot = ROAD_LENGTH;
+						xRot = ROAD_ANGLE_DOWN;
 					} else {
 						// terrain is not too far below the object, rotate to terrain's slope
 						Vector3 rotation = Quaternion.FromToRotation (toBuild.transform.up, hit.normal).eulerAngles;
 						//Debug.Log ("Hit terrain: DISTANCE" + hit.distance + "      ROTATION" + rotation.x);
-						if (rotation.x <= -ROAD_LENGTH) {
-							xRot = -ROAD_LENGTH;
-						} else if (rotation.x >= ROAD_LENGTH) {
-							xRot = ROAD_LENGTH;
+						if (rotation.x <= -ROAD_ANGLE_DOWN) {
+							xRot = -ROAD_ANGLE_DOWN;
+						} else if (rotation.x >= ROAD_ANGLE_DOWN) {
+							xRot = ROAD_ANGLE_DOWN;
 						} else {
 							xRot = rotation.x;
 						}
 					}
 					Vector3 angles = toBuild.transform.rotation.eulerAngles;
-					if ((angles.x + xRot) >= ROAD_LENGTH && (angles.x + xRot) <= (360 - ROAD_LENGTH)) {
+					if ((angles.x + xRot) >= ROAD_ANGLE_DOWN && (angles.x + xRot) <= (360 - ROAD_ANGLE_DOWN)) {
 						xRot = xRot - angles.x;
 					} 
 
@@ -804,8 +793,57 @@ public class ConstructionController : NetworkBehaviour {
 
 	private void RotateUp() {
 		RoadTerrainCollisionCheck collCheck = toBuild.GetComponent<RoadTerrainCollisionCheck> ();
-		if (collCheck != null && collCheck.Colliding()) {
+		if (collCheck != null && collCheck.Colliding() && (toBuild.transform.eulerAngles.x < ROAD_ANGLE_UP || toBuild.transform.eulerAngles.x > 360-ROAD_ANGLE_UP) ){
 			toBuild.transform.Rotate (-1f, 0, 0);
+		}
+	}
+
+	/// <summary>
+	/// Positions the toBuild object to the hit point while disregarding locked axes
+	/// </summary>
+	/// <param name="hit">Hit point.</param>
+	private void ConstrainedPosition(RaycastHit hit) {
+		if (Input.GetKeyDown (KeyCode.X)) {
+			lockedX = !lockedX;
+		}
+		if (Input.GetKeyDown (KeyCode.Y)) {
+			lockedY = !lockedY;
+		}
+		if (Input.GetKeyDown (KeyCode.Z)) {
+			lockedZ = !lockedZ;
+		}
+		if (toBuild != null) {
+			float x = toBuild.transform.position.x; 
+			float y = toBuild.transform.position.y;
+			float z = toBuild.transform.position.z;
+			if (!lockedZ) {
+				z = hit.point.z;
+			}
+			if (!lockedY) {
+				y = hit.point.y;
+			}
+			if (!lockedX) {
+				x = hit.point.x;
+			}
+			toBuild.transform.position = new Vector3 (x, y, z);
+		}
+	}
+
+	private void RotationControls() {
+		if (Input.GetKeyDown (KeyCode.Mouse1) && toBuild.CompareTag ("floor")) { //For paths
+			toBuild.transform.Rotate (new Vector3 (0, 30, 0)); //Snap to 90 degrees
+		} else if (Input.GetKeyDown (KeyCode.Mouse0) && toBuild.CompareTag ("floor")) { //For paths
+			toBuild.transform.Rotate (new Vector3 (0, -30, 0)); //Snap to 90 degrees
+		} else if (Input.GetKeyDown (KeyCode.LeftControl)) {
+			toBuild.transform.Rotate (0, 30, 0);
+		} else if (Input.GetKeyDown (KeyCode.RightControl)) {
+			toBuild.transform.Rotate (0, -30, 0);
+		} else if (Input.GetKeyDown (KeyCode.LeftAlt) || Input.GetKeyDown(KeyCode.RightAlt)) {
+			toBuild.transform.Rotate (-toBuild.transform.eulerAngles.x, -toBuild.transform.eulerAngles.y, -toBuild.transform.eulerAngles.z);
+		} else if (Input.GetKey (KeyCode.Mouse1)) {
+			toBuild.transform.Rotate (new Vector3 (0, 2, 0));
+		} else if (Input.GetKey (KeyCode.Mouse0)) {
+			toBuild.transform.Rotate (new Vector3 (0, -2, 0));
 		}
 	}
 
