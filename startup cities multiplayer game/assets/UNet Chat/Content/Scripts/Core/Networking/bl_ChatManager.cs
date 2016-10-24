@@ -13,7 +13,7 @@ public class bl_ChatManager : NetworkBehaviour
     public string ClientName = string.Empty;
 
     public bool useBothSides = true;
-    public bool useGroupPrefix = true;
+    public bool useGroupPrefix = false; //CHANGED TO FALSE -Z
     public bool ShowPlayerNameInput = false; //If you setup your own method for sen the name, desactive this.
     public int MaxMessages = 15;
 
@@ -210,7 +210,7 @@ public class bl_ChatManager : NetworkBehaviour
         }
         else
         {
-            m = string.Format("{2}<color=#{0}>[{1}]</color>", hex, filterText,sender);
+			m = string.Format("[{1}]<color=#{0}>: {2}</color>", hex, sender, filterText);
         }
         return m;
     }
@@ -238,11 +238,7 @@ public class bl_ChatManager : NetworkBehaviour
             ChatUI.ShowChat(true);
         }
     }
-
-	public void SetCompanyName()
-	{
 		
-	}
 
     /// <summary>
     /// Call this when want to clean all messages from the chat

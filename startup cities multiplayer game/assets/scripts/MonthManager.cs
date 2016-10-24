@@ -13,7 +13,7 @@ public class MonthManager : NetworkBehaviour {
 
 	// Month length in seconds
 	const int MONTH_LENGTH = 10;
-	const int TURNS_UNTIL_NIGHT = 24;
+	const int TURNS_UNTIL_NIGHT = 48;
 	const int MAYOR_TERM_LENGTH = 12;
 
 	//access for SetSunLight and AutoIntensity class other classes to MONTH_LENGTH

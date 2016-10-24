@@ -158,6 +158,8 @@ public class SpectatorController : NetworkBehaviour
 		es = GameObject.Find ("EventSystem").GetComponent<EventSystem> ();
 		setMouseLookEnabled (true);
 		GameObject.Find("Canvas").transform.Find ("ChatUI").GetComponent<bl_ChatUI> ().SetPlayerName ("Spectator");
+		GameObject flybyCamera = GameObject.Find ("Flyby Camera");
+		Destroy (flybyCamera);
 	}
 
 	public const float WALK_SPEED = .25f;

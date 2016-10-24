@@ -19,6 +19,7 @@ public class Office : Business {
 
 		if (isServer) {
 			skillLevel = 2;
+			lowestSkill = 2;
 			baseRent = 5000;
 			baseCondition = 100;
 			baseSafety = 100;

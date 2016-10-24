@@ -55,32 +55,24 @@ public class FoodTruck : Vehicle
 	protected override void Update ()
 	{
 		if (vehicleOccupied) {
-			if (Input.GetKeyDown (KeyCode.Mouse0) && !horn.isPlaying) {
-				horn.Play ();
-			}
-			if (Input.GetKeyUp (KeyCode.Mouse0)) {
-				horn.Stop ();
-			}
-			if (Input.GetKeyDown(KeyCode.Mouse1)) {
-				Player p = getLocalPlayerInVehicle ();
-				p.CmdToggleVehicleLights (this.netId);
-			}
 			if (Input.GetKeyDown (KeyCode.F)) {
-				Player p = getLocalPlayerInVehicle ();
-				if (p != null && p.eligibleToExitVehicle) {
-					p.eligibleToExitVehicle = false;
-					ExitVehicle (p);
-				}
+				ExitToggle ();
 			}
-
-			if (vehicleOccupied && carController.CurrentSpeed <= 15f && !ruin) {
-				mega.ToggleFoodTruck (true);
-			} else {
-				mega.ToggleFoodTruck (false);
-			}
+			FoodTruckSpeedCheck ();
 		}
+
+
+
 		if (isServer) {
 			CheckCondition ();
+		}
+	}
+
+	protected virtual void FoodTruckSpeedCheck() {
+		if (/*vehicleOccupied && */carController.CurrentSpeed <= 15f && !ruin) {
+			mega.ToggleFoodTruck (true);
+		} else {
+			mega.ToggleFoodTruck (false);
 		}
 	}
 
