@@ -205,6 +205,8 @@ public class ResidentManager : NetworkBehaviour
 	}
 	private void messageAll(string s) {
 		Player player = FindObjectOfType<Player>();
-		player.RpcMessageAll (s);
+		if (player != null) {
+			player.RpcMessageAll (s);
+		}
 	}
 }
