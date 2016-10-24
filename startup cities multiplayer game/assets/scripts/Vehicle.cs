@@ -94,29 +94,26 @@ public class Vehicle : DamageableObject
 	protected virtual void Update ()
 	{
 		if (vehicleOccupied) {
-			if (Input.GetKeyDown (KeyCode.Mouse0) && !horn.isPlaying) {
-				horn.Play ();
-			}
-			if (Input.GetKeyUp (KeyCode.Mouse0)) {
-				horn.Stop ();
-			}
-			if (Input.GetKeyDown(KeyCode.Mouse1)) {
-				Player p = getLocalPlayerInVehicle ();
-				p.CmdToggleVehicleLights (this.netId);
-			}
 			if (Input.GetKeyDown (KeyCode.F)) {
-				Player p = getLocalPlayerInVehicle ();
-				if (p != null && p.eligibleToExitVehicle) {
-					p.eligibleToExitVehicle = false;
-					ExitVehicle (p);
-				}
+				ExitToggle ();
 			}
-		}
+		} //else condition here to turn off horn if no one is inside?
 		if (isServer) {
 			CheckCondition ();
 			//Gas consumption here
 		}
 	}
+
+	protected virtual void ExitToggle() {
+		Player p = getLocalPlayerInVehicle ();
+		if (p != null && p.eligibleToExitVehicle) {
+			p.eligibleToExitVehicle = false;
+			p.myVehicle = null;
+			ExitVehicle (p);
+		}
+	}
+
+
 
 
 	/// <summary>
@@ -532,9 +529,8 @@ public class Vehicle : DamageableObject
 
 	/* SOUND METHODS */
 
-
 	/// <summary>
-	/// Toggles the vehicle's ambient audio loop (like stereo system), if it has one.
+	/// Toggles the vehicle's ambient audio loop (like a car stereo system), if it has one.
 	/// This is NOT used for food truck audio, which is toggled when they're doing business.
 	/// </summary>
 	/// <param name="enabled">If set to <c>true</c> enabled.</param>
@@ -674,6 +670,28 @@ public class Vehicle : DamageableObject
 	public int getVehicleToughness ()
 	{
 		return vehicleToughness;
+	}
+
+	/// <summary>
+	/// Plays the horn.
+	/// </summary>
+	public void PlayHorn() {
+		horn.Play ();
+	}
+
+	/// <summary>
+	/// Stops the horn.
+	/// </summary>
+	public void StopHorn() {
+		horn.Stop ();
+	}
+
+	/// <summary>
+	/// Shows if the horn playing.
+	/// </summary>
+	/// <returns><c>true</c>, if horn is playing, <c>false</c> otherwise.</returns>
+	public bool isHornPlaying() {
+		return horn.isPlaying;
 	}
 
 }

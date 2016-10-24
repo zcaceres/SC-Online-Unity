@@ -57,12 +57,16 @@ public class Player : NetworkBehaviour {
 	public string message;
 	[SyncVar(hook = "togglePlayerVisibility")]
 	public bool playerNotVisible;
-	public bool hasPassengerPending; //used for when a passenger is asking access to the vehicle
-	public NetworkInstanceId netIdOfPassengerPending; //the player that is pending to enter the vehicle
 
 	//Vehicle vars
 	public bool eligibleToExitVehicle;
 	public CarController currentVehicle;
+	public Vehicle passengerEnter;
+	public Vehicle driverEnter;
+	public bool hasPassengerPending; //used for when a passenger is asking access to the vehicle
+	public NetworkInstanceId netIdOfPassengerPending; //the player that is pending to enter the vehicle
+	public Vehicle myVehicle;
+
 
 	[SyncVar]
 	public string leaders;
@@ -110,8 +114,6 @@ public class Player : NetworkBehaviour {
 	private GameObject activePanel;
 	private StartupRigidbodyFirstPersonController characterController;
 	public GameObject bankruptChoice;
-	public Vehicle passengerEnter;
-	public Vehicle driverEnter;
 	public CityHall activeCityHall;
 
 	// Use this for initialization
@@ -216,53 +218,17 @@ public class Player : NetworkBehaviour {
 			return;
 		}
 
+		//Selecting objects in the world
 		if (Input.GetButtonDown ("Fire2")) {
-			targetSelect ();
-		}
-
-		if (Input.GetKeyDown (KeyCode.Tab)) {
-			updateUI ();
-			ui.ledgerToggle ();
-		}
-
-		// overland map toggle
-		if (Input.GetKeyDown (KeyCode.M)) {
-			if (overlandMapCam.enabled) {
-				overlandMap.DisableOverlandMap ();
-			} else {
-				overlandMap.EnableOverlandMap ();
+			/*works like a bool. if player is driving
+			 * then won't permit raycasting */
+			if (myVehicle == null) {
+				targetSelect ();
 			}
 		}
 
-		if (Input.GetKeyDown (KeyCode.N)) {
-			formNeighborhood (targetObject);
-		}
-		if (Input.GetKeyDown (KeyCode.K)) { 
-			addToNeighborhood (targetObject);
-		}
-		if (Input.GetKeyDown (KeyCode.F)) {
-			//spawnGiveMoneyPanel ();
-			if (passengerEnter != null) {
-				CmdAskOwnerToEnterVehicle (passengerEnter.getOwnerNetId());
-			} else if (driverEnter != null) {
-				driverEnter.StartVehicle (this);
-			}
-			driverEnter = null;
-		}
-			
-		if (Input.GetKeyDown (KeyCode.Y)) {
-			if (hasPassengerPending) {//ensures there is a passenger pending to enter
-				CmdAllowPassengerToEnterVehicle (netIdOfPassengerPending);
-			}
-		}
 
-		if (Input.GetKeyDown(KeyCode.Alpha1)) {
-			toggleManager();
-		}
-		if (Input.GetKeyDown(KeyCode.I)) {
-			CmdAddMoney (this.GetComponent<NetworkIdentity> ().netId, 10000);
-		}
-
+		/* BUILDINGS */
 		// Repair
 		if (Input.GetKeyDown (KeyCode.R)) {
 			if (targetObject != null) {
@@ -278,15 +244,6 @@ public class Player : NetworkBehaviour {
 			}
 		}
 
-		// Fire test button
-		if (Input.GetKeyDown (KeyCode.Z)) {
-			if (targetObject != null) {
-				if (targetObject is DamageableObject) {
-					targetObject.GetComponent<DamageableObject> ().setFire ();
-				}
-			}
-		}
-
 		if (Input.GetKeyDown (KeyCode.P)) {
 			if (targetObject != null) {
 				if (targetObject.getOwner() == id) {
@@ -295,17 +252,12 @@ public class Player : NetworkBehaviour {
 			}
 		}
 
-		if (Input.GetKeyDown (KeyCode.X)) {
-			if (targetObject != null && targetObject.isDestructable() && targetObject.ownedBy(this.netId)) {
-				activePanel = constructionController.confirmDestroy (targetObject.gameObject);
-				controlsAllowed (false);
-			}
-		}
 
 		if (Input.GetKeyDown (KeyCode.LeftShift)) {
 			buy ();
 		}
 
+		/* UI */
 		if (Input.GetKeyDown (KeyCode.O)) {
 			monthManager.toggleColors ();
 		}
@@ -330,6 +282,111 @@ public class Player : NetworkBehaviour {
 		if (targetObject != null) {
 			updateBuildingReadout ();
 		}
+			
+		//Toggling the ledger
+		if (Input.GetKeyDown (KeyCode.Tab)) {
+			updateUI ();
+			ui.ledgerToggle ();
+		}
+
+		// overland map toggle
+		if (Input.GetKeyDown (KeyCode.M)) {
+			if (overlandMapCam.enabled) {
+				overlandMap.DisableOverlandMap ();
+			} else {
+				overlandMap.EnableOverlandMap ();
+			}
+		}
+
+
+
+		/* NEIGHBORHOODS */
+		//Forming Neighborhoods
+		if (Input.GetKeyDown (KeyCode.N)) {
+			formNeighborhood (targetObject);
+		}
+
+		//Adding Lot to Neighborhood
+		if (Input.GetKeyDown (KeyCode.K)) { 
+			addToNeighborhood (targetObject);
+		}
+
+		//Toggles a manager for a neighborhood
+		if (Input.GetKeyDown(KeyCode.Alpha1)) {
+			toggleManager();
+		}
+
+
+		/* VEHICLE */
+		//Entering a vehicle as Driver or Passenger
+		if (Input.GetKeyDown (KeyCode.F)) {
+			//spawnGiveMoneyPanel ();
+			if (passengerEnter != null) {
+				CmdAskOwnerToEnterVehicle (passengerEnter.getOwnerNetId());
+			} else if (driverEnter != null) {
+				driverEnter.StartVehicle (this);
+				myVehicle = driverEnter; // entervehicle temporarily sets driverenter which is put in myVehicle
+			}
+			driverEnter = null;
+		}
+
+		// play vehicle horn
+		if (Input.GetKeyDown (KeyCode.Mouse0)) {
+			if (myVehicle != null) { //if I have entered a vehicle (see myvehicle above)
+				if (myVehicle.ownedBy(this)) { //if this player object owns the vehicle
+					if (!myVehicle.isHornPlaying()) { //if the horn is not playing
+						myVehicle.PlayHorn (); //play the horn
+					}
+				}
+			}
+		}
+
+		// stop vehicle horn
+		if (Input.GetKeyUp (KeyCode.Mouse0)) { //if I release mouse 0
+			if (myVehicle != null) { //if I am in a vehicle
+				myVehicle.StopHorn (); //stop the horn
+			}
+		}
+
+		// toggles vehicle lights
+		if (Input.GetKeyDown(KeyCode.Mouse1)) {
+			//Player p = getLocalPlayerInVehicle ();
+			if (myVehicle != null) {
+				if (myVehicle.ownedBy (this)) {
+					CmdToggleVehicleLights (myVehicle.netId);
+				}
+			}
+		}
+
+		//Allows a passenger to enter if they are on the passenger door trigger
+		if (Input.GetKeyDown (KeyCode.Y)) {
+			if (hasPassengerPending) {//ensures there is a passenger pending to enter
+				CmdAllowPassengerToEnterVehicle (netIdOfPassengerPending);
+			}
+		}
+
+			
+		/* TESTING / CHEATS */
+		if (Input.GetKeyDown(KeyCode.I)) {
+			CmdAddMoney (this.GetComponent<NetworkIdentity> ().netId, 10000);
+		}
+
+		// Fire test button
+		if (Input.GetKeyDown (KeyCode.Z)) {
+			if (targetObject != null) {
+				if (targetObject is DamageableObject) {
+					targetObject.GetComponent<DamageableObject> ().setFire ();
+				}
+			}
+		}
+
+		if (Input.GetKeyDown (KeyCode.X)) {
+			if (targetObject != null && targetObject.isDestructable() && targetObject.ownedBy(this.netId)) {
+				activePanel = constructionController.confirmDestroy (targetObject.gameObject);
+				controlsAllowed (false);
+			}
+		}
+
 	}
 
 
@@ -1029,7 +1086,7 @@ public class Player : NetworkBehaviour {
 		GameObject tmp = (GameObject)Instantiate (criminal, spawnVector, criminal.transform.rotation);
 		NetworkServer.Spawn (tmp);
 	}
-
+		
 	[Command(channel=CHANNEL)]
 	public void CmdAuction(NetworkInstanceId buildingId) {
 		AuctionManager auction = FindObjectOfType<AuctionManager> ();
@@ -1110,6 +1167,13 @@ public class Player : NetworkBehaviour {
 		}
 	}
 
+	/// <summary>
+	/// Removes a modifier
+	/// </summary>
+	/// <param name="m">M.</param>
+	/// <param name="cost">Cost.</param>
+	/// <param name="playerId">Player identifier.</param>
+	/// <param name="mm">Mm.</param>
 	[Command(channel=CHANNEL)]
 	public void CmdRemoveMod(string m, int cost, NetworkInstanceId playerId, NetworkInstanceId mm) {
 		GameObject obj;
@@ -1130,6 +1194,11 @@ public class Player : NetworkBehaviour {
 		RpcUpdateUI ();
 	}
 
+	/// <summary>
+	/// Evicts a tenant
+	/// </summary>
+	/// <param name="playerId">Player identifier.</param>
+	/// <param name="mm">Mm.</param>
 	[Command(channel=CHANNEL)]
 	public void CmdEvict(NetworkInstanceId playerId, NetworkInstanceId mm) {
 		GameObject obj;
@@ -1155,6 +1224,11 @@ public class Player : NetworkBehaviour {
 		RpcUpdateUI ();
 	}
 
+	/// <summary>
+	/// Sends a networked message to a player
+	/// </summary>
+	/// <param name="playerId">Player identifier.</param>
+	/// <param name="s">S.</param>
 	[Command(channel=CHANNEL)]
 	public void CmdMessage(NetworkInstanceId playerId, string s) {
 		GameObject p;
@@ -1165,6 +1239,12 @@ public class Player : NetworkBehaviour {
 		player.message = s;
 	}
 
+	/// <summary>
+	/// Forms a neighborhood
+	/// </summary>
+	/// <param name="playerId">Player identifier.</param>
+	/// <param name="lotId">Lot identifier.</param>
+	/// <param name="name">Name.</param>
 	[Command(channel=CHANNEL)]
 	public void CmdFormNeighborhood(NetworkInstanceId playerId, NetworkInstanceId lotId, string name) {
 		Player player = getLocalInstance (playerId).GetComponent<Player> ();
@@ -1183,6 +1263,12 @@ public class Player : NetworkBehaviour {
 		}
 	}
 
+	/// <summary>
+	/// Adds lot to neighborhood
+	/// </summary>
+	/// <param name="playerId">Player identifier.</param>
+	/// <param name="lotId">Lot identifier.</param>
+	/// <param name="neighborhoodId">Neighborhood identifier.</param>
 	[Command(channel=CHANNEL)]
 	public void CmdAddToNeighborhood(NetworkInstanceId playerId, NetworkInstanceId lotId, NetworkInstanceId neighborhoodId) {
 		Player player = getLocalInstance (playerId).GetComponent<Player> ();
@@ -1200,6 +1286,11 @@ public class Player : NetworkBehaviour {
 		}
 	}
 
+	/// <summary>
+	/// Removes lot from neighborhood
+	/// </summary>
+	/// <param name="playerId">Player identifier.</param>
+	/// <param name="lotId">Lot identifier.</param>
 	[Command(channel=CHANNEL)]
 	public void CmdRemoveFromNeighborhood(NetworkInstanceId playerId, NetworkInstanceId lotId) {
 		Player player = getLocalInstance (playerId).GetComponent<Player> ();
@@ -1883,6 +1974,8 @@ public class Player : NetworkBehaviour {
 	private void RpcEnterVehicle() {
 		if (this.isLocalPlayer) {
 			if (passengerEnter != null) {
+				Debug.LogError ("calling RpcEnterVehicle");
+				myVehicle = passengerEnter;
 				passengerEnter.PassengerEnterVehicle (this);
 			}
 		}

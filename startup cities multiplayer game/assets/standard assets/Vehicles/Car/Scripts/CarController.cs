@@ -132,9 +132,10 @@ namespace UnityStandardAssets.Vehicles.Car
 			if (!this.enabled) {
 				return;
 			}
-				
-			//Debug.Log ("steering: " + steering + "accel: " + accel + "footbrake: " + footbrake + "handbrake: " + handbrake);
-            for (int i = 0; i < 4; i++)
+
+			/*-Z disabled to prevent strange behaviour where tires moved out of their
+			 * initial positions when the car was first driven */
+			for (int i = 0; i < 4; i++)
             {
                 Quaternion quat;
                 Vector3 position;
@@ -271,7 +272,7 @@ namespace UnityStandardAssets.Vehicles.Car
 
         // checks if the wheels are spinning and is so does three things
         // 1) emits particles
-        // 2) plays tiure skidding sounds
+        // 2) plays tire skidding sounds
         // 3) leaves skidmarks on the ground
         // these effects are controlled through the WheelEffects class
         private void CheckForWheelSpin()
