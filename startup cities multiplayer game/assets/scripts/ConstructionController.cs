@@ -204,9 +204,14 @@ public class ConstructionController : NetworkBehaviour {
 	}
 		
 	[Command (channel = CHANNEL)]
-	public void CmdCityBuild (int index, int category, Vector3 pos, Quaternion q, Vector3 scale, NetworkInstanceId pid) {
+	public void CmdCityBuild (int index, int category, Vector3 pos, Quaternion q, Vector3 scale, NetworkInstanceId pid, NetworkInstanceId regionId) {
 		Player player = getLocalInstance (pid).GetComponent<Player> ();
 		GameObject constructionParticles;
+		GameObject rTmp = getLocalInstance (regionId);
+		Region region = null;
+		if (rTmp != null) {
+			region = getLocalInstance (regionId).GetComponent<Region> ();
+		}
 		constructionParticles = (GameObject)Resources.Load ("ConstructionParticles");
 		GameObject tmp = (GameObject)Instantiate (spawnables[category][index].spawnable, pos, q);
 		tmp.transform.localScale = scale;
@@ -224,7 +229,10 @@ public class ConstructionController : NetworkBehaviour {
 			if (b is Building) {
 				b.GetComponent<Building>().upgrade = true;     // it should not spawn with bad modifiers
 			}
-
+			if (regionId != NetworkInstanceId.Invalid && region != null) {
+				b.region = regionId;
+				b.localRegion = region;
+			}
 			if (player != null) {
 				player.budget -= spawnables[category] [index].price;
 				player.message = "Spent $" + spawnables [category][index].price + " to build " + spawnables [category][index].name + "!";
@@ -643,7 +651,7 @@ public class ConstructionController : NetworkBehaviour {
 							confirm.transform.Find ("ConfirmMessage").GetComponent<Text> ().text = "Build " + spawnables[currentCategory] [index].name + " for $" + spawnables[currentCategory] [index].price + "?";
 							confirm.transform.Find ("Ok").GetComponent<Button> ().onClick.AddListener (delegate {
 								lotBoundary.resetColor ();
-								CmdCityBuild (index,currentCategory, toBuild.transform.position, toBuild.transform.rotation, toBuild.transform.localScale, this.netId);
+								CmdCityBuild (index,currentCategory, toBuild.transform.position, toBuild.transform.rotation, toBuild.transform.localScale, this.netId, NetworkInstanceId.Invalid);
 								//constructionRotation = toBuild.transform.rotation;
 								Destroy (toBuild);
 								Destroy (tooltip);

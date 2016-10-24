@@ -10,12 +10,17 @@ public class SimpleCameraController : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
+		AudioListener al = GetComponent<AudioListener> ();
 		if (gameObject.GetComponentInParent<NetworkIdentity>().isLocalPlayer) {
 			GetComponent<Camera> ().enabled = true;
-			GetComponent<AudioListener> ().enabled = true;
+			if (al != null) {
+				GetComponent<AudioListener> ().enabled = true;
+			}
 		} else {
 			GetComponent<Camera> ().enabled = false;
-			GetComponent<AudioListener> ().enabled = false;
+			if (al != null) {
+				GetComponent<AudioListener> ().enabled = false;
+			}
 		}
 	}	
 }
