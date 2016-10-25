@@ -13,6 +13,7 @@ public class CityHall : Business {
 
 	[SyncVar]
 	private int budget;
+	private Politician m;
 	public Region governedRegion;
 	static MonthManager mm;
 	void Start() {
@@ -21,6 +22,7 @@ public class CityHall : Business {
 		tenant = GetComponent<Tenant> ();
 		color = c.gameObject.GetComponent<MeshRenderer> ().materials.ElementAt (0).color;
 		type = TYPENUM;
+		m = null;
 		governedRegion = GetComponent<Region> ();
 		if (mm == null) {
 			mm = FindObjectOfType<MonthManager> ();
@@ -28,10 +30,10 @@ public class CityHall : Business {
 		if (isServer) {
 			budget = 0;
 			skillLevel = 0;
-			baseRent = 1000;
+			baseRent = 0;
 			baseCondition = 100;
 			baseSafety = 100;
-			rent = baseRent;
+			rent = 0;
 			condition = baseCondition;
 			safety = baseSafety;
 			cost = 100000;
@@ -180,11 +182,17 @@ public class CityHall : Business {
 	}
 
 	/// <summary>
-	/// Removes the passed amount from the city hall's budget
+	/// Removes the passed amount from the city hall's budget, modified by the mayor's traits
 	/// </summary>
 	/// <param name="amount">Amount.</param>
-	public void pay(int amount) {
-		budget -= amount;
+	public void pay(int amount, bool building, bool cop) {
+		if (m == null) {
+			budget -= amount;
+		} else if (building) {
+			budget -= (int)(m.GetBuildMultiplier () * amount);
+		} else if (cop) {
+			budget -= (int)(m.GetPoliceMultiplier () * amount);
+		}
 	}
 
 	public int GetBudget() {
@@ -206,14 +214,14 @@ public class CityHall : Business {
 		} else {
 			ownerName = getPlayer(owner).getName();
 		}
-		s = "City Hall of " + governedRegion.regionName + "\nOwner: " + ownerName + "\nPrice: " + cost + "\nCondition: " + conditionToString() + "\nSafety: " + safetyToString() +  "\nRent: " + rent;
+		s = "City Hall of " + governedRegion.regionName + "\nOwner: " + ownerName + "\nPrice: " + cost + "\nCondition: " + conditionToString() + "\nSafety: " + safetyToString() +  "\nBudget: " + budget;
 
 		if (occupied) {
 			if (!tenant.isNone()) {
-				s += "\nOccupant: " + tenant.resident.residentName;
+				s += "\nMayor: " + tenant.resident.residentName;
 			}
 		} else {
-			s += "\nNot Occupied";
+			s += "\nNo Mayor";
 		}
 
 		if (notForSale) {
@@ -247,7 +255,7 @@ public class CityHall : Business {
 		} else  {
 			ownerName = getPlayer(owner).getName();
 		}
-		s = "Type: " + buildingTypes [type] + "\nName : " + buildingName + "\nOwner: " + ownerName + "\nPrice: " + cost + "\nCondition: " + conditionToString () + "\nSafety: " + safetyToString () +  "\nRent: " + rent;
+		s = "Type: " + buildingTypes [type] + "\nName : " + buildingName + "\nOwner: " + ownerName + "\nPrice: " + cost + "\nCondition: " + conditionToString () + "\nSafety: " + safetyToString () +  "\nBudget: " + budget;
 
 		if (occupied) {
 			if (!tenant.isNone()) {
@@ -279,6 +287,7 @@ public class CityHall : Business {
 
 	public void SetMayor(Politician p) {
 		string message = governedRegion.regionName + " has elected " + p.residentName + "!";
+		m = p;
 		p.ChooseLoyalty ();
 		if (tenant.resident != null) {
 			tenant.evict ();

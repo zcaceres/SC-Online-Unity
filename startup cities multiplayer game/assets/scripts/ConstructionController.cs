@@ -225,6 +225,16 @@ public class ConstructionController : NetworkBehaviour {
 		// deduct some amount from the player's budget
 		OwnableObject b = tmp.GetComponent<OwnableObject> ();
 
+		if (region != null) {
+			bool road = false;
+			bool cop = false;
+			if (tmp.CompareTag ("floor")) {
+				road = true;
+			} else if (tmp.name.Contains ("Police")) {
+				cop = true;
+			}
+			region.cityHall.pay (spawnables [category] [index].price, road, cop);
+		}
 		if (b != null) {
 			if (b is Building) {
 				b.GetComponent<Building>().upgrade = true;     // it should not spawn with bad modifiers
@@ -233,12 +243,12 @@ public class ConstructionController : NetworkBehaviour {
 				b.region = regionId;
 				b.localRegion = region;
 			}
-			if (player != null) {
-				player.budget -= spawnables[category] [index].price;
-				player.message = "Spent $" + spawnables [category][index].price + " to build " + spawnables [category][index].name + "!";
-				b.setOwner(player.netId);
-				b.notForSale = true;
-			} 
+//			if (player != null) {
+//				player.budget -= spawnables[category] [index].price;
+//				player.message = "Spent $" + spawnables [category][index].price + " to build " + spawnables [category][index].name + "!";
+//				b.setOwner(player.netId);
+//				b.notForSale = true;
+//			} 
 		}
 	}
 
@@ -322,8 +332,9 @@ public class ConstructionController : NetworkBehaviour {
 		// Player is currently selecting the mayor category, use its function
 		if (currentCategory == MAYOR_CATEGORY) {
 			//if (player.activeCityHall != null && player.activeCityHall.ownedBy(player)) {
-				CityBuildMode ();
-				return;
+			player.activeCityHall = FindObjectOfType<CityHall>(); // Temporary--should only be selectable by the actual owner
+			CityBuildMode ();
+			return;
 			//} else { // skip over the city utilities category if the player isnt acting as a city
 			//	currentCategory = 0;
 			//}
@@ -677,7 +688,7 @@ public class ConstructionController : NetworkBehaviour {
 							confirm.transform.Find ("ConfirmMessage").GetComponent<Text> ().text = "Build " + spawnables[currentCategory] [index].name + " for $" + spawnables[currentCategory] [index].price + "?";
 							confirm.transform.Find ("Ok").GetComponent<Button> ().onClick.AddListener (delegate {
 								lotBoundary.resetColor ();
-								CmdCityBuild (index,currentCategory, toBuild.transform.position, toBuild.transform.rotation, toBuild.transform.localScale, this.netId, NetworkInstanceId.Invalid);
+								CmdCityBuild (index,currentCategory, toBuild.transform.position, toBuild.transform.rotation, toBuild.transform.localScale, this.netId, player.activeCityHall.netId);
 								//constructionRotation = toBuild.transform.rotation;
 								Destroy (toBuild);
 								Destroy (tooltip);

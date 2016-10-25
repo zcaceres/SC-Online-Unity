@@ -195,6 +195,36 @@ public class Politician : Resident {
 
 	}
 
+	/// <summary>
+	/// Returns the multiplier to build cost caused by the candidate's traits
+	/// </summary>
+	/// <returns>The build multiplier.</returns>
+	public float GetBuildMultiplier() {
+		float multi = 1;
+		multi *= politicalTraits[genericTraitOne].roadCostModifier * politicalTraits[genericTraitTwo].roadCostModifier * politicalTraits[partyTrait].roadCostModifier;
+		return multi;
+	}
+
+	/// <summary>
+	/// Gets the police multiplier.
+	/// </summary>
+	/// <returns>The police multiplier.</returns>
+	public float GetPoliceMultiplier() {
+		float multi = 1;
+		multi *= politicalTraits[genericTraitOne].copCostModifier * politicalTraits[genericTraitTwo].copCostModifier * politicalTraits[partyTrait].copCostModifier;
+		return multi;
+	}
+
+	public float GetEmbezzleChance() {
+		float chance = 0;
+		chance += politicalTraits [genericTraitOne].embezzleChance + politicalTraits [genericTraitTwo].embezzleChance + politicalTraits [partyTrait].embezzleChance;
+		return chance;
+	}
+
+	/// <summary>
+	/// Gets the disloyal chance (the chance that the politician will have no loyalty to their top donor.
+	/// </summary>
+	/// <returns>The disloyal chance.</returns>
 	protected float GetDisloyalChance() {
 		return (politicalTraits[partyTrait].noLoyaltyChance + politicalTraits[genericTraitOne].noLoyaltyChance + politicalTraits[genericTraitTwo].noLoyaltyChance);
 	}
