@@ -169,14 +169,16 @@ namespace UnityStandardAssets.Vehicles.Car
                 m_WheelColliders[3].brakeTorque = hbTorque;
             }
 
-
+			Debug.Log ("handbrake is: " + handbrake + "handbrake torque is " + m_MaxHandbrakeTorque);
             CalculateRevs();
             GearChanging();
 
             AddDownForce();
             CheckForWheelSpin();
             TractionControl();
-        }
+//			Debug.Log ("steering: " + steering + "accel: " + accel + "fb:" + footbrake + "hb: " + handbrake);
+   
+		}
 
 
         private void CapSpeed()

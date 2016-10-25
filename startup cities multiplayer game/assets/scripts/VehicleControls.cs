@@ -26,8 +26,20 @@ public class VehicleControls : NetworkBehaviour
 			float handbrake = CrossPlatformInputManager.GetAxis ("Jump");
 			if (isServer) {
 				driver.currentVehicle.Move (h, v, v, handbrake); //Server driving
+				if (Input.GetKeyUp(KeyCode.Space)) {
+					driver.currentVehicle.Move (h, -.1f, -.1f, 0);
+					/* When player disengaged handbrake this forces the car controller
+					 * to permit acceleration. Otherwise the handbrake is 'locked'
+					 * and the player cannot go forward, but must go backwards before going forward.*/
+				}
 			} else {
 				driver.CmdDrive (h, v, v, handbrake); //Client driving
+				if (Input.GetKeyUp(KeyCode.Space)) {
+					driver.CmdDrive(h, -.1f, -.1f, 0);
+					/* When player disengaged handbrake this forces the car controller
+					 * to permit acceleration. Otherwise the handbrake is 'locked'
+					 * and the player cannot go forward, but must go backwards before going forward.*/
+				}
 			}
 		}
 	}

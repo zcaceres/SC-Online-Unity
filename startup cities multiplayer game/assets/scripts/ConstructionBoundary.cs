@@ -38,7 +38,7 @@ public class ConstructionBoundary : MonoBehaviour
 	/// isConstructable bool to player class
 	/// </summary>
 	/// <param name="other">Kinematic rigidbody on the lot</param>
-	void OnTriggerEnter (Collider other)
+	protected virtual void OnTriggerEnter (Collider other)
 	{
 		if (other.GetComponent<Lot> () != null) {
 			constructionChecker += 1;

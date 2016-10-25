@@ -35,11 +35,14 @@ DummyBuildings/Dummy_ParkBench, ConstructableBuildings/ParkBench, 100, 0, 18, 5,
 DummyBuildings/Dummy_StreetLamp, ConstructableBuildings/StreetLamp, 400, 0, 18, 10, Street Lamp, A pretty light at night., 4
 DummyBuildings/Dummy_StreetLight, ConstructableBuildings/StreetLight, 400, 0, 18, 10, Street Light, A tall street light., 4
 DummyBuildings/Dummy_SecurityGuard, ConstructableBuildings/SecurityGuard, 400, 0, 24, -5, Hire a Security Guard, Scares away criminals. Costs $100 a month., 5
-DummyBuildings/Dummy_FireHydrant, ConstructableBuildings/FireHydrant, 500, 0, 24, -5, Fire Hydrant, Stand near this hydrant to put out fires., 5
-DummyBuildings/Dummy_Office, ConstructableBuildings/Office, 70000, 2, 26, -20, Office Building, Attracts high-skill workers to the city., 3
+DummyBuildings/Dummy_FireHydrant, ConstructableBuildings/FireHydrant, 500, 0, 24, -5, Fire Hydrant, Stand near this hydrant to put out fires, 5
+DummyBuildings/Dummy_Office, ConstructableBuildings/Office, 70000, 2, 26, -20, Office Building, Attracts high-skill workers to the city, 3
 DummyBuildings/Roads/Dummy_Road_Straight_Short, ConstructableBuildings/Roads/Road_Straight_Short, 5000, 3, 23, 0, Straight Road, For connecting., 6
 DummyBuildings/Roads/Dummy_Road_Cross, ConstructableBuildings/Roads/Road_Cross, 7000, 3, 23, 0, Four-Way Intersection, Look both ways before you cross, 6
 DummyBuildings/Roads/Dummy_Road_L_Left, ConstructableBuildings/Roads/Road_L_Left, 5000, 3, 23, 0, L-Curve (Left), A sharp turn, 6
 DummyBuildings/Roads/Dummy_Road_L_Right, ConstructableBuildings/Roads/Road_L_Right, 5000, 3, 23, 0, L-Curve (Right), A sharp turn, 6
 DummyBuildings/Dummy_LargeConstructableLot, ConstructableBuildings/LargeConstructableLot, 2000, 0, 17, 0, Large Lot, A large buyable lot, 6
 DummyBuildings/Dummy_SmallConstructableLot, ConstructableBuildings/SmallConstructableLot, 1000, 0, 17, 0, Small Lot, A small buyable lot, 6
+DummyBuildings/Dummy_PoliceOfficer, ConstructableBuildings/PoliceOfficer, 4000, 0, 23, 0, Police Officer, The city's finest, 6
+DummyBuildings/Dummy_CityFireHydrant, ConstructableBuildings/FireHydrant, 500, 0, 24, -5, City Fire Hydrant, City hydrant to put out fires, 6
+DummyBuildings/Dummy_CityStreetLight, ConstructableBuildings/StreetLight, 400, 0, 18, 10, City Street Light, A city-managed street light, 6

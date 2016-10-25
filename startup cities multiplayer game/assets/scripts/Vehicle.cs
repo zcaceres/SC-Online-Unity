@@ -114,8 +114,6 @@ public class Vehicle : DamageableObject
 	}
 
 
-
-
 	/// <summary>
 	/// Returns the local player in the vehicle
 	/// </summary>
