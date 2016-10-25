@@ -19,6 +19,7 @@ public class OverlandMap : MonoBehaviour {
 
 	void Update() {
 		if (overlandMapCam.enabled) {
+			/*
 			if (Input.GetButtonDown ("Fire1")) {
 				if (tooltip != null) {
 					Destroy (tooltip);
@@ -49,6 +50,7 @@ public class OverlandMap : MonoBehaviour {
 					}
 				}
 			}
+			*/
 		}
 	}
 	public void EnableOverlandMap () {

@@ -96,7 +96,7 @@ public class Player : NetworkBehaviour {
 	private GameObject upgradePanel;
 	private AuctionManager auction;
 	public OverlandMap overlandMap;
-	private Camera overlandMapCam;
+	public Camera overlandMapCam;
 	private GameObject playerMapMarker;
 	private List<GameObject> notifications;
 	private static Sprite[] notificationSprites;

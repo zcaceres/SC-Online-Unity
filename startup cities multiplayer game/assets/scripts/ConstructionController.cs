@@ -324,9 +324,9 @@ public class ConstructionController : NetworkBehaviour {
 			//if (player.activeCityHall != null && player.activeCityHall.ownedBy(player)) {
 				CityBuildMode ();
 				return;
-		//	} else { // skip over the city utilities category if the player isnt acting as a city
-		//		currentCategory = 0;
-		//	}
+			//} else { // skip over the city utilities category if the player isnt acting as a city
+			//	currentCategory = 0;
+			//}
 		}
 
 		if (confirm != null) { // don't move the object around while the player is dealing with the confirmation box
@@ -529,6 +529,18 @@ public class ConstructionController : NetworkBehaviour {
 	public void CityBuildMode() {
 		//road should not be snapped at start of buildmode
 		ConstructionBoundary lotBoundary;
+
+		// permit toggling overland cam in city build mode
+		if (Input.GetKeyDown (KeyCode.M)) {
+			if (player.overlandMapCam.enabled) {
+				player.overlandMap.DisableOverlandMap ();
+				//playerCamera = gameObject.transform.Find ("MainCamera").gameObject;
+			} else {
+				player.overlandMap.EnableOverlandMap ();
+				//playerCamera = player.overlandMapCam.gameObject;
+			}
+		}
+
 		int index = currentSpawnable % spawnables[currentCategory].Count;
 
 		if (confirm != null) { // don't move the object around while the player is dealing with the confirmation box
@@ -556,7 +568,14 @@ public class ConstructionController : NetworkBehaviour {
 		} else if (toBuild == null) {
 			Vector3 fwd = playerCamera.transform.TransformDirection (Vector3.forward); // ray shooting from camera
 			RaycastHit hit;
-			if (Physics.Raycast (playerCamera.transform.position, fwd, out hit, 100f, layerMask)) {
+			Ray ray;
+			if (player.overlandMapCam.enabled) {
+				Vector3 m = Input.mousePosition;
+				ray = player.overlandMapCam.ScreenPointToRay (m);
+			} else {
+				ray = new Ray (playerCamera.transform.position, fwd);
+			}
+			if (Physics.Raycast (ray.origin, ray.direction, out hit, 1000, layerMask))  {
 				toBuild = (GameObject)Instantiate (spawnables [currentCategory][index].dummy, hit.point, Quaternion.identity);
 				if (toBuild.CompareTag ("floor")) {
 					toBuild.transform.rotation = Quaternion.identity;
@@ -573,7 +592,14 @@ public class ConstructionController : NetworkBehaviour {
 			Vector3 fwd = playerCamera.transform.TransformDirection (Vector3.forward); // ray shooting from camera
 			RaycastHit hit;
 
-			if (Physics.Raycast (playerCamera.transform.position, fwd, out hit, 100, layerMask)) {
+			Ray ray;
+			if (player.overlandMapCam.enabled) {
+				Vector3 m = Input.mousePosition;
+				ray = player.overlandMapCam.ScreenPointToRay (m);
+			} else {
+				ray = new Ray (playerCamera.transform.position, fwd);
+			}
+			if (Physics.Raycast (ray.origin, ray.direction, out hit, 1000, layerMask))  {
 				if (isRoad) { // this handles the placement of road items, ignore it for cops/lots/others
 					if (hit.collider.gameObject.GetComponent<RoadConnector> () != null) { //if i raycast a road
 						if (!snapped) {
