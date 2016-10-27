@@ -204,7 +204,7 @@ public class ConstructionController : NetworkBehaviour {
 	}
 		
 	[Command (channel = CHANNEL)]
-	public void CmdCityBuild (int index, int category, Vector3 pos, Quaternion q, Vector3 scale, NetworkInstanceId pid, NetworkInstanceId regionId) {
+	public void CmdCityBuild (int index, int category, Vector3 pos, Quaternion q, Vector3 scale, NetworkInstanceId pid, NetworkInstanceId regionId, bool flatten) {
 		Player player = getLocalInstance (pid).GetComponent<Player> ();
 		GameObject constructionParticles;
 		GameObject rTmp = getLocalInstance (regionId);
@@ -230,6 +230,9 @@ public class ConstructionController : NetworkBehaviour {
 			bool cop = false;
 			if (tmp.CompareTag ("floor")) {
 				road = true;
+				if (flatten) {
+					FlattenTerrainBeneath (tmp);
+				}
 			} else if (tmp.name.Contains ("Police")) {
 				cop = true;
 			}
@@ -283,7 +286,7 @@ public class ConstructionController : NetworkBehaviour {
 				}
 			}
 			Destroy (b.gameObject);
-		}
+		}       
 	}
 
 	/// <summary>
@@ -635,7 +638,7 @@ public class ConstructionController : NetworkBehaviour {
 									RotateToTerrain ();
 								}
 							}
-						} else {
+						} else if (toBuild.name.Contains("Straight")) {
 							RotateUp ();
 						}
 					} else {
@@ -668,8 +671,13 @@ public class ConstructionController : NetworkBehaviour {
 					} else {
 						RoadTerrainCollisionCheck tmp = toBuild.GetComponent<RoadTerrainCollisionCheck> ();
 						if (tmp != null && tmp.Colliding ()) {
-							readyToConstruct = false;
-							lotBoundary.turnRed ();
+							if (tmp.name.Contains ("Straight")) {
+								readyToConstruct = false;
+								lotBoundary.turnRed ();
+							} else {
+								readyToConstruct = true;
+								lotBoundary.turnGreen ();
+							}
 						} else {
 							readyToConstruct = true;
 							lotBoundary.turnGreen ();
@@ -681,14 +689,19 @@ public class ConstructionController : NetworkBehaviour {
 				}
 
 				if (Input.GetKeyDown (KeyCode.E)) {
-					if (canBuild (spawnables [currentCategory][index].price)) {
+					//if (canBuild (spawnables [currentCategory][index].price)) {
 						if (readyToConstruct) {
 							confirm = (GameObject)Instantiate (Resources.Load ("Confirm"));
 							confirm.transform.SetParent (GameObject.Find ("Canvas").transform, false);
 							confirm.transform.Find ("ConfirmMessage").GetComponent<Text> ().text = "Build " + spawnables[currentCategory] [index].name + " for $" + spawnables[currentCategory] [index].price + "?";
 							confirm.transform.Find ("Ok").GetComponent<Button> ().onClick.AddListener (delegate {
 								lotBoundary.resetColor ();
-								CmdCityBuild (index,currentCategory, toBuild.transform.position, toBuild.transform.rotation, toBuild.transform.localScale, this.netId, player.activeCityHall.netId);
+							bool flatten = false;
+							RoadTerrainCollisionCheck collCheck = toBuild.GetComponent<RoadTerrainCollisionCheck>();
+							if (collCheck != null && collCheck.Colliding()) {
+								flatten = true;
+							}
+								CmdCityBuild (index,currentCategory, toBuild.transform.position, toBuild.transform.rotation, toBuild.transform.localScale, this.netId, player.activeCityHall.netId, flatten);
 								//constructionRotation = toBuild.transform.rotation;
 								Destroy (toBuild);
 								Destroy (tooltip);
@@ -702,7 +715,7 @@ public class ConstructionController : NetworkBehaviour {
 						} else {
 							player.showMessage ("You can't build there.");
 						}
-					}
+					//}
 				}
 					
 				if (Input.GetKey (KeyCode.Mouse1)) {
@@ -938,5 +951,35 @@ public class ConstructionController : NetworkBehaviour {
 	private int getDestroyCost(OwnableObject b) {
 		int price = b.getBaseCost () / 4;
 		return price;
+	}
+
+	/// <summary>
+	/// Flattens the terrain beneath the object to be level with the object.
+	/// </summary>
+	/// <param name="g">The object.</param>
+	private void FlattenTerrainBeneath(GameObject g) {
+		Terrain terrain = Terrain.activeTerrain;
+		int size = 3; // the diameter of terrain portion that will raise under the game object 
+		int hmWidth = terrain.terrainData.heightmapWidth;
+		int hmHeight = terrain.terrainData.heightmapHeight;
+
+		// get the position of this game object relative to the terrain
+		Vector3 pos = g.GetComponent<MeshRenderer>().bounds.center;
+		Vector3 tempCoord = (pos - terrain.gameObject.transform.position);
+		Vector3 coord = new Vector3 (tempCoord.x / terrain.terrainData.size.x, (tempCoord.y - .5f) / terrain.terrainData.size.y, tempCoord.z / terrain.terrainData.size.z);
+
+		// get the position of the terrain heightmap where this game object is
+		int posXInTerrain = (int) (coord.x * hmWidth); 
+		int posYInTerrain = (int) (coord.z * hmHeight);
+		// we set an offset so that all the raising terrain is under this game object
+		int offset = 1;//(int)(size / 2);
+		// get the heights of the terrain under this game object
+		float[,] heights = terrain.terrainData.GetHeights(posXInTerrain - offset, posYInTerrain - offset, size, size );
+		for (int i = 0; i < size; i++) {
+			for (int j = 0; j < size; j++) {
+				heights [i, j] = coord.y; // raise/lower it to the y coord of the object above the terrain
+			}
+		}
+		terrain.terrainData.SetHeights(posXInTerrain - offset,posYInTerrain - offset,heights);
 	}
 }
