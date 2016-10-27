@@ -977,7 +977,9 @@ public class ConstructionController : NetworkBehaviour {
 		float[,] heights = terrain.terrainData.GetHeights(posXInTerrain - offset, posYInTerrain - offset, size, size );
 		for (int i = 0; i < size; i++) {
 			for (int j = 0; j < size; j++) {
-				heights [i, j] = coord.y; // raise/lower it to the y coord of the object above the terrain
+				if (heights[i,j] > coord.y) {
+					heights [i, j] = coord.y; // lower it to the y coord of the object above the terrain
+				}
 			}
 		}
 		terrain.terrainData.SetHeights(posXInTerrain - offset,posYInTerrain - offset,heights);
