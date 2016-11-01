@@ -129,65 +129,65 @@ namespace UnityEngine.Networking {
 					}
 					ypos += spacing;
 				} else {
-					if (manager.matchInfo == null) {
-						if (manager.matches == null) {
-							if (GUI.Button (new Rect (xpos, ypos, 200, 20), "Create Internet Match")) {
-								manager.matchMaker.CreateMatch (manager.matchName, manager.matchSize, true, "", manager.OnMatchCreate);
-							}
-							ypos += spacing;
-
-							GUI.Label (new Rect (xpos, ypos, 100, 20), "Room Name:");
-							manager.matchName = GUI.TextField (new Rect (xpos + 100, ypos, 100, 20), manager.matchName);
-							ypos += spacing;
-
-							ypos += 10;
-
-							if (GUI.Button (new Rect (xpos, ypos, 200, 20), "Find Internet Match")) {
-								manager.matchMaker.ListMatches (0, 20, "", manager.OnMatchList);
-							}
-							ypos += spacing;
-						} else {
-							foreach (var match in manager.matches) {
-								if (GUI.Button (new Rect (xpos, ypos, 200, 20), "Join Match:" + match.name)) {
-									manager.matchName = match.name;
-									manager.matchSize = (uint)match.currentSize;
-									manager.matchMaker.JoinMatch (match.networkId, "", manager.OnMatchJoined);
-								}
-								ypos += spacing;
-							}
-						}
-					}
-
-					if (GUI.Button (new Rect (xpos, ypos, 200, 20), "Change MM server")) {
-						showServer = !showServer;
-					}
-					if (showServer) {
-						ypos += spacing;
-						if (GUI.Button (new Rect (xpos, ypos, 100, 20), "Local")) {
-							manager.SetMatchHost ("localhost", 1337, false);
-							showServer = false;
-						}
-						ypos += spacing;
-						if (GUI.Button (new Rect (xpos, ypos, 100, 20), "Internet")) {
-							manager.SetMatchHost ("mm.unet.unity3d.com", 443, true);
-							showServer = false;
-						}
-						ypos += spacing;
-						if (GUI.Button (new Rect (xpos, ypos, 100, 20), "Staging")) {
-							manager.SetMatchHost ("staging-mm.unet.unity3d.com", 443, true);
-							showServer = false;
-						}
-					}
-
-					ypos += spacing;
-
-					GUI.Label (new Rect (xpos, ypos, 300, 20), "MM Uri: " + manager.matchMaker.baseUri);
-					ypos += spacing;
-
-					if (GUI.Button (new Rect (xpos, ypos, 200, 20), "Disable Match Maker")) {
-						manager.StopMatchMaker ();
-					}
-					ypos += spacing;
+//					if (manager.matchInfo == null) {
+//						if (manager.matches == null) {
+//							if (GUI.Button (new Rect (xpos, ypos, 200, 20), "Create Internet Match")) {
+//								manager.matchMaker.CreateMatch (manager.matchName, manager.matchSize, true, "", manager.OnMatchCreate);
+//							}
+//							ypos += spacing;
+//
+//							GUI.Label (new Rect (xpos, ypos, 100, 20), "Room Name:");
+//							manager.matchName = GUI.TextField (new Rect (xpos + 100, ypos, 100, 20), manager.matchName);
+//							ypos += spacing;
+//
+//							ypos += 10;
+//
+//							if (GUI.Button (new Rect (xpos, ypos, 200, 20), "Find Internet Match")) {
+//								manager.matchMaker.ListMatches (0, 20, "", manager.OnMatchList);
+//							}
+//							ypos += spacing;
+//						} else {
+//							foreach (var match in manager.matches) {
+//								if (GUI.Button (new Rect (xpos, ypos, 200, 20), "Join Match:" + match.name)) {
+//									manager.matchName = match.name;
+//									manager.matchSize = (uint)match.currentSize;
+//									manager.matchMaker.JoinMatch (match.networkId, "", manager.OnMatchJoined);
+//								}
+//								ypos += spacing;
+//							}
+//						}
+//					}
+//
+//					if (GUI.Button (new Rect (xpos, ypos, 200, 20), "Change MM server")) {
+//						showServer = !showServer;
+//					}
+//					if (showServer) {
+//						ypos += spacing;
+//						if (GUI.Button (new Rect (xpos, ypos, 100, 20), "Local")) {
+//							manager.SetMatchHost ("localhost", 1337, false);
+//							showServer = false;
+//						}
+//						ypos += spacing;
+//						if (GUI.Button (new Rect (xpos, ypos, 100, 20), "Internet")) {
+//							manager.SetMatchHost ("mm.unet.unity3d.com", 443, true);
+//							showServer = false;
+//						}
+//						ypos += spacing;
+//						if (GUI.Button (new Rect (xpos, ypos, 100, 20), "Staging")) {
+//							manager.SetMatchHost ("staging-mm.unet.unity3d.com", 443, true);
+//							showServer = false;
+//						}
+//					}
+//
+//					ypos += spacing;
+//
+//					GUI.Label (new Rect (xpos, ypos, 300, 20), "MM Uri: " + manager.matchMaker.baseUri);
+//					ypos += spacing;
+//
+//					if (GUI.Button (new Rect (xpos, ypos, 200, 20), "Disable Match Maker")) {
+//						manager.StopMatchMaker ();
+//					}
+//					ypos += spacing;
 				}
 			}
 		}
