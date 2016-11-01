@@ -38,4 +38,5 @@ sysinfo.txt
 *.apk
 *.unitypackage
 /test_Data
+/testrun_data
 /testrun_Data/
