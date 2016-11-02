@@ -480,7 +480,7 @@ public class Player : NetworkBehaviour {
 				ui.playerReadoutToggle (true);
 				ui.updatePlayerReadout (targetResident.personToString ());
 			} else if (targetVehicle != null) {
-				ui.playerReadoutToggle(true);
+				ui.playerReadoutToggle (true);
 				ui.updatePlayerReadout (targetVehicle.getReadout());
 			}
 			else {
@@ -1603,7 +1603,7 @@ public class Player : NetworkBehaviour {
 	}
 
 	public void targetNeighborhood() {
-		if (!(targetObject is Neighborhood)) {
+		if (targetObject!= null && !(targetObject is Neighborhood)) {
 			Neighborhood n = targetObject.getNeighborhood ();
 			if (n != null) {
 				targetObject = n;
