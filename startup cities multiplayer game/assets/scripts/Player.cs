@@ -115,6 +115,7 @@ public class Player : NetworkBehaviour {
 	private StartupRigidbodyFirstPersonController characterController;
 	public GameObject bankruptChoice;
 	public CityHall activeCityHall;
+	public bool terrainMode;
 
 	// Use this for initialization
 	void Start () {
@@ -207,7 +208,7 @@ public class Player : NetworkBehaviour {
 				construction = true;
 			}
 		}
-
+			
 		if (moveMode) {
 			constructionController.moveMode (moveTarget);
 			return;
@@ -215,6 +216,15 @@ public class Player : NetworkBehaviour {
 
 		if (construction) {
 			constructionController.buildMode ();
+			return;
+		}
+
+		if (Input.GetKeyDown (KeyCode.T)) {
+			terrainMode = true;
+		}
+
+		if (terrainMode) {
+			constructionController.TerrainMode ();
 			return;
 		}
 
@@ -2017,5 +2027,15 @@ public class Player : NetworkBehaviour {
 		currentVehicle.Move (h, v, ve, hb);
 	}
 
+	/// <summary>
+	/// Raycast the specified distance from the player's camera.
+	/// </summary>
+	/// <param name="distance">Distance.</param>
+	public RaycastHit Raycast(float distance) {
+		Vector3 fwd = playerCamera.transform.TransformDirection(Vector3.forward); // ray shooting from camera
+		RaycastHit hit;
 
+		Physics.Raycast (playerCamera.transform.position, fwd, out hit, distance);
+		return hit;
+	}
 }

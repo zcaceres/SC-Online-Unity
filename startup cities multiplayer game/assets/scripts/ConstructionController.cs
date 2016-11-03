@@ -63,6 +63,12 @@ public class ConstructionController : NetworkBehaviour {
 	private bool lockedX;
 	private bool lockedY;
 	private bool lockedZ;
+	private Vector3 terrainSpot;
+	private bool spotSet;
+	private Vector3 raiseTerrainSpot;
+	private bool raiseSpotSet;
+	private Vector3 lowerTerrainSpot;
+	private bool lowerSpotSet;
 
 	// Use this for initialization
 	void Start () {
@@ -734,6 +740,86 @@ public class ConstructionController : NetworkBehaviour {
 		ItemSelect ();	
 	}
 
+	/// <summary>
+	/// Called by player update while editing terrain
+	/// </summary>
+	public void TerrainMode() {
+		Vector3 fwd = playerCamera.transform.TransformDirection (Vector3.forward); // ray shooting from camera
+		RaycastHit hit;
+		if (Physics.Raycast (playerCamera.transform.position, fwd, out hit, 100f, layerMask)) {
+
+			if (toBuild == null) {
+				toBuild = (GameObject)Instantiate (Resources.Load ("Utilities/Dummy_TerrainAdjuster"));
+				toBuild.transform.position = hit.point;
+			} else {
+				toBuild.transform.position = hit.point;
+				//Grabs construction boundary from toBuild object to check for proper placement in the lot
+				ConstructionBoundary lotBoundary = toBuild.GetComponent<ConstructionBoundary> ();
+				Lot l;
+				if (lotBoundary.isConstructable) {
+					l = hit.collider.gameObject.GetComponent<Lot> ();
+					if ((l != null) || lotBoundary.triggerLot != null) {
+						if (lotBoundary.triggerLot != null) {
+							l = lotBoundary.triggerLot;
+						}
+						if (l.ownedBy (this.netId)) {
+							readyToConstruct = true;
+							lotBoundary.turnGreen ();
+						} 
+					} else {
+						readyToConstruct = false;
+						lotBoundary.turnRed ();
+					}
+				} else {
+					readyToConstruct = false;
+					lotBoundary.turnRed ();
+				}
+			}
+			if (readyToConstruct) {
+				if (Input.GetButton ("Fire2")) {
+					if (raiseSpotSet) {
+						raiseTerrainSpot = new Vector3 (raiseTerrainSpot.x, raiseTerrainSpot.y + 1, raiseTerrainSpot.z);
+						RaiseTerrain (raiseTerrainSpot);
+					} else {
+						raiseTerrainSpot = hit.point;
+						raiseSpotSet = true;
+					}
+				} else if (raiseSpotSet) {
+					raiseSpotSet = false;
+				}
+
+				if (Input.GetKey(KeyCode.DownArrow)) {
+					if (lowerSpotSet) {
+						lowerTerrainSpot = new Vector3 (lowerTerrainSpot.x, lowerTerrainSpot.y - 1, lowerTerrainSpot.z);
+						LowerTerrain (lowerTerrainSpot);
+					} else {
+						lowerTerrainSpot = hit.point;
+						lowerSpotSet = true;
+					}
+				} else if (lowerSpotSet) {
+					lowerSpotSet = false;
+				}
+
+				if (Input.GetButton ("Fire1")) {
+					if (spotSet) {
+						Vector3 pos = new Vector3 (hit.point.x, terrainSpot.y, hit.point.z);
+						SetTerrainHeight (pos);
+
+					} else {
+						terrainSpot = hit.point;
+						spotSet = true;
+					}
+				} else if (spotSet) {
+					spotSet = false;
+				}
+			}
+		}
+		if (Input.GetKeyDown (KeyCode.Tab)) {
+			player.terrainMode = false;
+			Destroy (toBuild);
+		}
+	}
+
 	public GameObject confirmDestroy(GameObject target) {
 		confirm = (GameObject)Instantiate (Resources.Load ("Confirm"));
 		confirm.transform.SetParent (GameObject.Find ("Canvas").transform, false);
@@ -983,5 +1069,65 @@ public class ConstructionController : NetworkBehaviour {
 			}
 		}
 		terrain.terrainData.SetHeights(posXInTerrain - offset,posYInTerrain - offset,heights);
+	}
+		
+	public void RaiseTerrain(Vector3 pos) {
+		Terrain terrain = Terrain.activeTerrain;
+		int size = 1;
+		int hmWidth = terrain.terrainData.heightmapWidth;
+		int hmHeight = terrain.terrainData.heightmapHeight;
+
+		Vector3 tempCoord = (pos - terrain.gameObject.transform.position);
+		Vector3 coord = new Vector3 (tempCoord.x / terrain.terrainData.size.x, (tempCoord.y + 1f) / terrain.terrainData.size.y, tempCoord.z / terrain.terrainData.size.z);
+
+		int posXInTerrain = (int) (coord.x * hmWidth); 
+		int posYInTerrain = (int) (coord.z * hmHeight);
+		float[,] heights = terrain.terrainData.GetHeights(posXInTerrain, posYInTerrain, size, size );
+		for (int i = 0; i < size; i++) {
+			for (int j = 0; j < size; j++) {
+				heights [i, j] = coord.y;
+			}
+		}
+		terrain.terrainData.SetHeights(posXInTerrain,posYInTerrain,heights);
+	}
+
+	public void LowerTerrain(Vector3 pos) {
+		Terrain terrain = Terrain.activeTerrain;
+		int size = 1;
+		int hmWidth = terrain.terrainData.heightmapWidth;
+		int hmHeight = terrain.terrainData.heightmapHeight;
+
+		Vector3 tempCoord = (pos - terrain.gameObject.transform.position);
+		Vector3 coord = new Vector3 (tempCoord.x / terrain.terrainData.size.x, (tempCoord.y - 1f) / terrain.terrainData.size.y, tempCoord.z / terrain.terrainData.size.z);
+
+		int posXInTerrain = (int) (coord.x * hmWidth); 
+		int posYInTerrain = (int) (coord.z * hmHeight);
+		float[,] heights = terrain.terrainData.GetHeights(posXInTerrain, posYInTerrain, size, size );
+		for (int i = 0; i < size; i++) {
+			for (int j = 0; j < size; j++) {
+				heights [i, j] = coord.y;
+			}
+		}
+		terrain.terrainData.SetHeights(posXInTerrain,posYInTerrain,heights);
+	}
+
+	public void SetTerrainHeight(Vector3 pos) {
+		Terrain terrain = Terrain.activeTerrain;
+		int size = 1;
+		int hmWidth = terrain.terrainData.heightmapWidth;
+		int hmHeight = terrain.terrainData.heightmapHeight;
+
+		Vector3 tempCoord = (pos - terrain.gameObject.transform.position);
+		Vector3 coord = new Vector3 (tempCoord.x / terrain.terrainData.size.x, (tempCoord.y) / terrain.terrainData.size.y, tempCoord.z / terrain.terrainData.size.z);
+
+		int posXInTerrain = (int) (coord.x * hmWidth); 
+		int posYInTerrain = (int) (coord.z * hmHeight);
+		float[,] heights = terrain.terrainData.GetHeights(posXInTerrain, posYInTerrain, size, size );
+		for (int i = 0; i < size; i++) {
+			for (int j = 0; j < size; j++) {
+				heights [i, j] = coord.y;
+			}
+		}
+		terrain.terrainData.SetHeights(posXInTerrain,posYInTerrain,heights);
 	}
 }
